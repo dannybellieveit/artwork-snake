@@ -9,9 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Leading slash makes these root-relative
   const PHOTO_URLS = [
-    '/assets/photo1.jpg',
-    '/assets/photo2.jpg',
-    '/assets/photo3.jpg',
+    '/assets/RGGaSV6.jpg',
+    '/assets/cheryl.jpg',
+    '/assets/vape.jpg',
     // add more as needed
   ];
 
