@@ -1,20 +1,19 @@
-// game.js - Snake Image Game with Target-Eating Growth
+// game.js - Snake Image Game with Proper Growth
 
 document.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('game-canvas');
   const ctx    = canvas.getContext('2d');
 
-  const SQUARE     = 50;                      // grid cell size
+  const SQUARE     = 50;  
   const COLS       = Math.floor(canvas.width  / SQUARE);
   const ROWS       = Math.floor(canvas.height / SQUARE);
-  const DIRECTIONS = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
 
-  // Paths to your repo-hosted images in assets/
+  // Your asset filenames here:
   const PHOTO_URLS = [
-    '/assets/vape.jpg',
     '/assets/cheryl.jpg',
+    '/assets/vape.jpg',
     '/assets/RGGaSV6.jpg',
-    // …add more filenames here
+    // …add more
   ];
 
   // Preload images
@@ -25,24 +24,23 @@ document.addEventListener('DOMContentLoaded', () => {
     return img;
   });
 
-  // Wait until all images have loaded (or errored) before starting
-  const loadAll = imgs =>
-    Promise.all(imgs.map(img =>
-      new Promise(resolve => {
-        img.onload = img.onerror = () => resolve();
-      })
+  // Wait until all images have loaded (or errored)
+  function loadAll(imgs) {
+    return Promise.all(imgs.map(img =>
+      new Promise(res => img.onload = img.onerror = res)
     ));
+  }
 
   const rand = n => Math.floor(Math.random() * n);
 
-  // Snake: array of segments { x, y, img }
+  // Initialize snake with one segment at a random cell
   let snake = [{
     x: rand(COLS) * SQUARE,
     y: rand(ROWS) * SQUARE,
     img: rand(loadedImages.length)
   }];
 
-  // Current target the snake will chase
+  // Target to chase
   let target;
 
   function spawnTarget() {
@@ -51,14 +49,13 @@ document.addEventListener('DOMContentLoaded', () => {
       x = rand(COLS) * SQUARE;
       y = rand(ROWS) * SQUARE;
     } while (snake.some(seg => seg.x === x && seg.y === y));
-    target = { x, y, img: rand(loadedImages.length) };
+    target = {
+      x, y,
+      img: rand(loadedImages.length)
+    };
   }
 
-  function pickNewDirection() {
-    // Not used here since movement is direct chase
-  }
-
-  // Move the head one grid step toward the target
+  // Compute new head coordinates
   function moveHead() {
     const head = { ...snake[0] };
     if      (head.x < target.x) head.x += SQUARE;
@@ -68,39 +65,54 @@ document.addEventListener('DOMContentLoaded', () => {
     return head;
   }
 
+  // Game step: move, eat, grow/pop
   function step() {
-    const newHead = moveHead();
-    snake.unshift(newHead);
-    if (newHead.x === target.x && newHead.y === target.y) {
-      // Ate it! Grow and respawn target
+    const oldHeadImg = snake[0].img;
+    const newHeadPos = moveHead();
+    // Add new head, carrying over the head’s image
+    snake.unshift({
+      x: newHeadPos.x,
+      y: newHeadPos.y,
+      img: oldHeadImg
+    });
+
+    if (newHeadPos.x === target.x && newHeadPos.y === target.y) {
+      // Ate target: change the new tail’s image to the eaten one
+      snake[snake.length - 1].img = target.img;
       spawnTarget();
     } else {
       // Normal move: remove tail
       snake.pop();
     }
+
     draw();
   }
 
+  // Draw target + snake
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw target with a border
+    // draw target
     ctx.globalAlpha = 0.8;
-    ctx.drawImage(loadedImages[target.img], target.x, target.y, SQUARE, SQUARE);
+    ctx.drawImage(
+      loadedImages[target.img],
+      target.x, target.y, SQUARE, SQUARE
+    );
     ctx.globalAlpha = 1;
-    ctx.strokeStyle = 'white';
-    ctx.strokeRect(target.x, target.y, SQUARE, SQUARE);
 
-    // Draw snake segments
+    // draw snake
     snake.forEach(seg => {
-      ctx.drawImage(loadedImages[seg.img], seg.x, seg.y, SQUARE, SQUARE);
+      ctx.drawImage(
+        loadedImages[seg.img],
+        seg.x, seg.y, SQUARE, SQUARE
+      );
     });
   }
 
-  // Main loop initializer
+  // Initialize when ready
   loadAll(loadedImages).then(() => {
     spawnTarget();
     draw();
-    setInterval(step, 400); // Adjust speed if desired
+    setInterval(step, 400);
   });
 });
