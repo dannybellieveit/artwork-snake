@@ -1,84 +1,106 @@
-// game.js
+// game.js - Snake Image Game with Target-Eating Growth
 
 document.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('game-canvas');
   const ctx    = canvas.getContext('2d');
 
-  const SQUARE     = 50;
+  const SQUARE     = 50;                      // grid cell size
+  const COLS       = Math.floor(canvas.width  / SQUARE);
+  const ROWS       = Math.floor(canvas.height / SQUARE);
   const DIRECTIONS = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
 
-  // Leading slash makes these root-relative
+  // Paths to your repo-hosted images in assets/
   const PHOTO_URLS = [
-    '/assets/RGGaSV6.jpg',
-    '/assets/cheryl.jpg',
-    '/assets/vape.jpg',
-    // add more as needed
+    '/assets/photo1.jpg',
+    '/assets/photo2.jpg',
+    '/assets/photo3.jpg',
+    // …add more filenames here
   ];
 
-  // Preload all images
-  const loadedImages = PHOTO_URLS.map(url => {
+  // Preload images
+  const loadedImages = PHOTO_URLS.map(src => {
     const img = new Image();
-    img.src = url;
-    img.onerror = () => console.error(`Failed to load image: ${url}`);
+    img.src = src;
+    img.onerror = () => console.error(`Failed to load ${src}`);
     return img;
   });
 
-  function loadAllImages(imgArray) {
-    return Promise.all(imgArray.map(img =>
+  // Wait until all images have loaded (or errored) before starting
+  const loadAll = imgs =>
+    Promise.all(imgs.map(img =>
       new Promise(resolve => {
-        img.onload  = () => resolve();
-        img.onerror = () => resolve();
+        img.onload = img.onerror = () => resolve();
       })
     ));
-  }
 
-  const randomIndex = () => Math.floor(Math.random() * loadedImages.length);
+  const rand = n => Math.floor(Math.random() * n);
 
-  // Start with one segment in the center
+  // Snake: array of segments { x, y, img }
   let snake = [{
-    x: canvas.width  / 2 - SQUARE / 2,
-    y: canvas.height / 2 - SQUARE / 2,
-    imgIndex: randomIndex()
+    x: rand(COLS) * SQUARE,
+    y: rand(ROWS) * SQUARE,
+    img: rand(loadedImages.length)
   }];
 
-  let dir = 'RIGHT';
+  // Current target the snake will chase
+  let target;
 
-  function pickNewDirection() {
-    if (Math.random() < 0.3) {
-      dir = DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)];
-    }
+  function spawnTarget() {
+    let x, y;
+    do {
+      x = rand(COLS) * SQUARE;
+      y = rand(ROWS) * SQUARE;
+    } while (snake.some(seg => seg.x === x && seg.y === y));
+    target = { x, y, img: rand(loadedImages.length) };
   }
 
-  function moveSnake() {
+  function pickNewDirection() {
+    // Not used here since movement is direct chase
+  }
+
+  // Move the head one grid step toward the target
+  function moveHead() {
     const head = { ...snake[0] };
-    switch (dir) {
-      case 'UP':    head.y -= SQUARE; break;
-      case 'DOWN':  head.y += SQUARE; break;
-      case 'LEFT':  head.x -= SQUARE; break;
-      case 'RIGHT': head.x += SQUARE; break;
+    if      (head.x < target.x) head.x += SQUARE;
+    else if (head.x > target.x) head.x -= SQUARE;
+    else if (head.y < target.y) head.y += SQUARE;
+    else if (head.y > target.y) head.y -= SQUARE;
+    return head;
+  }
+
+  function step() {
+    const newHead = moveHead();
+    snake.unshift(newHead);
+    if (newHead.x === target.x && newHead.y === target.y) {
+      // Ate it! Grow and respawn target
+      spawnTarget();
+    } else {
+      // Normal move: remove tail
+      snake.pop();
     }
-    snake.unshift({ x: head.x, y: head.y, imgIndex: randomIndex() });
-    snake.pop();
+    draw();
   }
 
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw target with a border
+    ctx.globalAlpha = 0.8;
+    ctx.drawImage(loadedImages[target.img], target.x, target.y, SQUARE, SQUARE);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = 'white';
+    ctx.strokeRect(target.x, target.y, SQUARE, SQUARE);
+
+    // Draw snake segments
     snake.forEach(seg => {
-      const img = loadedImages[seg.imgIndex];
-      ctx.drawImage(img, seg.x, seg.y, SQUARE, SQUARE);
+      ctx.drawImage(loadedImages[seg.img], seg.x, seg.y, SQUARE, SQUARE);
     });
   }
 
-  // **Define loop** before using it
-  function loop() {
-    pickNewDirection();
-    moveSnake();
+  // Main loop initializer
+  loadAll(loadedImages).then(() => {
+    spawnTarget();
     draw();
-  }
-
-  // Wait for images, then start
-  loadAllImages(loadedImages).then(() => {
-    loop();                   // initial draw
-    setInterval(loop, 600);   // then continuous updates
+    setInterval(step, 400); // Adjust speed if desired
   });
 });
