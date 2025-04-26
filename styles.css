@@ -15,6 +15,6 @@ body, html {
 }
 
 canvas {
-  border: 2px solid #333;
+  /* border removed */
   image-rendering: pixelated;
 }
