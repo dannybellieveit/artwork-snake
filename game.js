@@ -11,9 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Paths to your repo-hosted images in assets/
   const PHOTO_URLS = [
-    '/assets/photo1.jpg',
-    '/assets/photo2.jpg',
-    '/assets/photo3.jpg',
+    '/assets/vape.jpg',
+    '/assets/cheryl.jpg',
+    '/assets/RGGaSV6.jpg',
     // …add more filenames here
   ];
 
