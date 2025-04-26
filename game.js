@@ -1,81 +1,86 @@
-// game.js — Snake chases targets, grows properly, keeps eaten image
+// game.js — Snake that keeps eaten images on its tail
 
 document.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('game-canvas');
   const ctx    = canvas.getContext('2d');
 
-  const SQUARE = 50;
-  const COLS   = Math.floor(canvas.width  / SQUARE);
-  const ROWS   = Math.floor(canvas.height / SQUARE);
+  const S = 50;                                 // grid square
+  const COLS = Math.floor(canvas.width  / S);
+  const ROWS = Math.floor(canvas.height / S);
 
-  // Your repo-hosted images:
+  // Update these to match your filenames:
   const PHOTO_URLS = [
     '/assets/1.jpg',
-    '/assets/vape.jpg',
     '/assets/cheryl.jpg',
+    '/assets/vape.jpg',
     // …etc
   ];
 
-  // Preload
-  const loadedImages = PHOTO_URLS.map(src => {
+  // Preload images
+  const loaded = PHOTO_URLS.map(src => {
     const img = new Image();
     img.src = src;
-    img.onerror = () => console.error(`Failed to load ${src}`);
+    img.onerror = () => console.error('Load failed:', src);
     return img;
   });
-  function loadAll(imgs) {
-    return Promise.all(imgs.map(i => new Promise(r => i.onload = i.onerror = r)));
+  function preloadAll(arr) {
+    return Promise.all(arr.map(im => new Promise(res => im.onload = im.onerror = res)));
   }
 
-  const rand = n => Math.floor(Math.random() * n);
+  // Utility
+  const rnd = n => Math.floor(Math.random() * n);
 
-  // Initial snake: one segment somewhere
-  let snake = [{
-    x: rand(COLS) * SQUARE,
-    y: rand(ROWS) * SQUARE,
-    img: rand(loadedImages.length)
-  }];
+  // Snake state: parallel arrays
+  let snakePos = [];    // [{x,y},…]
+  let snakeImg = [];    // [imgIndex, …]
 
-  let target, lastEatenImg = null;
+  // Target state
+  let target = { x: 0, y: 0, img: 0 };
+
+  function initSnake() {
+    const startX = rnd(COLS) * S;
+    const startY = rnd(ROWS) * S;
+    snakePos = [{ x: startX, y: startY }];
+    snakeImg = [ rnd(loaded.length) ];
+  }
 
   function spawnTarget() {
     let x, y;
     do {
-      x = rand(COLS) * SQUARE;
-      y = rand(ROWS) * SQUARE;
-    } while (snake.some(s => s.x === x && s.y === y));
-    target = { x, y, img: rand(loadedImages.length) };
+      x = rnd(COLS) * S;
+      y = rnd(ROWS) * S;
+    } while (snakePos.some(p => p.x === x && p.y === y));
+    target = { x, y, img: rnd(loaded.length) };
   }
 
-  // Step head one tile toward target
-  function moveHead() {
-    const h = { ...snake[0] };
-    if      (h.x < target.x) h.x += SQUARE;
-    else if (h.x > target.x) h.x -= SQUARE;
-    else if (h.y < target.y) h.y += SQUARE;
-    else if (h.y > target.y) h.y -= SQUARE;
-    return h;
+  function moveOneStep() {
+    const head = { ...snakePos[0] };
+    if      (head.x < target.x) head.x += S;
+    else if (head.x > target.x) head.x -= S;
+    else if (head.y < target.y) head.y += S;
+    else if (head.y > target.y) head.y -= S;
+    return head;
   }
 
   function step() {
-    const headImg = snake[0].img;            // carry-forward image
-    const newHead = moveHead();
-    const ate     = (newHead.x === target.x && newHead.y === target.y);
+    const newHead = moveOneStep();
+    const ate = (newHead.x === target.x && newHead.y === target.y);
 
-    // 1) add new head
-    snake.unshift({ x: newHead.x, y: newHead.y, img: headImg });
-
-    // 2) if we ate, remember this image and respawn; else normal pop
-    if (ate) {
-      lastEatenImg = target.img;
-      spawnTarget();
-    } else {
-      snake.pop();
+    // 1) shift positions
+    snakePos.unshift(newHead);
+    if (!ate) {
+      snakePos.pop(); 
     }
 
-    // 3) reapply the last-eaten image to the tail (so it never “falls off”)
-    if (lastEatenImg !== null) {
-      snake[snake.length - 1].img = lastEatenImg;
+    // 2) append image on eat
+    if (ate) {
+      snakeImg.push(target.img);
+      spawnTarget();
+    }
+
+    // 3) keep snakeImg length synced to snakePos
+    if (!ate) {
+      snakeImg = snakeImg; // no-op, we only grow on eat
     }
 
     draw();
@@ -86,17 +91,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // draw target
     ctx.globalAlpha = 0.8;
-    ctx.drawImage(loadedImages[target.img], target.x, target.y, SQUARE, SQUARE);
+    ctx.drawImage(loaded[target.img], target.x, target.y, S, S);
     ctx.globalAlpha = 1;
 
     // draw snake
-    snake.forEach(s => {
-      ctx.drawImage(loadedImages[s.img], s.x, s.y, SQUARE, SQUARE);
+    snakePos.forEach((p, i) => {
+      const img = loaded[snakeImg[i]];
+      ctx.drawImage(img, p.x, p.y, S, S);
     });
   }
 
-  // kickoff
-  loadAll(loadedImages).then(() => {
+  // start
+  preloadAll(loaded).then(() => {
+    initSnake();
     spawnTarget();
     draw();
     setInterval(step, 400);
