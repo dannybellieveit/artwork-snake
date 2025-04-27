@@ -10,9 +10,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Point these at your stored images:
   const PHOTO_URLS = [
-    '/assets/1.jpg',
-    '/assets/vape.jpg',
-    '/assets/cheryl.jpg',
+    '/assets/photo1.jpg',
+    '/assets/photo2.jpg',
+    '/assets/photo3.jpg',
+    '/assets/photo4.jpg',
+    '/assets/photo5.jpg',
+    '/assets/photo6.jpg',
+    '/assets/photo7.jpg',
+    '/assets/photo8.jpg',
+    '/assets/photo9.jpg',
     // …etc
   ];
 
