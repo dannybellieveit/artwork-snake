@@ -12,7 +12,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // —— Worker Config ——
   const WORKER_BASE         = 'https://proud-cherry-9c55.6wbqhmqd8b.workers.dev';
-  const SPOTIFY_PLAYLIST_ID = '37i9dQZF1DXcBWIGoYBM5M';
+  // Spotify’s “Today’s Top Hits” (definitely public)
+const SPOTIFY_PLAYLIST_ID = '37i9dQZF1DXcBWIGoYBM5M';
+
 
   // Fetch token from Worker
   async function fetchSpotifyToken() {
