@@ -1,4 +1,4 @@
-/* style.css */
+/* sky-blue page background, no canvas border */
 
 body {
   margin: 0;
@@ -16,7 +16,7 @@ body {
 }
 
 canvas {
-  width: 100%;  /* responsive scaling */
+  width: 100%;
   height: auto;
   display: block;
 }
