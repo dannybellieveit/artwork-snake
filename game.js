@@ -1,19 +1,19 @@
-// game.js — Snake that keeps eaten images on its tail (static assets)
+// game.js — Snake that keeps eaten images on its tail, sequentially
 
 document.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('game-canvas');
   const ctx    = canvas.getContext('2d');
 
-  const S    = 50;                              // grid square size
+  const S    = 50;                              // grid square
   const COLS = Math.floor(canvas.width  / S);
   const ROWS = Math.floor(canvas.height / S);
 
-  // UPDATE THESE to point at your stored images:
+  // Point these at your stored images:
   const PHOTO_URLS = [
     '/assets/1.jpg',
     '/assets/vape.jpg',
     '/assets/cheryl.jpg',
-    // …add as many as you like
+    // …etc
   ];
 
   // Preload images
@@ -31,22 +31,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const rnd = n => Math.floor(Math.random() * n);
 
-  let snakePos = [];   // [{x,y},…]
-  let snakeImg = [];   // [index,…]
+  let snakePos = [];    // [{x,y},…]
+  let snakeImg = [];    // [imgIndex,…]
   let target   = { x:0, y:0, img:0 };
+
+  // For sequential photo usage:
+  let nextPhotoIndex = 0;
 
   function initSnake() {
     snakePos = [{ x: rnd(COLS)*S, y: rnd(ROWS)*S }];
-    snakeImg = [ rnd(loaded.length) ];
+    // start your tail with the first photo
+    snakeImg = [0];
+    nextPhotoIndex = 1 % loaded.length;
   }
 
   function spawnTarget() {
-    let x, y;
+    let x,y;
     do {
       x = rnd(COLS)*S;
       y = rnd(ROWS)*S;
-    } while (snakePos.some(p => p.x === x && p.y === y));
-    target = { x, y, img: rnd(loaded.length) };
+    } while (snakePos.some(p => p.x===x && p.y===y));
+    // assign the next photo in sequence
+    target = { x, y, img: nextPhotoIndex };
+    // advance, wrapping only after all used
+    nextPhotoIndex = (nextPhotoIndex + 1) % loaded.length;
   }
 
   function moveOneStep() {
@@ -66,6 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!ate) snakePos.pop();
 
     if (ate) {
+      // grow by adding the image you just ate
       snakeImg.push(target.img);
       spawnTarget();
     }
@@ -87,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // start the game
+  // start
   preloadAll(loaded).then(() => {
     initSnake();
     spawnTarget();
