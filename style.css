@@ -1,5 +1,3 @@
-/* sky-blue page background, no canvas border */
-
 body {
   margin: 0;
   background: skyblue;
@@ -23,18 +21,18 @@ canvas {
 
 .info-box {
   position: absolute;
-  bottom: 10px;
+  bottom: 5px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(255,255,255,0.8);
-  padding: 4px 8px;
+  background: rgba(255,255,255,0.9);
+  padding: 6px 12px;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 16px;
   pointer-events: none;
+  white-space: nowrap;
 }
 
 footer {
-  margin-top: auto;
   padding: 12px 0;
 }
 
@@ -43,10 +41,21 @@ footer {
   display: flex;
   gap: 16px;
   padding: 0;
+  margin: 0;
 }
 
 .contacts a {
   text-decoration: none;
   color: #333;
   font-weight: bold;
+}
+
+@media (max-width: 600px) {
+  .info-box {
+    font-size: 14px;
+  }
+  .contacts {
+    gap: 8px;
+    font-size: 14px;
+  }
 }
