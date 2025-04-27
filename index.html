@@ -1,14 +1,15 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Snake with Spotify Art</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <canvas id="gameCanvas" width="400" height="400"></canvas>
-  <!-- (Optional) preview one of the images -->
-  <img id="preview-art" alt="Preview art" style="display:none; width:64px; height:64px" />
-  <script src="snake.js"></script>
+  <canvas id="game-canvas" width="500" height="500"></canvas>
+  <!-- Optional preview during development -->
+  <img id="preview-art" alt="Preview art" style="display:none; width:64px; height:64px; margin-top:10px;">
+  <script src="game.js" defer></script>
 </body>
 </html>
