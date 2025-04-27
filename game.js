@@ -1,10 +1,12 @@
-// game.js — Snake that keeps eaten images on its tail, with Spotify integration
+// game.js — Snake that keeps eaten images on its tail, with Spotify integration and debug logs
 
 document.addEventListener('DOMContentLoaded', async () => {
+  console.log('DOM ready');
+
   // —— Canvas Setup ——
   const canvas = document.getElementById('game-canvas');
   const ctx    = canvas.getContext('2d');
-  const S      = 50;                                 // grid square size
+  const S      = 50;
   const COLS   = Math.floor(canvas.width  / S);
   const ROWS   = Math.floor(canvas.height / S);
 
@@ -15,6 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const clientSecret = 'aa93345266164ef9a43b5e65c10ae7e2';
 
   async function fetchSpotifyToken() {
+    console.log('Fetching Spotify token…');
     const resp = await fetch('https://accounts.spotify.com/api/token', {
       method: 'POST',
       headers: {
@@ -24,10 +27,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       body: 'grant_type=client_credentials'
     });
     const { access_token } = await resp.json();
+    console.log('Got token:', access_token ? '✅' : '❌');
     return access_token;
   }
 
   async function fetchAllPlaylistTracks(playlistId, token) {
+    console.log('Fetching playlist tracks…');
     let tracks = [];
     let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
     while (url) {
@@ -36,24 +41,31 @@ document.addEventListener('DOMContentLoaded', async () => {
       tracks = tracks.concat(json.items);
       url    = json.next;
     }
+    console.log(`Fetched ${tracks.length} tracks`);
     return tracks;
   }
 
   function extractArtworkUrls(tracks) {
-    return tracks
+    const urls = tracks
       .map(item => item.track?.album?.images?.[0]?.url)
       .filter(u => !!u);
+    console.log(`Extracted ${urls.length} artwork URLs`);
+    return urls;
   }
 
   function preloadImages(urls) {
+    console.log('Preloading images:', urls.length);
     return Promise.all(
       urls.map(url => new Promise((resolve, reject) => {
         const img = new Image();
         img.onload  = () => resolve(img);
-        img.onerror = () => reject(new Error(`Failed to load ${url}`));
+        img.onerror = () => {
+          console.warn('Failed to load image:', url);
+          resolve(null);
+        };
         img.src     = url;
       }))
-    );
+    ).then(images => images.filter(img => img));
   }
 
   async function loadTrackArtworks(playlistId) {
@@ -61,11 +73,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     const tracks = await fetchAllPlaylistTracks(playlistId, token);
     const urls   = extractArtworkUrls(tracks);
 
-    // Preload first 20 for a fast start
-    const initialImages = await preloadImages(urls.slice(0, 20));
+    // Preload first 20 for fast start
+    const initialUrls   = urls.slice(0, 20);
+    console.log('Preloading first batch…');
+    const initialImages = await preloadImages(initialUrls);
+    console.log(`Loaded initial images: ${initialImages.length}`);
+
     // Background load the rest
-    preloadImages(urls.slice(20))
-      .then(more => initialImages.push(...more))
+    const remainingUrls = urls.slice(20);
+    preloadImages(remainingUrls)
+      .then(more => console.log(`Loaded remaining images: ${more.length}`))
       .catch(err => console.warn('Some images failed:', err));
 
     return initialImages;
@@ -75,7 +92,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let loadedImages = [];
   try {
     loadedImages = await loadTrackArtworks(SPOTIFY_PLAYLIST_ID);
-    // Show preview if needed
+    console.log('Total loadedImages:', loadedImages.length);
     const preview = document.getElementById('preview-art');
     if (preview && loadedImages.length) {
       preview.src = loadedImages[0].src;
@@ -83,17 +100,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   } catch (err) {
     console.error('Spotify load failed, falling back to static assets:', err);
-    // Fallback static images
-    const PHOTO_URLS = [
-      '/assets/photo1.jpg',
-      '/assets/photo2.jpg',
-      '/assets/photo3.jpg',
-    ];
-    loadedImages = PHOTO_URLS.map(src => {
-      const img = new Image();
-      img.src = src;
-      return img;
-    });
+    const PHOTO_URLS = ['/assets/photo1.jpg','/assets/photo2.jpg','/assets/photo3.jpg'];
+    loadedImages = PHOTO_URLS.map(src => { const img = new Image(); img.src = src; return img; });
+    console.log('Using static images, count=', loadedImages.length);
   }
 
   // —— Snake Game State ——
@@ -142,18 +151,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw target
     ctx.globalAlpha = 0.8;
     ctx.drawImage(loadedImages[target.img], target.x, target.y, S, S);
     ctx.globalAlpha = 1;
 
-    // Draw snake
     snakePos.forEach((p, i) => {
       ctx.drawImage(loadedImages[snakeImg[i]], p.x, p.y, S, S);
     });
   }
 
-  // —— Start Game ——  
+  // —— Start Game ——
   initSnake();
   spawnTarget();
   draw();
