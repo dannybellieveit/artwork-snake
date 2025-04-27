@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,9 +8,28 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- Step 3: Login button for Spotify Implicit Grant flow -->
+  <button id="login">Login with Spotify</button>
+
   <canvas id="game-canvas" width="500" height="500"></canvas>
   <!-- Optional preview during development -->
   <img id="preview-art" alt="Preview art" style="display:none; width:64px; height:64px; margin-top:10px;">
+
+  <script>
+    // Step 3: Spotify Implicit Grant login
+    const clientId = 'YOUR_SPOTIFY_CLIENT_ID';
+    const redirectUri = window.location.origin + '/callback.html';
+
+    document.getElementById('login').onclick = () => {
+      const scopes = 'playlist-read-private playlist-read-collaborative';
+      const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}` +
+                      `&response_type=token` +
+                      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+                      `&scope=${encodeURIComponent(scopes)}`;
+      window.location = authUrl;
+    };
+  </script>
+
   <script src="game.js" defer></script>
 </body>
 </html>
