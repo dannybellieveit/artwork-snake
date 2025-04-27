@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let loadedImages;
   try {
     const SPOTIFY_PLAYLIST_URL = 'https://open.spotify.com/playlist/37i9dQZF1EFCSLSz1lSDiP?si=a31a309f679845c8';
-    const SPOTIFY_PLAYLIST_ID  = SPOTIFY_PLAYLIST_URL.split('/').pop().split('?')[0];
+    const SPOTIFY_PLAYLIST_ID  = '37i9dQZF1EFCSLSz1lSDiP?si=a31a309f679845c8';
     loadedImages = await loadTrackArtworks(SPOTIFY_PLAYLIST_ID);
     console.log('Total loadedImages:', loadedImages.length);
   } catch (e) {
