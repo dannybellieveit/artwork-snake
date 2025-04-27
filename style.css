@@ -1,7 +1,5 @@
-/* style.css */
 body {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100vh;
@@ -11,8 +9,4 @@ body {
 
 canvas {
   border: 2px solid #333;
-}
-
-#preview-art {
-  border: 1px solid #666;
 }
