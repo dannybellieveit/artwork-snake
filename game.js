@@ -1,161 +1,120 @@
-// game.js — Snake that keeps eaten images on its tail, updated for user-auth flow
+// game.js — Clickable & hoverable snake
 
-document.addEventListener('DOMContentLoaded', async () => {
-  console.log('DOM ready');
-
-  // —— Canvas Setup ——
+document.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('game-canvas');
   const ctx    = canvas.getContext('2d');
-  const S      = 50;
-  const COLS   = Math.floor(canvas.width  / S);
-  const ROWS   = Math.floor(canvas.height / S);
+  const info   = document.getElementById('info-box');
 
-  // —— User Token Logic ——
-  function getUserToken() {
-    const token = localStorage.getItem('spotify_token');
-    if (!token) {
-      alert('Please log in with Spotify first.');
-      throw new Error('No Spotify token—please log in.');
-    }
-    return token;
+  const S    = 50;
+  const COLS = Math.floor(canvas.width / S);
+  const ROWS = Math.floor(canvas.height / S);
+
+  // Metadata for each photo
+  const IMAGES = [
+    { src:'assets/photo1.jpg', title:'Project A', artist:'Artist 1', link:'https://example.com/A' },
+    { src:'assets/photo2.jpg', title:'Project B', artist:'Artist 2', link:'https://example.com/B' },
+    // …etc for each photo
+  ];
+
+  // Preload
+  const loaded = IMAGES.map(obj => {
+    const img = new Image(); img.src = obj.src;
+    return img;
+  });
+  function preloadAll(arr) {
+    return Promise.all(arr.map(i => new Promise(r=>{i.onload=i.onerror=r;})));
   }
 
-  async function fetchAllPlaylistTracks(playlistId) {
-    console.log('Fetching tracks with user token…');
-    const token = getUserToken();
-    const resp = await fetch(
-      `https://api.spotify.com/v1/playlists/${playlistId}/tracks?market=US&limit=100`,
-      { headers: { 'Authorization': 'Bearer ' + token } }
-    );
-    if (!resp.ok) {
-      alert(`Spotify API error: ${resp.status}`);
-      throw new Error(`Spotify API ${resp.status}`);
-    }
-    const json = await resp.json();
-    console.log(`Fetched tracks count: ${json.items.length}`);
-    return json.items;
+  // Game state
+  let snakePos=[], snakeImg=[], target={}, nextPhoto=0, gameI;
+
+  function initSnake(){
+    snakePos=[{ x:0,y:0 }]; snakeImg=[0]; nextPhoto=1;
+  }
+  function spawnTarget(){
+    let x,y;
+    do { x=Math.floor(Math.random()*COLS)*S; y=Math.floor(Math.random()*ROWS)*S; }
+    while(snakePos.some(p=>p.x===x&&p.y===y));
+    target={x,y,img:nextPhoto};
+    nextPhoto=(nextPhoto+1)%loaded.length;
   }
 
-  function extractArtworkUrls(tracks) {
-    const urls = tracks
-      .map(item => item.track?.album?.images?.[0]?.url)
-      .filter(u => !!u);
-    console.log(`Extracted ${urls.length} artwork URLs`);
-    return urls;
+  function candidates(head){
+    const arr=[];
+    const dx = target.x-head.x, dy=target.y-head.y;
+    if(dx>0) arr.push({x:head.x+S,y:head.y});
+    if(dx<0) arr.push({x:head.x-S,y:head.y});
+    if(dy>0) arr.push({x:head.x,y:head.y+S});
+    if(dy<0) arr.push({x:head.x,y:head.y-S});
+    // all 4 dirs fallback
+    [{x:S,y:0},{x:-S,y:0},{x:0,y:S},{x:0,y:-S}].forEach(d=>arr.push({x:head.x+d.x,y:head.y+d.y}));
+    return arr;
   }
 
-  function preloadImages(urls) {
-    console.log('Preloading images:', urls.length);
-    return Promise.all(
-      urls.map(url => new Promise(resolve => {
-        const img = new Image();
-        img.onload  = () => resolve(img);
-        img.onerror = () => resolve(null);
-        img.src     = url;
-      }))
-    ).then(imgs => imgs.filter(i => i));
+  function move(){
+    const head={...snakePos[0]};
+    const arr=candidates(head);
+    // pick first non-self-colliding
+    let next=arr.find(p=>!snakePos.some(q=>q.x===p.x&&q.y===p.y))||arr[0];
+    return next;
   }
 
-  async function loadTrackArtworks(playlistId) {
-    const tracks = await fetchAllPlaylistTracks(playlistId);
-    const urls   = extractArtworkUrls(tracks);
-
-    // Fast start: first 20 images
-    const initial = await preloadImages(urls.slice(0, 20));
-    console.log('Loaded initial images:', initial.length);
-
-    // Background load the rest
-    preloadImages(urls.slice(20))
-      .then(rest => console.log('Loaded remaining images:', rest.length))
-      .catch(err => console.warn('Background load error:', err));
-
-    return initial;
+  function die(){
+    clearInterval(gameI);
+    let f=0;const t=setInterval(()=>{
+      ctx.fillStyle=(f%2?'white':'red');ctx.fillRect(0,0,canvas.width,canvas.height);
+      if(++f>5){clearInterval(t);start();}
+    },100);
   }
 
-  // —— Load Images or fallback ——
-  let loadedImages;
-  try {
-    const SPOTIFY_PLAYLIST_URL = 'https://open.spotify.com/playlist/37i9dQZF1EFCSLSz1lSDiP?si=a31a309f679845c8';
-    const SPOTIFY_PLAYLIST_ID  = '37i9dQZF1EFCSLSz1lSDiP?si=a31a309f679845c8';
-    loadedImages = await loadTrackArtworks(SPOTIFY_PLAYLIST_ID);
-    console.log('Total loadedImages:', loadedImages.length);
-  } catch (e) {
-    console.error('User-auth fetch failed, falling back to static assets:', e);
-    const PHOTO_URLS = [
-      '/assets/photo1.jpg',
-      '/assets/photo2.jpg',
-      '/assets/photo3.jpg'
-    ];
-    loadedImages = PHOTO_URLS.map(src => {
-      const img = new Image();
-      img.src = src;
-      return img;
-    });
-    console.log('Using static images, count=', loadedImages.length);
-  }
-
-  // —— Snake State & Logic ——
-  const rnd = n => Math.floor(Math.random() * n);
-  let snakePos = [], snakeImg = [], target = {};
-
-  function initSnake() {
-    snakePos = [{ x: rnd(COLS) * S, y: rnd(ROWS) * S }];
-    snakeImg = [rnd(loadedImages.length)];
-  }
-
-  function spawnTarget() {
-    let x, y;
-    do {
-      x = rnd(COLS) * S;
-      y = rnd(ROWS) * S;
-    } while (snakePos.some(p => p.x === x && p.y === y));
-    target = { x, y, img: rnd(loadedImages.length) };
-  }
-
-  function moveOneStep() {
-    const h = { ...snakePos[0] };
-    if      (h.x < target.x) h.x += S;
-    else if (h.x > target.x) h.x -= S;
-    else if (h.y < target.y) h.y += S;
-    else if (h.y > target.y) h.y -= S;
-    return h;
-  }
-
-  function step() {
-    const head = moveOneStep();
-    const ate  = head.x === target.x && head.y === target.y;
-
+  function step(){
+    const head=move();
+    // collision kill
+    if(snakePos.some(p=>p.x===head.x&&p.y===head.y)) return die();
+    const ate=head.x===target.x&&head.y===target.y;
     snakePos.unshift(head);
-    if (!ate) snakePos.pop();
-    else {
-      snakeImg.push(target.img);
-      spawnTarget();
-    }
-
+    if(!ate) snakePos.pop();
+    else{ snakeImg.push(target.img); spawnTarget(); }
     draw();
   }
 
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Draw target
-    const tImg = loadedImages[target.img];
-    if (tImg) {
-      ctx.globalAlpha = 0.8;
-      ctx.drawImage(tImg, target.x, target.y, S, S);
-      ctx.globalAlpha = 1;
-    }
-
-    // Draw snake
-    snakePos.forEach((p, i) => {
-      const sImg = loadedImages[snakeImg[i]];
-      if (sImg) ctx.drawImage(sImg, p.x, p.y, S, S);
-    });
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // target
+    const ti=loaded[target.img]; if(ti) ctx.drawImage(ti, target.x, target.y, S,S);
+    // snake
+    snakePos.forEach((p,i)=>{ const si=loaded[snakeImg[i]]; if(si) ctx.drawImage(si,p.x,p.y,S,S); });
   }
 
-  // Start the game
-  initSnake();
-  spawnTarget();
-  draw();
-  setInterval(step, 400);
+  // Handle clicks & hovers
+  canvas.addEventListener('click', e=>{
+    const r=canvas.getBoundingClientRect();
+    const x=Math.floor((e.clientX-r.left)/r.width*canvas.width),
+          y=Math.floor((e.clientY-r.top)/r.height*canvas.height);
+    // find segment or target
+    [...snakePos.map((p,i)=>({p,i,type:'snake'})),{p:target,i:target.img,type:'target'}]
+      .some(o=>{
+        if(x>=o.p.x&&x<o.p.x+S&&y>=o.p.y&&y<o.p.y+S){
+          const md=IMAGES[o.i]; window.open(md.link,'_blank'); return true;
+        }
+      });
+  });
+
+  canvas.addEventListener('mousemove', e=>{
+    const r=canvas.getBoundingClientRect();
+    const x=(e.clientX-r.left)/r.width*canvas.width,
+          y=(e.clientY-r.top)/r.height*canvas.height;
+    let found=false;
+    [...snakePos.map((p,i)=>({p,i})),{p:target,i:target.img}].forEach(o=>{
+      if(x>=o.p.x&&x<o.p.x+S&&y>=o.p.y&&y<o.p.y+S){
+        const md=IMAGES[o.i];
+        info.textContent = md.title+ ' — ' + md.artist;
+        found=true;
+      }
+    });
+    if(!found) info.textContent='';
+  });
+
+  function start(){ initSnake(); spawnTarget(); draw(); gameI=setInterval(step,400); }
+  preloadAll(loaded).then(start);
 });
