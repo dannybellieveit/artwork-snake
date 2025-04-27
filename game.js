@@ -1,4 +1,4 @@
-// game.js — Snake that keeps eaten images on its tail, with Spotify integration via Worker
+// game.js — Snake that keeps eaten images on its tail, updated for user-auth flow
 
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('DOM ready');
@@ -10,35 +10,32 @@ document.addEventListener('DOMContentLoaded', async () => {
   const COLS   = Math.floor(canvas.width  / S);
   const ROWS   = Math.floor(canvas.height / S);
 
-  // —— Worker Config ——
-  const WORKER_BASE         = 'https://proud-cherry-9c55.6wbqhmqd8b.workers.dev';
-  // Spotify’s “Today’s Top Hits” (definitely public)
-const SPOTIFY_PLAYLIST_ID = '37i9dQZF1DXcBWIGoYBM5M';
-
-
-  // Fetch token from Worker
-  async function fetchSpotifyToken() {
-    console.log('Fetching token via Worker…');
-    const resp = await fetch(`${WORKER_BASE}/spotify-token`, { method: 'GET' });
-    const json = await resp.json();
-    console.log('Got token:', json.access_token ? '✅' : '❌', json.error ? json.error : '');
-    return json.access_token;
-  }
-
-  // Fetch tracks from Worker
-  async function fetchAllPlaylistTracks(playlistId) {
-    console.log('Fetching tracks via Worker…');
-    const resp = await fetch(`${WORKER_BASE}/spotify-tracks?id=${playlistId}`, { method: 'GET' });
-    const json = await resp.json();
-    if (json.error) {
-      console.error('Worker error:', json.error);
-      return [];
+  // —— User Token Logic ——
+  function getUserToken() {
+    const token = localStorage.getItem('spotify_token');
+    if (!token) {
+      alert('Please log in with Spotify first.');
+      throw new Error('No Spotify token—please log in.');
     }
-    console.log(`Fetched tracks count:`, json.items?.length);
-    return json.items || [];
+    return token;
   }
 
-  // Extract URLs
+  async function fetchAllPlaylistTracks(playlistId) {
+    console.log('Fetching tracks with user token…');
+    const token = getUserToken();
+    const resp = await fetch(
+      `https://api.spotify.com/v1/playlists/${playlistId}/tracks?market=US&limit=100`,
+      { headers: { 'Authorization': 'Bearer ' + token } }
+    );
+    if (!resp.ok) {
+      alert(`Spotify API error: ${resp.status}`);
+      throw new Error(`Spotify API ${resp.status}`);
+    }
+    const json = await resp.json();
+    console.log(`Fetched tracks count: ${json.items.length}`);
+    return json.items;
+  }
+
   function extractArtworkUrls(tracks) {
     const urls = tracks
       .map(item => item.track?.album?.images?.[0]?.url)
@@ -47,7 +44,6 @@ const SPOTIFY_PLAYLIST_ID = '37i9dQZF1DXcBWIGoYBM5M';
     return urls;
   }
 
-  // Preload images
   function preloadImages(urls) {
     console.log('Preloading images:', urls.length);
     return Promise.all(
@@ -60,16 +56,15 @@ const SPOTIFY_PLAYLIST_ID = '37i9dQZF1DXcBWIGoYBM5M';
     ).then(imgs => imgs.filter(i => i));
   }
 
-  // Load Spotify art (initial + background)
   async function loadTrackArtworks(playlistId) {
     const tracks = await fetchAllPlaylistTracks(playlistId);
     const urls   = extractArtworkUrls(tracks);
 
-    // Fast start: first 20
+    // Fast start: first 20 images
     const initial = await preloadImages(urls.slice(0, 20));
     console.log('Loaded initial images:', initial.length);
 
-    // Background load rest
+    // Background load the rest
     preloadImages(urls.slice(20))
       .then(rest => console.log('Loaded remaining images:', rest.length))
       .catch(err => console.warn('Background load error:', err));
@@ -77,15 +72,25 @@ const SPOTIFY_PLAYLIST_ID = '37i9dQZF1DXcBWIGoYBM5M';
     return initial;
   }
 
-  // —— Load or fallback ——
+  // —— Load Images or fallback ——
   let loadedImages;
   try {
+    const SPOTIFY_PLAYLIST_URL = 'https://open.spotify.com/playlist/37i9dQZF1EFCSLSz1lSDiP?si=a31a309f679845c8';
+    const SPOTIFY_PLAYLIST_ID  = SPOTIFY_PLAYLIST_URL.split('/').pop().split('?')[0];
     loadedImages = await loadTrackArtworks(SPOTIFY_PLAYLIST_ID);
     console.log('Total loadedImages:', loadedImages.length);
   } catch (e) {
-    console.error('Worker fetch failed, falling back to static assets:', e);
-    const PHOTO_URLS = ['/assets/photo1.jpg','/assets/photo2.jpg','/assets/photo3.jpg'];
-    loadedImages = PHOTO_URLS.map(src => { const img = new Image(); img.src = src; return img; });
+    console.error('User-auth fetch failed, falling back to static assets:', e);
+    const PHOTO_URLS = [
+      '/assets/photo1.jpg',
+      '/assets/photo2.jpg',
+      '/assets/photo3.jpg'
+    ];
+    loadedImages = PHOTO_URLS.map(src => {
+      const img = new Image();
+      img.src = src;
+      return img;
+    });
     console.log('Using static images, count=', loadedImages.length);
   }
 
@@ -94,16 +99,16 @@ const SPOTIFY_PLAYLIST_ID = '37i9dQZF1DXcBWIGoYBM5M';
   let snakePos = [], snakeImg = [], target = {};
 
   function initSnake() {
-    snakePos = [{ x: rnd(COLS)*S, y: rnd(ROWS)*S }];
+    snakePos = [{ x: rnd(COLS) * S, y: rnd(ROWS) * S }];
     snakeImg = [rnd(loadedImages.length)];
   }
 
   function spawnTarget() {
     let x, y;
     do {
-      x = rnd(COLS)*S; 
-      y = rnd(ROWS)*S;
-    } while (snakePos.some(p => p.x===x && p.y===y));
+      x = rnd(COLS) * S;
+      y = rnd(ROWS) * S;
+    } while (snakePos.some(p => p.x === x && p.y === y));
     target = { x, y, img: rnd(loadedImages.length) };
   }
 
@@ -118,7 +123,7 @@ const SPOTIFY_PLAYLIST_ID = '37i9dQZF1DXcBWIGoYBM5M';
 
   function step() {
     const head = moveOneStep();
-    const ate  = head.x===target.x && head.y===target.y;
+    const ate  = head.x === target.x && head.y === target.y;
 
     snakePos.unshift(head);
     if (!ate) snakePos.pop();
@@ -131,9 +136,9 @@ const SPOTIFY_PLAYLIST_ID = '37i9dQZF1DXcBWIGoYBM5M';
   }
 
   function draw() {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw target if loaded
+    // Draw target
     const tImg = loadedImages[target.img];
     if (tImg) {
       ctx.globalAlpha = 0.8;
@@ -142,15 +147,13 @@ const SPOTIFY_PLAYLIST_ID = '37i9dQZF1DXcBWIGoYBM5M';
     }
 
     // Draw snake
-    snakePos.forEach((p,i) => {
+    snakePos.forEach((p, i) => {
       const sImg = loadedImages[snakeImg[i]];
-      if (sImg) {
-        ctx.drawImage(sImg, p.x, p.y, S, S);
-      }
+      if (sImg) ctx.drawImage(sImg, p.x, p.y, S, S);
     });
   }
 
-  // Start
+  // Start the game
   initSnake();
   spawnTarget();
   draw();
