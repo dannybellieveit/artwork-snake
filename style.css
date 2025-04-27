@@ -1,12 +1,14 @@
+/* sky-blue page background, no canvas border */
+
 body {
+  margin: 0;
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100vh;
-  margin: 0;
-  background: #f0f0f0;
+  background: skyblue;
 }
 
 canvas {
-  border: 2px solid #333;
+  /* no border */
 }
