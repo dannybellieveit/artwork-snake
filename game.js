@@ -1,5 +1,5 @@
 // game.js — Snake with sequential images, self-collision avoidance until trapped,
-// clickable segments, hover info, flashing death and restart
+// clickable segments, hover info, snake-only flashing death and restart
 
 document.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('game-canvas');
@@ -82,9 +82,24 @@ document.addEventListener('DOMContentLoaded', () => {
     clearInterval(gameInterval);
     let flashes = 0;
     const flashTimer = setInterval(() => {
-      ctx.fillStyle = (flashes % 2 === 0 ? 'white' : 'red');
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      if (++flashes > 5) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw target normally
+      const tImg = loaded[target.img];
+      if (tImg) {
+        ctx.globalAlpha = 0.8;
+        ctx.drawImage(tImg, target.x, target.y, S, S);
+        ctx.globalAlpha = 1;
+      }
+
+      // Draw snake flashing
+      snakePos.forEach((pos, i) => {
+        ctx.fillStyle = (flashes % 2 === 0 ? 'white' : 'red');
+        ctx.fillRect(pos.x, pos.y, S, S);
+      });
+
+      flashes++;
+      if (flashes > 5) {
         clearInterval(flashTimer);
         start();
       }
