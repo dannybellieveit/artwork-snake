@@ -1,3 +1,6 @@
+/* style.css */
+
+/* Base styles */
 body {
   margin: 0;
   background: skyblue;
@@ -13,25 +16,29 @@ body {
   max-width: 800px;
 }
 
+/* Canvas is responsive */
 canvas {
   width: 100%;
   height: auto;
   display: block;
 }
 
+/* Info box: transparent background, fixed to bottom */
 .info-box {
   position: absolute;
-  bottom: 5px;
+  bottom: 0;               /* stick to bottom of container */
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(255,255,255,0.9);
+  background: transparent; /* no white background */
   padding: 6px 12px;
   border-radius: 4px;
   font-size: 16px;
   pointer-events: none;
   white-space: nowrap;
+  color: #000;             /* ensure text is readable */
 }
 
+/* Footer contact links */
 footer {
   padding: 12px 0;
 }
@@ -50,12 +57,24 @@ footer {
   font-weight: bold;
 }
 
+/* Mobile-specific adjustments */
 @media (max-width: 600px) {
+  /* Smaller font for info and contacts */
   .info-box {
     font-size: 14px;
   }
   .contacts {
     gap: 8px;
     font-size: 14px;
+  }
+
+  /* Make the play area more vertical: enforce a 3:4 aspect ratio */
+  .game-container {
+    width: 90vw;
+  }
+  canvas {
+    aspect-ratio: 3 / 4;
+    width: 100%;
+    height: auto;
   }
 }
