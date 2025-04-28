@@ -1,13 +1,28 @@
 // game.js — Snake with sequential images, self-collision avoidance until trapped,
 // clickable segments, hover info, snake-only flashing death and restart
+// now with responsive resizing to keep images square on mobile
 
 document.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('game-canvas');
   const ctx    = canvas.getContext('2d');
   const info   = document.getElementById('info-box');
   const S      = 50;
-  const COLS   = Math.floor(canvas.width / S);
-  const ROWS   = Math.floor(canvas.height / S);
+  let COLS, ROWS;
+
+  function resizeCanvas() {
+    const container = document.querySelector('.game-container');
+    const rect = container.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    COLS = Math.floor(canvas.width / S);
+    ROWS = Math.floor(canvas.height / S);
+  }
+
+  resizeCanvas();
+  window.addEventListener('resize', () => {
+    resizeCanvas();
+    draw(); // redraw after resizing
+  });
 
   // Image metadata
   const IMAGES = [
