@@ -1,5 +1,5 @@
 // game.js — Snake with sequential images, self-collision avoidance until trapped,
-// clickable segments, hover info, snake-only flashing death and restart
+// clickable segments, snake-only flashing death and restart
 // now with responsive resizing to keep images square on mobile
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -21,18 +21,15 @@ document.addEventListener('DOMContentLoaded', () => {
   resizeCanvas();
   window.addEventListener('resize', () => {
     resizeCanvas();
-    draw(); // redraw after resizing
+    draw();
   });
 
-  // Image metadata
   const IMAGES = [
     { src: 'assets/photo1.jpg', title: 'Project A', artist: 'Artist 1', link: 'https://example.com/A' },
     { src: 'assets/photo2.jpg', title: 'Project B', artist: 'Artist 2', link: 'https://example.com/B' },
     { src: 'assets/photo3.jpg', title: 'Project C', artist: 'Artist 3', link: 'https://example.com/C' },
-    // …add more entries here
   ];
 
-  // Preload images
   const loaded = IMAGES.map(item => {
     const img = new Image();
     img.src = item.src;
@@ -46,7 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   }
 
-  // Game state
   let snakePos = [], snakeImg = [], target = {}, nextPhotoIndex = 0, gameInterval = null;
 
   function initSnake() {
@@ -70,15 +66,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function getCandidates(head) {
     const candidates = [];
-    const dx = target.x - head.x, dy = target.y - head.y;
-    if (dx > 0) candidates.push({ x: head.x + S, y: head.y });
-    if (dx < 0) candidates.push({ x: head.x - S, y: head.y });
-    if (dy > 0) candidates.push({ x: head.x,     y: head.y + S });
-    if (dy < 0) candidates.push({ x: head.x,     y: head.y - S });
-    // Fallback directions
-    [{ x: S, y: 0 }, { x: -S, y: 0 }, { x: 0, y: S }, { x: 0, y: -S }]
-      .forEach(d => candidates.push({ x: head.x + d.x, y: head.y + d.y }));
-    return candidates;
+    const moves = [
+      { x: S, y: 0 },
+      { x: -S, y: 0 },
+      { x: 0, y: S },
+      { x: 0, y: -S }
+    ];
+    for (const move of moves) {
+      const newX = head.x + move.x;
+      const newY = head.y + move.y;
+      if (
+        newX >= 0 && newX < COLS * S &&
+        newY >= 0 && newY < ROWS * S &&
+        !snakePos.some(p => p.x === newX && p.y === newY)
+      ) {
+        candidates.push({ x: newX, y: newY });
+      }
+    }
+    return candidates.length ? candidates : [head];
   }
 
   function moveOneStep() {
@@ -89,7 +94,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return pos;
       }
     }
-    // If all collide, return first to trigger death
     return candidates[0];
   }
 
@@ -98,21 +102,16 @@ document.addEventListener('DOMContentLoaded', () => {
     let flashes = 0;
     const flashTimer = setInterval(() => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw target normally
       const tImg = loaded[target.img];
       if (tImg) {
         ctx.globalAlpha = 0.8;
         ctx.drawImage(tImg, target.x, target.y, S, S);
         ctx.globalAlpha = 1;
       }
-
-      // Draw snake flashing
-      snakePos.forEach((pos, i) => {
+      snakePos.forEach(pos => {
         ctx.fillStyle = (flashes % 2 === 0 ? 'white' : 'red');
         ctx.fillRect(pos.x, pos.y, S, S);
       });
-
       flashes++;
       if (flashes > 5) {
         clearInterval(flashTimer);
@@ -123,7 +122,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function step() {
     const newHead = moveOneStep();
-    // Self-collision
     if (snakePos.some(p => p.x === newHead.x && p.y === newHead.y)) {
       return die();
     }
@@ -140,14 +138,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // Draw target
     const tImg = loaded[target.img];
     if (tImg) {
       ctx.globalAlpha = 0.8;
       ctx.drawImage(tImg, target.x, target.y, S, S);
       ctx.globalAlpha = 1;
     }
-    // Draw snake
     snakePos.forEach((pos, i) => {
       const img = loaded[snakeImg[i]];
       if (img) ctx.drawImage(img, pos.x, pos.y, S, S);
@@ -161,47 +157,30 @@ document.addEventListener('DOMContentLoaded', () => {
     gameInterval = setInterval(step, 400);
   }
 
-  // Click → open link
   canvas.addEventListener('click', e => {
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width  / rect.width;
+    const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
     const x = Math.floor((e.clientX - rect.left) * scaleX);
-    const y = Math.floor((e.clientY - rect.top)  * scaleY);
-    const cells = [
-      ...snakePos.map((p,i) => ({ p, i })),
-      { p: target, i: target.img }
-    ];
-    cells.some(o => {
-      if (x >= o.p.x && x < o.p.x + S && y >= o.p.y && y < o.p.y + S) {
-        window.open(IMAGES[o.i].link, '_blank');
-        return true;
-      }
-    });
+    const y = Math.floor((e.clientY - rect.top) * scaleY);
+    if (x >= target.x && x < target.x + S && y >= target.y && y < target.y + S) {
+      window.open(IMAGES[target.img].link, '_blank');
+    }
   });
 
-  // Hover → show info
   canvas.addEventListener('mousemove', e => {
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width  / rect.width;
+    const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
     const x = Math.floor((e.clientX - rect.left) * scaleX);
-    const y = Math.floor((e.clientY - rect.top)  * scaleY);
-    const cells = [
-      ...snakePos.map((p,i) => ({ p, i })),
-      { p: target, i: target.img }
-    ];
-    let found = false;
-    cells.forEach(o => {
-      if (x >= o.p.x && x < o.p.x + S && y >= o.p.y && y < o.p.y + S) {
-        const md = IMAGES[o.i];
-        info.textContent = `${md.title} — ${md.artist}`;
-        found = true;
-      }
-    });
-    if (!found) info.textContent = '';
+    const y = Math.floor((e.clientY - rect.top) * scaleY);
+    if (x >= target.x && x < target.x + S && y >= target.y && y < target.y + S) {
+      canvas.style.cursor = 'pointer';
+    } else {
+      canvas.style.cursor = 'default';
+    }
+    info.textContent = '';
   });
 
-  // Launch
   preloadAll(loaded).then(start);
 });
