@@ -28,6 +28,12 @@ document.addEventListener('DOMContentLoaded', () => {
     { src: 'assets/photo1.jpg', title: 'Project A', artist: 'Artist 1', link: 'https://example.com/A' },
     { src: 'assets/photo2.jpg', title: 'Project B', artist: 'Artist 2', link: 'https://example.com/B' },
     { src: 'assets/photo3.jpg', title: 'Project C', artist: 'Artist 3', link: 'https://example.com/C' },
+     { src: 'assets/photo4.jpg', title: 'Project A', artist: 'Artist 1', link: 'https://example.com/A' },
+    { src: 'assets/photo5.jpg', title: 'Project B', artist: 'Artist 2', link: 'https://example.com/B' },
+    { src: 'assets/photo6.jpg', title: 'Project C', artist: 'Artist 3', link: 'https://example.com/C' },
+     { src: 'assets/photo7.jpg', title: 'Project A', artist: 'Artist 1', link: 'https://example.com/A' },
+    { src: 'assets/photo8.jpg', title: 'Project B', artist: 'Artist 2', link: 'https://example.com/B' },
+    { src: 'assets/photo9.jpg', title: 'Project C', artist: 'Artist 3', link: 'https://example.com/C' },
   ];
 
   const loaded = IMAGES.map(item => {
