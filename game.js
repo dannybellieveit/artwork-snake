@@ -25,15 +25,60 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   const IMAGES = [
-    { src: 'assets/photo1.jpg', title: 'Project A', artist: 'Artist 1', link: 'https://example.com/A' },
-    { src: 'assets/photo2.jpg', title: 'Project B', artist: 'Artist 2', link: 'https://example.com/B' },
-    { src: 'assets/photo3.jpg', title: 'Project C', artist: 'Artist 3', link: 'https://example.com/C' },
-     { src: 'assets/photo4.jpg', title: 'Project A', artist: 'Artist 1', link: 'https://example.com/A' },
-    { src: 'assets/photo5.jpg', title: 'Project B', artist: 'Artist 2', link: 'https://example.com/B' },
-    { src: 'assets/photo6.jpg', title: 'Project C', artist: 'Artist 3', link: 'https://example.com/C' },
-     { src: 'assets/photo7.jpg', title: 'Project A', artist: 'Artist 1', link: 'https://example.com/A' },
-    { src: 'assets/photo8.jpg', title: 'Project B', artist: 'Artist 2', link: 'https://example.com/B' },
-    { src: 'assets/photo9.jpg', title: 'Project C', artist: 'Artist 3', link: 'https://example.com/C' },
+    {
+      src: 'assets/photo1.jpg',
+      title: 'Project A',
+      artist: 'Artist 1',
+      spotifyUrl: 'https://open.spotify.com/track/3n3Ppam7vgaVa1iaRUc9Lp'
+    },
+    {
+      src: 'assets/photo2.jpg',
+      title: 'Project B',
+      artist: 'Artist 2',
+      spotifyUrl: 'https://open.spotify.com/track/2TpxZ7JUBn3uw46aR7qd6V'
+    },
+    {
+      src: 'assets/photo3.jpg',
+      title: 'Project C',
+      artist: 'Artist 3',
+      spotifyUrl: 'https://open.spotify.com/track/5CtI0qwDJkDQGwXD1H1cLb'
+    },
+    {
+      src: 'assets/photo4.jpg',
+      title: 'Project D',
+      artist: 'Artist 4',
+      spotifyUrl: 'https://open.spotify.com/track/7GhIk7Il098yCjg4BQjzvb'
+    },
+    {
+      src: 'assets/photo5.jpg',
+      title: 'Project E',
+      artist: 'Artist 5',
+      spotifyUrl: 'https://open.spotify.com/track/0VjIjW4GlUZAMYd2vXMi3b'
+    },
+    {
+      src: 'assets/photo6.jpg',
+      title: 'Project F',
+      artist: 'Artist 6',
+      spotifyUrl: 'https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC'
+    },
+    {
+      src: 'assets/photo7.jpg',
+      title: 'Project G',
+      artist: 'Artist 7',
+      spotifyUrl: 'https://open.spotify.com/track/1301WleyT98MSxVHPZCA6M'
+    },
+    {
+      src: 'assets/photo8.jpg',
+      title: 'Project H',
+      artist: 'Artist 8',
+      spotifyUrl: 'https://open.spotify.com/track/6habFhsOp2NvshLv26DqMb'
+    },
+    {
+      src: 'assets/photo9.jpg',
+      title: 'Project I',
+      artist: 'Artist 9',
+      spotifyUrl: 'https://open.spotify.com/track/1CkvWZme3pRgbzaxZnTl5X'
+    }
   ];
 
   const loaded = IMAGES.map(item => {
@@ -192,10 +237,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const x = Math.floor((e.clientX - rect.left) * scaleX);
     const y = Math.floor((e.clientY - rect.top) * scaleY);
     if (x >= target.x && x < target.x + S && y >= target.y && y < target.y + S) {
+      const md = IMAGES[target.img];
       const embed = document.getElementById('spotify-embed');
       const container = document.getElementById('spotify-embed-container');
-      embed.src = `https://open.spotify.com/embed/track/3n3Ppam7vgaVa1iaRUc9Lp?utm_source=generator&theme=0`;
-      container.style.display = 'block';
+      const match = md.spotifyUrl.match(/track\/([a-zA-Z0-9]+)/);
+      if (match) {
+        const trackId = match[1];
+        embed.src = `https://open.spotify.com/embed/track/${trackId}?utm_source=generator&autoplay=1&theme=0`;
+        container.style.display = 'block';
+      }
     }
   });
 
@@ -213,17 +263,10 @@ document.addEventListener('DOMContentLoaded', () => {
       canvas.style.cursor = 'pointer';
       over = true;
     } else {
-      for (let i = 0; i < snakePos.length; i++) {
-        const p = snakePos[i];
-        if (x >= p.x && x < p.x + S && y >= p.y && y < p.y + S) {
-          const md = IMAGES[snakeImg[i]];
-          info.textContent = `${md.title} — ${md.artist}`;
-          over = true;
-          break;
-        }
-      }
-      canvas.style.cursor = over ? 'default' : 'default';
+      canvas.style.cursor = 'default';
     }
+
+    if (!over) info.textContent = '';
 
     if (!over) info.textContent = '';
   });
