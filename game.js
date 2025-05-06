@@ -1,4 +1,4 @@
-// game.js — Refactored Snake with debug logging & one-step speed bump
+// game.js — Refactored Snake with resize‐clamp to avoid phantom self-traps
 
 class Board {
   constructor(canvasId, cellSize) {
@@ -77,11 +77,8 @@ class Snake {
       return this._isValid(next) ? next : head;
     }
 
-    // --- DEBUG: log AI candidates each frame ---
     const candidates = this._getCandidates(head, target);
     console.log('    [move] head @', head, '→ candidates:', candidates);
-    // --------------------------------------------
-
     return candidates.length ? candidates[0] : null;
   }
 
@@ -132,7 +129,7 @@ class GameController {
     this.MAX_SPEEDUP = 8;      // cap at 8×
 
     this.nextImageIndex = 0;  // cycles across rounds
-    this.speedup        = 1;  // bumps only in _die()
+    this.speedup        = 1;  // bumped only in _die()
 
     this.board          = new Board('game-canvas', this.CELL);
     this.spotifyEmbed   = document.getElementById('spotify-embed');
@@ -140,9 +137,9 @@ class GameController {
     this.infoBox        = document.getElementById('info-box');
 
     this.imagesData = [
-      { src: 'assets/photo1.jpg', title: 'Verbathim',     artist: 'Nemahsis',
+      { src: 'assets/photo1.jpg', title: 'Verbathim', artist: 'Nemahsis',
         spotifyUrl: 'https://open.spotify.com/album/6aLc5t3mdbmonoCZMAnZ7N?si=kf-sDHxGT_qNrv2ax59iPw' },
-      { src: 'assets/photo2.jpg', title: 'TV Show',       artist: 'Katie Gregson-MacLeod',
+      { src: 'assets/photo2.jpg', title: 'TV Show', artist: 'Katie Gregson-MacLeod',
         spotifyUrl: 'https://open.spotify.com/track/0hQZyBWcYejAzb9WYM96pr?si=866aa6756cb24293' },
       /* …etc… */
     ];
@@ -156,7 +153,20 @@ class GameController {
     this.lastTime  = 0;
 
     this._bindEvents();
-    this.board.onResize = () => this.draw();
+
+    // clamp snake on resize, then redraw
+    this.board.onResize = () => {
+      if (this.snake) {
+        const maxX = (this.board.cols - 1) * this.CELL;
+        const maxY = (this.board.rows - 1) * this.CELL;
+        this.snake.positions = this.snake.positions.map(({ x, y }) => ({
+          x: Math.min(x, maxX),
+          y: Math.min(y, maxY)
+        }));
+      }
+      this.draw();
+    };
+
     this._preload().then(() => this.start());
   }
 
@@ -242,15 +252,14 @@ class GameController {
   start() {
     if (this.rafId) cancelAnimationFrame(this.rafId);
 
-    // only compute interval from current speedup (bumped in _die)
+    // compute interval from current speedup (bumped only in _die)
     this.interval = Math.max(this.MIN_SPEED, this.SPEED_BASE / this.speedup);
 
-    // init snake before spawning target
+    // init snake then spawn target
     this.snake = new Snake(this.loadedImages, this.board);
     this.snake.init();
     this._spawnTarget();
 
-    // debug log as a single object
     console.log('🏁 New round', {
       head:    this.snake.positions[0],
       target:  this.target,
@@ -276,7 +285,6 @@ class GameController {
       this.target,
       this.isManual ? this.manualDir : null
     );
-
     if (
       nextPos === null ||
       this.snake.positions.some(p => p.x === nextPos.x && p.y === nextPos.y)
@@ -306,7 +314,7 @@ class GameController {
         ctx.globalAlpha = 1;
       });
 
-      // draw flashing snake
+      // flashing snake
       this.snake.positions.forEach(pos => {
         this.board.drawCell(pos.x, pos.y, (ctx, x, y, s) => {
           ctx.fillStyle = flashes % 2 ? 'red' : 'white';
@@ -318,7 +326,6 @@ class GameController {
       if (flashes < this.FLASH_COUNT) {
         setTimeout(flash, 100);
       } else {
-        // bump speed once
         this.speedup = (this.speedup >= this.MAX_SPEEDUP ? 1 : this.speedup + 1);
         this.start();
       }
@@ -328,9 +335,7 @@ class GameController {
   }
 
   draw() {
-    // nothing until snake + target exist
     if (!this.snake || !this.target) return;
-
     this.board.clear();
 
     // draw target
