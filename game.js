@@ -27,15 +27,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const IMAGES = [
     {
       src: 'assets/photo1.jpg',
-      title: 'Project A',
-      artist: 'Artist 1',
-      spotifyUrl: 'https://open.spotify.com/track/3n3Ppam7vgaVa1iaRUc9Lp'
+      title: 'Verbathim',
+      artist: 'Nemahsis',
+      spotifyUrl: 'https://open.spotify.com/album/6aLc5t3mdbmonoCZMAnZ7N?si=kf-sDHxGT_qNrv2ax59iPw'
     },
     {
       src: 'assets/photo2.jpg',
-      title: 'Project B',
-      artist: 'Artist 2',
-      spotifyUrl: 'https://open.spotify.com/track/2TpxZ7JUBn3uw46aR7qd6V'
+      title: 'TV Show',
+      artist: 'Katie Gregson-MacLeod',
+      spotifyUrl: 'https://open.spotify.com/track/0hQZyBWcYejAzb9WYM96pr?si=866aa6756cb24293'
     },
     {
       src: 'assets/photo3.jpg',
