@@ -4,7 +4,7 @@
 class Board {
   constructor(canvasId, cellSize) {
     this.canvas = document.getElementById(canvasId);
-    this.ctx = this.canvas.getContext('2d');
+    this.ctx    = this.canvas.getContext('2d');
     this.cellSize = cellSize;
     this.cols = 0;
     this.rows = 0;
@@ -31,11 +31,19 @@ class Board {
     const container = this.canvas.parentElement;
     const rect = container.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
-    this.canvas.width = rect.width * dpr;
+
+    // update internal size for crisp Retina rendering
+    this.canvas.width  = rect.width * dpr;
     this.canvas.height = rect.height * dpr;
+
+    // reset any existing transform, then scale
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.scale(dpr, dpr);
-    this.cols = Math.floor(rect.width / this.cellSize);
+
+    // recompute grid
+    this.cols = Math.floor(rect.width  / this.cellSize);
     this.rows = Math.floor(rect.height / this.cellSize);
+
     if (this.onResize) this.onResize();
   }
 
@@ -71,6 +79,7 @@ class Snake {
   move(target, manualDirection) {
     const head = { ...this.positions[0] };
     let next;
+
     if (manualDirection) {
       next = { x: head.x + manualDirection.x, y: head.y + manualDirection.y };
       if (!this._isValid(next)) return head;
@@ -84,7 +93,7 @@ class Snake {
 
   _getCandidates(head, target) {
     const dirs = [
-      { x: this.board.cellSize, y: 0 },
+      { x: this.board.cellSize,  y: 0 },
       { x: -this.board.cellSize, y: 0 },
       { x: 0, y: this.board.cellSize },
       { x: 0, y: -this.board.cellSize }
@@ -101,19 +110,24 @@ class Snake {
 
   _isValid(pos) {
     const { cols, rows, cellSize } = this.board;
-    const inBounds = pos.x >= 0 && pos.x < cols * cellSize && pos.y >= 0 && pos.y < rows * cellSize;
+    const inBounds = pos.x >= 0 && pos.x < cols * cellSize &&
+                     pos.y >= 0 && pos.y < rows * cellSize;
     const notOnSelf = !this.positions.some(p => p.x === pos.x && p.y === pos.y);
     return inBounds && notOnSelf;
   }
 
-  growOrMove(nextPos, ate) {
-    if (nextPos === null) return false; // trapped
+  growOrMove(nextPos, ateIndex) {
+    if (nextPos === null) return false;  // trapped
+
     this.positions.unshift(nextPos);
-    if (ate) {
-      this.imageIndices.push(this.images.indexOf(ate.image));
+
+    if (ateIndex !== null) {
+      // use the passed-in metaIndex directly
+      this.imageIndices.push(ateIndex);
       this.nextImageIndex = (this.nextImageIndex + 1) % this.images.length;
       return true;
     }
+
     this.positions.pop();
     return false;
   }
@@ -121,60 +135,66 @@ class Snake {
 
 class GameController {
   constructor() {
-    this.CELL = 50;
+    this.CELL      = 50;
     this.SPEED_BASE = 400;
-    this.MIN_SPEED = 50;
+    this.MIN_SPEED  = 50;
     this.FLASH_COUNT = 6;
 
     this.board = new Board('game-canvas', this.CELL);
-    this.spotifyEmbed = document.getElementById('spotify-embed');
-    this.embedContainer = document.getElementById('spotify-embed-container');
-    this.infoBox = document.getElementById('info-box');
+    this.spotifyEmbed     = document.getElementById('spotify-embed');
+    this.embedContainer   = document.getElementById('spotify-embed-container');
+    this.infoBox          = document.getElementById('info-box');
 
-    this.imagesData = [ /* same IMAGES array metadata */ ];
+    // re-add your original metadata array here:
+    this.imagesData = [
+      { src: 'assets/photo1.jpg', title: 'Verbathim', artist: 'Nemahsis',
+        spotifyUrl: 'https://open.spotify.com/album/6aLc5t3mdbmonoCZMAnZ7N?si=kf-sDHxGT_qNrv2ax59iPw' },
+      { src: 'assets/photo2.jpg', title: 'TV Show', artist: 'Katie Gregson-MacLeod',
+        spotifyUrl: 'https://open.spotify.com/track/0hQZyBWcYejAzb9WYM96pr?si=866aa6756cb24293' },
+      // …etc for photo3…photo9…
+    ];
+
     this.loadedImages = [];
-
-    this.snake = null;
-    this.target = null;
+    this.snake     = null;
+    this.target    = null;
     this.manualDir = null;
-    this.isManual = false;
-    this.rafId = null;
-    this.speedup = 1;
-    this.lastTime = 0;
+    this.isManual  = false;
+    this.rafId     = null;
+    this.speedup   = 1;
+    this.lastTime  = 0;
 
     this._bindEvents();
-    this.board.onResize = () => this._onBoardResize();
+    this.board.onResize = () => this.draw();
     this._preload().then(() => this.start());
   }
 
   _preload() {
-    this.loadedImages = this.imagesData.map(data => {
+    this.loadedImages = this.imagesData.map(d => {
       const img = new Image();
-      img.src = data.src;
+      img.src = d.src;
       return img;
     });
     return Promise.all(
       this.loadedImages.map(img => new Promise(res => {
-        img.onload = res;
+        img.onload  = res;
         img.onerror = () => { console.error('Failed to load', img.src); res(); };
       }))
     );
   }
 
   _bindEvents() {
-    this._onClick = e => this._handleClick(e);
-    this._onMove = e => this._handleMouseMove(e);
-    this._onKey = e => this._handleKey(e);
-    this.board.canvas.addEventListener('click', this._onClick);
-    this.board.canvas.addEventListener('mousemove', this._onMove);
-    window.addEventListener('keydown', this._onKey);
+    this.board.canvas.addEventListener('click',    e => this._handleClick(e));
+    this.board.canvas.addEventListener('mousemove', e => this._handleMouseMove(e));
+    window.addEventListener('keydown', e => this._handleKey(e));
   }
 
   _handleClick(e) {
     const pos = this._getEventPos(e);
     if (this.target && pos.x === this.target.x && pos.y === this.target.y) {
-      const id = this.target.meta.spotifyUrl.match(/track\/(\w+)/)[1];
-      this.spotifyEmbed.src = `https://open.spotify.com/embed/track/${id}?utm_source=generator&autoplay=1`;
+      const id = this.imagesData[this.target.metaIndex]
+                     .spotifyUrl.match(/track\/(\w+)/)[1];
+      this.spotifyEmbed.src = `https://open.spotify.com/embed/track/${id}`
+                            + `?utm_source=generator&autoplay=1`;
       this.embedContainer.style.display = 'block';
     }
   }
@@ -194,28 +214,25 @@ class GameController {
   _handleKey(e) {
     const d = this.CELL;
     const map = {
-      ArrowUp:    { x: 0, y: -d },
-      ArrowDown:  { x: 0, y:  d },
-      ArrowLeft:  { x: -d, y: 0 },
-      ArrowRight: { x:  d, y: 0 }
+      ArrowUp:    { x: 0,  y: -d },
+      ArrowDown:  { x: 0,  y:  d },
+      ArrowLeft:  { x:-d,  y: 0 },
+      ArrowRight: { x: d,  y: 0 }
     };
     if (map[e.key]) {
-      this.isManual = true;
+      this.isManual  = true;
       this.manualDir = map[e.key];
     }
   }
 
   _getEventPos(e) {
+    // convert client coords → CSS‐pixel grid
     const rect = this.board.canvas.getBoundingClientRect();
-    const scaleX = this.board.canvas.width / rect.width;
-    const scaleY = this.board.canvas.height / rect.height;
-    const x = Math.floor((e.clientX - rect.left) * scaleX / this.CELL) * this.CELL;
-    const y = Math.floor((e.clientY - rect.top) * scaleY / this.CELL) * this.CELL;
-    return { x, y };
-  }
-
-  _onBoardResize() {
-    this.draw();
+    const xCSS = e.clientX - rect.left;
+    const yCSS = e.clientY - rect.top;
+    const col  = Math.floor(xCSS / this.CELL);
+    const row  = Math.floor(yCSS / this.CELL);
+    return { x: col * this.CELL, y: row * this.CELL };
   }
 
   _spawnTarget() {
@@ -226,19 +243,21 @@ class GameController {
       y = Math.floor(Math.random() * rows) * cellSize;
     } while (this.snake.positions.some(p => p.x === x && p.y === y));
     this.target = { x, y, metaIndex: this.snake.nextImageIndex };
-    this.snake.nextImageIndex = (this.snake.nextImageIndex + 1) % this.loadedImages.length;
+    this.snake.nextImageIndex = (this.snake.nextImageIndex + 1)
+                               % this.loadedImages.length;
   }
 
   start() {
     if (this.rafId) cancelAnimationFrame(this.rafId);
     this.speedup = (this.speedup % 16) + 1;
     this.interval = Math.max(this.MIN_SPEED, this.SPEED_BASE / this.speedup);
+
     this.snake = new Snake(this.loadedImages, this.board);
     this.snake.init();
     this._spawnTarget();
     this.lastTime = performance.now();
     this.isManual = false;
-    this.rafId = requestAnimationFrame(ts => this._loop(ts));
+    this.rafId    = requestAnimationFrame(ts => this._loop(ts));
   }
 
   _loop(timestamp) {
@@ -251,12 +270,21 @@ class GameController {
   }
 
   _step() {
-    const nextPos = this.snake.move(this.target, this.isManual ? this.manualDir : null);
-    if (nextPos === null || this.snake.positions.some(p => p.x === nextPos.x && p.y === nextPos.y)) {
+    const nextPos = this.snake.move(
+      this.target,
+      this.isManual ? this.manualDir : null
+    );
+    if (
+      nextPos === null ||
+      this.snake.positions.some(p => p.x === nextPos.x && p.y === nextPos.y)
+    ) {
       return this._die();
     }
+
     const ate = nextPos.x === this.target.x && nextPos.y === this.target.y;
-    this.snake.growOrMove(nextPos, ate ? this.target : null);
+    // pass the metaIndex instead of ate.image
+    this.snake.growOrMove(nextPos, ate ? this.target.metaIndex : null);
+
     if (ate) this._spawnTarget();
     this.draw();
   }
@@ -264,50 +292,56 @@ class GameController {
   _die() {
     cancelAnimationFrame(this.rafId);
     let flashes = 0;
+
     const flash = () => {
       this.board.clear();
+
       // draw target
-      const img = this.loadedImages[this.target.metaIndex];
-      this.board.drawCell(this.target.x, this.target.y, (ctx,x,y,s) => {
+      this.board.drawCell(this.target.x, this.target.y, (ctx, x, y, s) => {
         ctx.globalAlpha = 0.8;
+        const img = this.loadedImages[this.target.metaIndex];
         if (img.naturalWidth) ctx.drawImage(img, x, y, s, s);
-        else ctx.fillRect(x,y,s,s);
+        else ctx.fillRect(x, y, s, s);
         ctx.globalAlpha = 1;
       });
+
       // draw snake
       this.snake.positions.forEach(pos => {
-        this.board.drawCell(pos.x, pos.y, (ctx,x,y,s) => {
+        this.board.drawCell(pos.x, pos.y, (ctx, x, y, s) => {
           ctx.fillStyle = flashes % 2 ? 'red' : 'white';
-          ctx.fillRect(x,y,s,s);
+          ctx.fillRect(x, y, s, s);
         });
       });
+
       flashes++;
-      if (flashes <= this.FLASH_COUNT) {
+      if (flashes < this.FLASH_COUNT) {
         setTimeout(flash, 100);
       } else {
         this.start();
       }
     };
+
     flash();
   }
 
   draw() {
     this.board.clear();
+
     // draw target
-    const tgt = this.target;
-    const tgtImg = this.loadedImages[tgt.metaIndex];
-    this.board.drawCell(tgt.x, tgt.y, (ctx,x,y,s) => {
+    this.board.drawCell(this.target.x, this.target.y, (ctx, x, y, s) => {
       ctx.globalAlpha = 0.8;
-      if (tgtImg.naturalWidth) ctx.drawImage(tgtImg, x, y, s, s);
-      else ctx.fillRect(x,y,s,s);
+      const img = this.loadedImages[this.target.metaIndex];
+      if (img.naturalWidth) ctx.drawImage(img, x, y, s, s);
+      else ctx.fillRect(x, y, s, s);
       ctx.globalAlpha = 1;
     });
+
     // draw snake
-    this.snake.positions.forEach((pos,i) => {
-      const img = this.loadedImages[this.snake.imageIndices[i]];
-      this.board.drawCell(pos.x, pos.y, (ctx,x,y,s) => {
-        if (img.naturalWidth) ctx.drawImage(img, x, y, s, s);
-        else ctx.fillRect(x,y,s,s);
+    this.snake.positions.forEach((pos, i) => {
+      this.board.drawCell(pos.x, pos.y, (ctx, x, y, s) => {
+        const img = this.loadedImages[this.snake.imageIndices[i]];
+        if (img && img.naturalWidth) ctx.drawImage(img, x, y, s, s);
+        else ctx.fillRect(x, y, s, s);
       });
     });
   }
