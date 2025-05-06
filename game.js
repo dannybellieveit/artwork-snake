@@ -67,7 +67,7 @@ class Snake {
     const x = Math.floor(Math.random() * cols) * cellSize;
     const y = Math.floor(Math.random() * rows) * cellSize;
     this.positions    = [{ x, y }];
-    this.imageIndices = [0];    // head always starts with image 0
+    this.imageIndices = [Math.floor(Math.random() * this.images.length)];
   }
 
   move(target, manualDir) {
