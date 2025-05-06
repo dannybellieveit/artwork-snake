@@ -238,24 +238,32 @@ class GameController {
     this.nextImageIndex = (this.nextImageIndex + 1) % this.loadedImages.length;
   }
 
-  start() {
-    if (this.rafId) cancelAnimationFrame(this.rafId);
+start() {
+  if (this.rafId) cancelAnimationFrame(this.rafId);
 
-    // --- DEBUG: log head & target at start of each round ---
-    this._spawnTarget();
-    console.log('🏁 New round – head at:', this.snake?.positions[0], 
-                ' target at:', this.target, 
-                '(speedup =', this.speedup, ')');
-    // -------------------------------------------------------
+  // 1) reset / bump speed
+  this.speedup = this.speedup >= this.MAX_SPEEDUP ? 1 : this.speedup + 1;
+  this.interval = Math.max(this.MIN_SPEED, this.SPEED_BASE / this.speedup);
 
-    this.interval = Math.max(this.MIN_SPEED, this.SPEED_BASE / this.speedup);
+  // 2) initialize snake *first*
+  this.snake = new Snake(this.loadedImages, this.board);
+  this.snake.init();
 
-    this.snake = new Snake(this.loadedImages, this.board);
-    this.snake.init();
-    this.lastTime = performance.now();
-    this.isManual = false;
-    this.rafId    = requestAnimationFrame(ts => this._loop(ts));
-  }
+  // 3) THEN spawn a target
+  this._spawnTarget();
+
+  // 4) now it’s safe to log & start the loop
+  console.log(
+    '🏁 New round – head at:', this.snake.positions[0],
+    ' target at:', this.target,
+    '(speedup =', this.speedup, ')'
+  );
+
+  this.lastTime = performance.now();
+  this.isManual = false;
+  this.rafId    = requestAnimationFrame(ts => this._loop(ts));
+}
+
 
   _loop(timestamp) {
     const delta = timestamp - this.lastTime;
@@ -311,7 +319,11 @@ class GameController {
   }
 
   draw() {
-    this.board.clear();
+  // nothing to draw until we've got both snake & target
+  if (!this.snake || !this.target) return;
+
+  this.board.clear();
+
 
     // draw target
     this.board.drawCell(this.target.x, this.target.y, (ctx, x, y, s) => {
