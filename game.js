@@ -115,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
       flashes++;
       if (flashes > 5) {
         clearInterval(flashTimer);
+        clearInterval(gameInterval);
         start();
       }
     }, 100);
@@ -154,7 +155,14 @@ document.addEventListener('DOMContentLoaded', () => {
     initSnake();
     spawnTarget();
     draw();
-    gameInterval = setInterval(step, 400);
+    const maxSpeedup = 8; // cap at 8x speed (50ms interval)
+    start.speedup = (start.speedup || 1) + 1;
+    if (start.speedup > maxSpeedup) {
+      start.speedup = 1; // reset after final death
+    }
+    const interval = Math.max(50, 400 / start.speedup);
+    gameInterval = setInterval(step, interval);
+  }
   }
 
   canvas.addEventListener('click', e => {
@@ -164,7 +172,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const x = Math.floor((e.clientX - rect.left) * scaleX);
     const y = Math.floor((e.clientY - rect.top) * scaleY);
     if (x >= target.x && x < target.x + S && y >= target.y && y < target.y + S) {
-      window.open(IMAGES[target.img].link, '_blank');
+      const embed = document.getElementById('spotify-embed');
+      const container = document.getElementById('spotify-embed-container');
+      embed.src = `https://open.spotify.com/embed/track/3n3Ppam7vgaVa1iaRUc9Lp?utm_source=generator&theme=0`;
+      container.style.display = 'block';
     }
   });
 
