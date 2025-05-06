@@ -168,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function die() {
     clearInterval(gameInterval);
-        let flashes = 0;
+    let flashes = 0;
     const flashTimer = setInterval(() => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const tImg = loaded[target.img];
@@ -187,12 +187,11 @@ document.addEventListener('DOMContentLoaded', () => {
       flashes++;
       if (flashes > 5) {
         clearInterval(flashTimer);
-        // manualControl remains unchanged unless manually reset
+        manualControl = false;
         start();
       }
     }, 100);
-      }
-    }, 100);
+  }    }, 100);
   }
 
   function step() {
@@ -283,8 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       canvas.style.cursor = 'default';
     }
-
-    if (!over) info.textContent = '';
 
     if (!over) info.textContent = '';
   });
