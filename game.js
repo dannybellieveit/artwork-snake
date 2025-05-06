@@ -64,40 +64,37 @@ document.addEventListener('DOMContentLoaded', () => {
     nextPhotoIndex = (nextPhotoIndex + 1) % loaded.length;
   }
 
-function getCandidates(head) {
-  const dirs = [
-    { x:  S, y: 0 },
-    { x: -S, y: 0 },
-    { x: 0,  y: S },
-    { x: 0,  y: -S }
-  ];
-
-  // Prioritize directions that move closer to target
-  dirs.sort((a, b) => {
-    const distA = Math.abs((head.x + a.x) - target.x) + Math.abs((head.y + a.y) - target.y);
-    const distB = Math.abs((head.x + b.x) - target.x) + Math.abs((head.y + b.y) - target.y);
-    return distA - distB;
-  });
-
-  return dirs
-    .map(d => ({ x: head.x + d.x, y: head.y + d.y }))
-    .filter(p =>
-      p.x >= 0 && p.x < COLS * S &&
-      p.y >= 0 && p.y < ROWS * S &&
-      !snakePos.some(s => s.x === p.x && s.y === p.y)
-    );
-}
-
-function moveOneStep() {
-  const head = { ...snakePos[0] };
-  const candidates = getCandidates(head);
-  if (candidates.length === 0) {
-    die();
-    return head; // arbitrary fallback
+  function getCandidates(head) {
+    const candidates = [];
+    const moves = [
+      { x: S, y: 0 },
+      { x: -S, y: 0 },
+      { x: 0, y: S },
+      { x: 0, y: -S }
+    ];
+    for (const move of moves) {
+      const newX = head.x + move.x;
+      const newY = head.y + move.y;
+      if (
+        newX >= 0 && newX < COLS * S &&
+        newY >= 0 && newY < ROWS * S &&
+        !snakePos.some(p => p.x === newX && p.y === newY)
+      ) {
+        candidates.push({ x: newX, y: newY });
+      }
+    }
+    return candidates.length ? candidates : [head];
   }
-  return candidates[0];
-}
 
+  function moveOneStep() {
+    const head = { ...snakePos[0] };
+    const candidates = getCandidates(head);
+    if (candidates.length === 0) {
+      die();
+      return head;
+    }
+    return candidates[0];
+  }
 
   function die() {
     clearInterval(gameInterval);
@@ -176,12 +173,33 @@ function moveOneStep() {
     const scaleY = canvas.height / rect.height;
     const x = Math.floor((e.clientX - rect.left) * scaleX);
     const y = Math.floor((e.clientY - rect.top) * scaleY);
+    let over = false;
+
     if (x >= target.x && x < target.x + S && y >= target.y && y < target.y + S) {
+      const md = IMAGES[target.img];
+      info.textContent = `${md.title} — ${md.artist}`;
       canvas.style.cursor = 'pointer';
+      over = true;
     } else {
-      canvas.style.cursor = 'default';
+      for (let i = 0; i < snakePos.length; i++) {
+        const p = snakePos[i];
+        if (x >= p.x && x < p.x + S && y >= p.y && y < p.y + S) {
+          const md = IMAGES[snakeImg[i]];
+          info.textContent = `${md.title} — ${md.artist}`;
+          over = true;
+          break;
+        }
+      }
+      canvas.style.cursor = over ? 'default' : 'default';
     }
-    info.textContent = '';
+
+    if (!over) info.textContent = '';
+  });
+
+  canvas.addEventListener('touchstart', () => {
+    setTimeout(() => {
+      info.textContent = '';
+    }, 1500);
   });
 
   preloadAll(loaded).then(start);
