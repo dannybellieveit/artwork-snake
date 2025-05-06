@@ -100,6 +100,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   let snakePos = [], snakeImg = [], target = {}, nextPhotoIndex = 0, gameInterval = null;
+  let manualControl = false;
+  let direction = { x: 0, y: 0 };
 
   function initSnake() {
     snakePos = [{
@@ -145,6 +147,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function moveOneStep() {
     const head = { ...snakePos[0] };
+
+    if (manualControl) {
+      const next = { x: head.x + direction.x, y: head.y + direction.y };
+      if (
+        next.x >= 0 && next.x < COLS * S &&
+        next.y >= 0 && next.y < ROWS * S &&
+        !snakePos.some(p => p.x === next.x && p.y === next.y)
+      ) return next;
+      else return head;
+    }
+
     const candidates = getCandidates(head);
     if (candidates.length === 0) {
       die();
@@ -222,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initSnake();
     spawnTarget();
     draw();
-    const maxSpeedup = 8; // cap at 8x speed (50ms interval)
+    const maxSpeedup = 16; // cap at 8x speed (50ms interval)
     start.speedup = (start.speedup || 1) + 1;
     if (start.speedup > maxSpeedup) {
       start.speedup = 1; // reset after final death
@@ -278,4 +291,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   preloadAll(loaded).then(start);
+
+  window.addEventListener('keydown', e => {
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      manualControl = true;
+      if (e.key === 'ArrowUp')    direction = { x: 0, y: -S };
+      if (e.key === 'ArrowDown')  direction = { x: 0, y:  S };
+      if (e.key === 'ArrowLeft')  direction = { x: -S, y: 0 };
+      if (e.key === 'ArrowRight') direction = { x:  S, y: 0 };
+    }
+  });
 });
