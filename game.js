@@ -168,18 +168,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function die() {
     clearInterval(gameInterval);
-    let flashes = 0;
+        let flashes = 0;
     const flashTimer = setInterval(() => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const tImg = loaded[target.img];
       if (tImg && tImg.complete && tImg.naturalWidth !== 0) {
-      ctx.globalAlpha = 0.8;
-      ctx.drawImage(tImg, target.x, target.y, S, S);
-      ctx.globalAlpha = 1;
-    } else {
-      ctx.fillStyle = '#888';
-      ctx.fillRect(target.x, target.y, S, S);
-    }
+        ctx.globalAlpha = 0.8;
+        ctx.drawImage(tImg, target.x, target.y, S, S);
+        ctx.globalAlpha = 1;
+      } else {
+        ctx.fillStyle = '#888';
+        ctx.fillRect(target.x, target.y, S, S);
+      }
       snakePos.forEach(pos => {
         ctx.fillStyle = (flashes % 2 === 0 ? 'white' : 'red');
         ctx.fillRect(pos.x, pos.y, S, S);
@@ -187,8 +187,10 @@ document.addEventListener('DOMContentLoaded', () => {
       flashes++;
       if (flashes > 5) {
         clearInterval(flashTimer);
-        clearInterval(gameInterval);
+        // manualControl remains unchanged unless manually reset
         start();
+      }
+    }, 100);
       }
     }, 100);
   }
@@ -232,6 +234,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function start() {
+    // preserve manual control status
+    const wasManual = manualControl;
     initSnake();
     spawnTarget();
     draw();
@@ -241,6 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
       start.speedup = 1; // reset after final death
     }
     const interval = Math.max(50, 400 / start.speedup);
+    manualControl = false;
     gameInterval = setInterval(step, interval);
   }
   canvas.addEventListener('click', e => {
@@ -295,6 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('keydown', e => {
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
       manualControl = true;
+      direction = direction || { x: 0, y: -S };
       if (e.key === 'ArrowUp')    direction = { x: 0, y: -S };
       if (e.key === 'ArrowDown')  direction = { x: 0, y:  S };
       if (e.key === 'ArrowLeft')  direction = { x: -S, y: 0 };
