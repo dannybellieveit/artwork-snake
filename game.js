@@ -1,305 +1,317 @@
-// game.js — Snake with sequential images, self-collision avoidance until trapped,
-// clickable segments, snake-only flashing death and restart
-// now with responsive resizing to keep images square on mobile
+// game.js — Refactored Snake with sequential images, responsive resizing, retina support,
+// requestAnimationFrame loop, modular structure, Spotify embedding, and robust loading
 
-document.addEventListener('DOMContentLoaded', () => {
-  const canvas = document.getElementById('game-canvas');
-  const ctx    = canvas.getContext('2d');
-  const info   = document.getElementById('info-box');
-  const S      = 50;
-  let COLS, ROWS;
-
-  function resizeCanvas() {
-    const container = document.querySelector('.game-container');
-    const rect = container.getBoundingClientRect();
-    canvas.width = rect.width;
-    canvas.height = rect.height;
-    COLS = Math.floor(canvas.width / S);
-    ROWS = Math.floor(canvas.height / S);
+class Board {
+  constructor(canvasId, cellSize) {
+    this.canvas = document.getElementById(canvasId);
+    this.ctx = this.canvas.getContext('2d');
+    this.cellSize = cellSize;
+    this.cols = 0;
+    this.rows = 0;
+    this._resizeScheduled = false;
+    this._bindResize();
+    this.resize();
   }
 
-  resizeCanvas();
-  window.addEventListener('resize', () => {
-    resizeCanvas();
-    draw();
-  });
+  _bindResize() {
+    window.addEventListener('resize', () => this._scheduleResize());
+  }
 
-  const IMAGES = [
-    {
-      src: 'assets/photo1.jpg',
-      title: 'Verbathim',
-      artist: 'Nemahsis',
-      spotifyUrl: 'https://open.spotify.com/album/6aLc5t3mdbmonoCZMAnZ7N?si=kf-sDHxGT_qNrv2ax59iPw'
-    },
-    {
-      src: 'assets/photo2.jpg',
-      title: 'TV Show',
-      artist: 'Katie Gregson-MacLeod',
-      spotifyUrl: 'https://open.spotify.com/track/0hQZyBWcYejAzb9WYM96pr?si=866aa6756cb24293'
-    },
-    {
-      src: 'assets/photo3.jpg',
-      title: 'Project C',
-      artist: 'Artist 3',
-      spotifyUrl: 'https://open.spotify.com/track/5CtI0qwDJkDQGwXD1H1cLb'
-    },
-    {
-      src: 'assets/photo4.jpg',
-      title: 'Project D',
-      artist: 'Artist 4',
-      spotifyUrl: 'https://open.spotify.com/track/7GhIk7Il098yCjg4BQjzvb'
-    },
-    {
-      src: 'assets/photo5.jpg',
-      title: 'Project E',
-      artist: 'Artist 5',
-      spotifyUrl: 'https://open.spotify.com/track/0VjIjW4GlUZAMYd2vXMi3b'
-    },
-    {
-      src: 'assets/photo6.jpg',
-      title: 'Project F',
-      artist: 'Artist 6',
-      spotifyUrl: 'https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC'
-    },
-    {
-      src: 'assets/photo7.jpg',
-      title: 'Project G',
-      artist: 'Artist 7',
-      spotifyUrl: 'https://open.spotify.com/track/1301WleyT98MSxVHPZCA6M'
-    },
-    {
-      src: 'assets/photo8.jpg',
-      title: 'Project H',
-      artist: 'Artist 8',
-      spotifyUrl: 'https://open.spotify.com/track/6habFhsOp2NvshLv26DqMb'
-    },
-    {
-      src: 'assets/photo9.jpg',
-      title: 'Project I',
-      artist: 'Artist 9',
-      spotifyUrl: 'https://open.spotify.com/track/1CkvWZme3pRgbzaxZnTl5X'
+  _scheduleResize() {
+    if (!this._resizeScheduled) {
+      this._resizeScheduled = true;
+      requestAnimationFrame(() => {
+        this.resize();
+        this._resizeScheduled = false;
+      });
     }
-  ];
+  }
 
-  const loaded = IMAGES.map(item => {
-    const img = new Image();
-    img.src = item.src;
-    return img;
-});
+  resize() {
+    const container = this.canvas.parentElement;
+    const rect = container.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    this.canvas.width = rect.width * dpr;
+    this.canvas.height = rect.height * dpr;
+    this.ctx.scale(dpr, dpr);
+    this.cols = Math.floor(rect.width / this.cellSize);
+    this.rows = Math.floor(rect.height / this.cellSize);
+    if (this.onResize) this.onResize();
+  }
 
-  function preloadAll(images) {
+  clear() {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+  }
+
+  drawCell(x, y, drawFn) {
+    this.ctx.save();
+    drawFn(this.ctx, x, y, this.cellSize);
+    this.ctx.restore();
+  }
+}
+
+class Snake {
+  constructor(images, board) {
+    this.images = images;
+    this.board = board;
+    this.positions = [];
+    this.imageIndices = [];
+    this.nextImageIndex = 0;
+  }
+
+  init() {
+    const { cols, rows, cellSize } = this.board;
+    const x = Math.floor(Math.random() * cols) * cellSize;
+    const y = Math.floor(Math.random() * rows) * cellSize;
+    this.positions = [{ x, y }];
+    this.imageIndices = [this.nextImageIndex];
+    this.nextImageIndex = (this.nextImageIndex + 1) % this.images.length;
+  }
+
+  move(target, manualDirection) {
+    const head = { ...this.positions[0] };
+    let next;
+    if (manualDirection) {
+      next = { x: head.x + manualDirection.x, y: head.y + manualDirection.y };
+      if (!this._isValid(next)) return head;
+    } else {
+      const candidates = this._getCandidates(head, target);
+      if (!candidates.length) return null;
+      next = candidates[0];
+    }
+    return next;
+  }
+
+  _getCandidates(head, target) {
+    const dirs = [
+      { x: this.board.cellSize, y: 0 },
+      { x: -this.board.cellSize, y: 0 },
+      { x: 0, y: this.board.cellSize },
+      { x: 0, y: -this.board.cellSize }
+    ];
+    dirs.sort((a, b) => {
+      const distA = Math.abs(head.x + a.x - target.x) + Math.abs(head.y + a.y - target.y);
+      const distB = Math.abs(head.x + b.x - target.x) + Math.abs(head.y + b.y - target.y);
+      return distA - distB;
+    });
+    return dirs
+      .map(d => ({ x: head.x + d.x, y: head.y + d.y }))
+      .filter(p => this._isValid(p));
+  }
+
+  _isValid(pos) {
+    const { cols, rows, cellSize } = this.board;
+    const inBounds = pos.x >= 0 && pos.x < cols * cellSize && pos.y >= 0 && pos.y < rows * cellSize;
+    const notOnSelf = !this.positions.some(p => p.x === pos.x && p.y === pos.y);
+    return inBounds && notOnSelf;
+  }
+
+  growOrMove(nextPos, ate) {
+    if (nextPos === null) return false; // trapped
+    this.positions.unshift(nextPos);
+    if (ate) {
+      this.imageIndices.push(this.images.indexOf(ate.image));
+      this.nextImageIndex = (this.nextImageIndex + 1) % this.images.length;
+      return true;
+    }
+    this.positions.pop();
+    return false;
+  }
+}
+
+class GameController {
+  constructor() {
+    this.CELL = 50;
+    this.SPEED_BASE = 400;
+    this.MIN_SPEED = 50;
+    this.FLASH_COUNT = 6;
+
+    this.board = new Board('game-canvas', this.CELL);
+    this.spotifyEmbed = document.getElementById('spotify-embed');
+    this.embedContainer = document.getElementById('spotify-embed-container');
+    this.infoBox = document.getElementById('info-box');
+
+    this.imagesData = [ /* same IMAGES array metadata */ ];
+    this.loadedImages = [];
+
+    this.snake = null;
+    this.target = null;
+    this.manualDir = null;
+    this.isManual = false;
+    this.rafId = null;
+    this.speedup = 1;
+    this.lastTime = 0;
+
+    this._bindEvents();
+    this.board.onResize = () => this._onBoardResize();
+    this._preload().then(() => this.start());
+  }
+
+  _preload() {
+    this.loadedImages = this.imagesData.map(data => {
+      const img = new Image();
+      img.src = data.src;
+      return img;
+    });
     return Promise.all(
-      images.map(img => new Promise(res => {
+      this.loadedImages.map(img => new Promise(res => {
         img.onload = res;
-        img.onerror = () => {
-          console.error('Image failed to load:', img.src);
-          res();
-        };
+        img.onerror = () => { console.error('Failed to load', img.src); res(); };
       }))
     );
   }
 
-  let snakePos = [], snakeImg = [], target = {}, nextPhotoIndex = 0, gameInterval = null;
-  let manualControl = false;
-  let direction = { x: 0, y: 0 };
-
-  function initSnake() {
-    snakePos = [{
-      x: Math.floor(Math.random() * COLS) * S,
-      y: Math.floor(Math.random() * ROWS) * S
-    }];
-    snakeImg = [0];
-    nextPhotoIndex = 1;
+  _bindEvents() {
+    this._onClick = e => this._handleClick(e);
+    this._onMove = e => this._handleMouseMove(e);
+    this._onKey = e => this._handleKey(e);
+    this.board.canvas.addEventListener('click', this._onClick);
+    this.board.canvas.addEventListener('mousemove', this._onMove);
+    window.addEventListener('keydown', this._onKey);
   }
 
-  function spawnTarget() {
+  _handleClick(e) {
+    const pos = this._getEventPos(e);
+    if (this.target && pos.x === this.target.x && pos.y === this.target.y) {
+      const id = this.target.meta.spotifyUrl.match(/track\/(\w+)/)[1];
+      this.spotifyEmbed.src = `https://open.spotify.com/embed/track/${id}?utm_source=generator&autoplay=1`;
+      this.embedContainer.style.display = 'block';
+    }
+  }
+
+  _handleMouseMove(e) {
+    const pos = this._getEventPos(e);
+    if (this.target && pos.x === this.target.x && pos.y === this.target.y) {
+      const md = this.imagesData[this.target.metaIndex];
+      this.infoBox.textContent = `${md.title} — ${md.artist}`;
+      this.board.canvas.style.cursor = 'pointer';
+    } else {
+      this.infoBox.textContent = '';
+      this.board.canvas.style.cursor = 'default';
+    }
+  }
+
+  _handleKey(e) {
+    const d = this.CELL;
+    const map = {
+      ArrowUp:    { x: 0, y: -d },
+      ArrowDown:  { x: 0, y:  d },
+      ArrowLeft:  { x: -d, y: 0 },
+      ArrowRight: { x:  d, y: 0 }
+    };
+    if (map[e.key]) {
+      this.isManual = true;
+      this.manualDir = map[e.key];
+    }
+  }
+
+  _getEventPos(e) {
+    const rect = this.board.canvas.getBoundingClientRect();
+    const scaleX = this.board.canvas.width / rect.width;
+    const scaleY = this.board.canvas.height / rect.height;
+    const x = Math.floor((e.clientX - rect.left) * scaleX / this.CELL) * this.CELL;
+    const y = Math.floor((e.clientY - rect.top) * scaleY / this.CELL) * this.CELL;
+    return { x, y };
+  }
+
+  _onBoardResize() {
+    this.draw();
+  }
+
+  _spawnTarget() {
+    const { cols, rows, cellSize } = this.board;
     let x, y;
     do {
-      x = Math.floor(Math.random() * COLS) * S;
-      y = Math.floor(Math.random() * ROWS) * S;
-    } while (snakePos.some(p => p.x === x && p.y === y));
-    target = { x, y, img: nextPhotoIndex };
-    nextPhotoIndex = (nextPhotoIndex + 1) % loaded.length;
+      x = Math.floor(Math.random() * cols) * cellSize;
+      y = Math.floor(Math.random() * rows) * cellSize;
+    } while (this.snake.positions.some(p => p.x === x && p.y === y));
+    this.target = { x, y, metaIndex: this.snake.nextImageIndex };
+    this.snake.nextImageIndex = (this.snake.nextImageIndex + 1) % this.loadedImages.length;
   }
 
-  function getCandidates(head) {
-    const dirs = [
-      { x:  S, y: 0 },
-      { x: -S, y: 0 },
-      { x: 0,  y: S },
-      { x: 0,  y: -S }
-    ];
-
-    dirs.sort((a, b) => {
-      const distA = Math.abs((head.x + a.x) - target.x) + Math.abs((head.y + a.y) - target.y);
-      const distB = Math.abs((head.x + b.x) - target.x) + Math.abs((head.y + b.y) - target.y);
-      return distA - distB;
-    });
-
-    return dirs
-      .map(d => ({ x: head.x + d.x, y: head.y + d.y }))
-      .filter(p =>
-        p.x >= 0 && p.x < COLS * S &&
-        p.y >= 0 && p.y < ROWS * S &&
-        !snakePos.some(s => s.x === p.x && s.y === p.y)
-      );
+  start() {
+    if (this.rafId) cancelAnimationFrame(this.rafId);
+    this.speedup = (this.speedup % 16) + 1;
+    this.interval = Math.max(this.MIN_SPEED, this.SPEED_BASE / this.speedup);
+    this.snake = new Snake(this.loadedImages, this.board);
+    this.snake.init();
+    this._spawnTarget();
+    this.lastTime = performance.now();
+    this.isManual = false;
+    this.rafId = requestAnimationFrame(ts => this._loop(ts));
   }
 
-  function moveOneStep() {
-    const head = { ...snakePos[0] };
-
-    if (manualControl) {
-      const next = { x: head.x + direction.x, y: head.y + direction.y };
-      if (
-        next.x >= 0 && next.x < COLS * S &&
-        next.y >= 0 && next.y < ROWS * S &&
-        !snakePos.some(p => p.x === next.x && p.y === next.y)
-      ) return next;
-      else return head;
+  _loop(timestamp) {
+    const delta = timestamp - this.lastTime;
+    if (delta >= this.interval) {
+      this.lastTime = timestamp;
+      this._step();
     }
-
-    const candidates = getCandidates(head);
-    if (candidates.length === 0) {
-      die();
-      return head;
-    }
-    return candidates[0];
+    this.rafId = requestAnimationFrame(ts => this._loop(ts));
   }
 
-  function die() {
-    clearInterval(gameInterval);
+  _step() {
+    const nextPos = this.snake.move(this.target, this.isManual ? this.manualDir : null);
+    if (nextPos === null || this.snake.positions.some(p => p.x === nextPos.x && p.y === nextPos.y)) {
+      return this._die();
+    }
+    const ate = nextPos.x === this.target.x && nextPos.y === this.target.y;
+    this.snake.growOrMove(nextPos, ate ? this.target : null);
+    if (ate) this._spawnTarget();
+    this.draw();
+  }
+
+  _die() {
+    cancelAnimationFrame(this.rafId);
     let flashes = 0;
-    const flashTimer = setInterval(() => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const tImg = loaded[target.img];
-      if (tImg && tImg.complete && tImg.naturalWidth !== 0) {
+    const flash = () => {
+      this.board.clear();
+      // draw target
+      const img = this.loadedImages[this.target.metaIndex];
+      this.board.drawCell(this.target.x, this.target.y, (ctx,x,y,s) => {
         ctx.globalAlpha = 0.8;
-        ctx.drawImage(tImg, target.x, target.y, S, S);
+        if (img.naturalWidth) ctx.drawImage(img, x, y, s, s);
+        else ctx.fillRect(x,y,s,s);
         ctx.globalAlpha = 1;
-      } else {
-        ctx.fillStyle = '#888';
-        ctx.fillRect(target.x, target.y, S, S);
-      }
-      snakePos.forEach(pos => {
-        ctx.fillStyle = (flashes % 2 === 0 ? 'white' : 'red');
-        ctx.fillRect(pos.x, pos.y, S, S);
+      });
+      // draw snake
+      this.snake.positions.forEach(pos => {
+        this.board.drawCell(pos.x, pos.y, (ctx,x,y,s) => {
+          ctx.fillStyle = flashes % 2 ? 'red' : 'white';
+          ctx.fillRect(x,y,s,s);
+        });
       });
       flashes++;
-      if (flashes > 5) {
-        clearInterval(flashTimer);
-        manualControl = false;
-        start();
+      if (flashes <= this.FLASH_COUNT) {
+        setTimeout(flash, 100);
+      } else {
+        this.start();
       }
-    }, 100);
-  }
-  function step() {
-    const newHead = moveOneStep();
-    if (snakePos.some(p => p.x === newHead.x && p.y === newHead.y)) {
-      return die();
-    }
-    const ate = newHead.x === target.x && newHead.y === target.y;
-    snakePos.unshift(newHead);
-    if (!ate) {
-      snakePos.pop();
-    } else {
-      snakeImg.push(target.img);
-      spawnTarget();
-    }
-    draw();
+    };
+    flash();
   }
 
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const tImg = loaded[target.img];
-    if (tImg && tImg.complete && tImg.naturalWidth !== 0) {
+  draw() {
+    this.board.clear();
+    // draw target
+    const tgt = this.target;
+    const tgtImg = this.loadedImages[tgt.metaIndex];
+    this.board.drawCell(tgt.x, tgt.y, (ctx,x,y,s) => {
       ctx.globalAlpha = 0.8;
-      ctx.drawImage(tImg, target.x, target.y, S, S);
+      if (tgtImg.naturalWidth) ctx.drawImage(tgtImg, x, y, s, s);
+      else ctx.fillRect(x,y,s,s);
       ctx.globalAlpha = 1;
-    } else {
-      ctx.fillStyle = '#888';
-      ctx.fillRect(target.x, target.y, S, S);
-    }
-    snakePos.forEach((pos, i) => {
-      const img = loaded[snakeImg[i]];
-      if (img && img.complete && img.naturalWidth !== 0) {
-        ctx.drawImage(img, pos.x, pos.y, S, S);
-      } else {
-        ctx.fillStyle = '#ccc';
-        ctx.fillRect(pos.x, pos.y, S, S);
-      }
+    });
+    // draw snake
+    this.snake.positions.forEach((pos,i) => {
+      const img = this.loadedImages[this.snake.imageIndices[i]];
+      this.board.drawCell(pos.x, pos.y, (ctx,x,y,s) => {
+        if (img.naturalWidth) ctx.drawImage(img, x, y, s, s);
+        else ctx.fillRect(x,y,s,s);
+      });
     });
   }
+}
 
-  function start() {
-    // reset manual control on restart
-    const wasManual = manualControl;
-    initSnake();
-    spawnTarget();
-    draw();
-    const maxSpeedup = 16; // cap at 8x speed (50ms interval)
-    start.speedup = (start.speedup || 1) + 1;
-    if (start.speedup > maxSpeedup) {
-      start.speedup = 1; // reset after final death
-    }
-    const interval = Math.max(50, 400 / start.speedup);
-    manualControl = false;
-    gameInterval = setInterval(step, interval);
-  }
-  canvas.addEventListener('click', e => {
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const x = Math.floor((e.clientX - rect.left) * scaleX);
-    const y = Math.floor((e.clientY - rect.top) * scaleY);
-    if (x >= target.x && x < target.x + S && y >= target.y && y < target.y + S) {
-      const md = IMAGES[target.img];
-      const embed = document.getElementById('spotify-embed');
-      const container = document.getElementById('spotify-embed-container');
-      const match = md.spotifyUrl.match(/track\/([a-zA-Z0-9]+)/);
-      if (match) {
-        const trackId = match[1];
-        embed.src = `https://open.spotify.com/embed/track/${trackId}?utm_source=generator&autoplay=1&theme=0`;
-        container.style.display = 'block';
-      }
-    }
-  });
-
-  canvas.addEventListener('mousemove', e => {
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const x = Math.floor((e.clientX - rect.left) * scaleX);
-    const y = Math.floor((e.clientY - rect.top) * scaleY);
-    let over = false;
-
-    if (x >= target.x && x < target.x + S && y >= target.y && y < target.y + S) {
-      const md = IMAGES[target.img];
-      info.textContent = `${md.title} — ${md.artist}`;
-      canvas.style.cursor = 'pointer';
-      over = true;
-    } else {
-      canvas.style.cursor = 'default';
-    }
-
-    if (!over) info.textContent = '';
-  });
-
-  canvas.addEventListener('touchstart', () => {
-    setTimeout(() => {
-      info.textContent = '';
-    }, 1500);
-  });
-
-  preloadAll(loaded).then(start);
-
-  window.addEventListener('keydown', e => {
-    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-      manualControl = true;
-      direction = direction || { x: 0, y: -S };
-      if (e.key === 'ArrowUp')    direction = { x: 0, y: -S };
-      if (e.key === 'ArrowDown')  direction = { x: 0, y:  S };
-      if (e.key === 'ArrowLeft')  direction = { x: -S, y: 0 };
-      if (e.key === 'ArrowRight') direction = { x:  S, y: 0 };
-    }
-  });
-});
+// Initialize when DOM is ready
+window.addEventListener('DOMContentLoaded', () => new GameController());
