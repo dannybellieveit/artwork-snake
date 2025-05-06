@@ -191,9 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
         start();
       }
     }, 100);
-  }    }, 100);
   }
-
   function step() {
     const newHead = moveOneStep();
     if (snakePos.some(p => p.x === newHead.x && p.y === newHead.y)) {
@@ -233,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function start() {
-    // preserve manual control status
+    // reset manual control on restart
     const wasManual = manualControl;
     initSnake();
     spawnTarget();
