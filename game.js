@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const img = new Image();
     img.src = item.src;
     return img;
-  });
+});
 
   function preloadAll(images) {
     return Promise.all(
@@ -45,14 +45,6 @@ document.addEventListener('DOMContentLoaded', () => {
           res();
         };
       }))
-    );
-  };
-      }))
-    );
-  };
-      }))
-    );
-  }))
     );
   }
 
