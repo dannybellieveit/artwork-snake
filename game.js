@@ -33,7 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const loaded = IMAGES.map(item => {
     const img = new Image();
     img.src = item.src;
-    img.onerror = () => console.error('Failed to load', item.src);
     return img;
   });
 
@@ -45,6 +44,9 @@ document.addEventListener('DOMContentLoaded', () => {
           console.error('Image failed to load:', img.src);
           res();
         };
+      }))
+    );
+  };
       }))
     );
   };
@@ -185,8 +187,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const interval = Math.max(50, 400 / start.speedup);
     gameInterval = setInterval(step, interval);
   }
-  }
-
   canvas.addEventListener('click', e => {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
