@@ -141,6 +141,20 @@ class GameController {
         spotifyUrl: 'https://open.spotify.com/album/6aLc5t3mdbmonoCZMAnZ7N?si=kf-sDHxGT_qNrv2ax59iPw' },
       { src: 'assets/photo2.jpg', title: 'TV Show', artist: 'Katie Gregson-MacLeod',
         spotifyUrl: 'https://open.spotify.com/track/0hQZyBWcYejAzb9WYM96pr?si=866aa6756cb24293' },
+       { src: 'assets/photo3.jpg', title: 'Verbathim', artist: 'Nemahsis',
+        spotifyUrl: 'https://open.spotify.com/album/6aLc5t3mdbmonoCZMAnZ7N?si=kf-sDHxGT_qNrv2ax59iPw' },
+      { src: 'assets/photo4.jpg', title: 'TV Show', artist: 'Katie Gregson-MacLeod',
+        spotifyUrl: 'https://open.spotify.com/track/0hQZyBWcYejAzb9WYM96pr?si=866aa6756cb24293' },
+       { src: 'assets/photo5.jpg', title: 'Verbathim', artist: 'Nemahsis',
+        spotifyUrl: 'https://open.spotify.com/album/6aLc5t3mdbmonoCZMAnZ7N?si=kf-sDHxGT_qNrv2ax59iPw' },
+      { src: 'assets/photo6.jpg', title: 'TV Show', artist: 'Katie Gregson-MacLeod',
+        spotifyUrl: 'https://open.spotify.com/track/0hQZyBWcYejAzb9WYM96pr?si=866aa6756cb24293' },
+       { src: 'assets/photo7.jpg', title: 'Verbathim', artist: 'Nemahsis',
+        spotifyUrl: 'https://open.spotify.com/album/6aLc5t3mdbmonoCZMAnZ7N?si=kf-sDHxGT_qNrv2ax59iPw' },
+      { src: 'assets/photo8.jpg', title: 'TV Show', artist: 'Katie Gregson-MacLeod',
+        spotifyUrl: 'https://open.spotify.com/track/0hQZyBWcYejAzb9WYM96pr?si=866aa6756cb24293' },
+       { src: 'assets/photo9.jpg', title: 'Verbathim', artist: 'Nemahsis',
+        spotifyUrl: 'https://open.spotify.com/album/6aLc5t3mdbmonoCZMAnZ7N?si=kf-sDHxGT_qNrv2ax59iPw' },
       /* …etc… */
     ];
     this.loadedImages = [];
