@@ -1,4 +1,4 @@
-// game.js — Refactored Snake with debug logging for immediate-death investigation
+// game.js — Refactored Snake with debug logging & one-step speed bump
 
 class Board {
   constructor(canvasId, cellSize) {
@@ -87,10 +87,15 @@ class Snake {
 
   _getCandidates(head, target) {
     const d = this.board.cellSize;
-    const dirs = [ { x: d, y: 0 }, { x: -d, y: 0 }, { x: 0, y: d }, { x: 0, y: -d } ];
+    const dirs = [
+      { x: d,  y: 0 },
+      { x: -d, y: 0 },
+      { x: 0,  y: d },
+      { x: 0,  y: -d }
+    ];
     dirs.sort((a, b) => {
-      const da = Math.abs(head.x+a.x - target.x) + Math.abs(head.y+a.y - target.y);
-      const db = Math.abs(head.x+b.x - target.x) + Math.abs(head.y+b.y - target.y);
+      const da = Math.abs(head.x + a.x - target.x) + Math.abs(head.y + a.y - target.y);
+      const db = Math.abs(head.x + b.x - target.x) + Math.abs(head.y + b.y - target.y);
       return da - db;
     });
     return dirs
@@ -100,8 +105,8 @@ class Snake {
 
   _isValid(pos) {
     const { cols, rows, cellSize } = this.board;
-    const inBounds = pos.x >= 0 && pos.x < cols * cellSize
-                  && pos.y >= 0 && pos.y < rows * cellSize;
+    const inBounds = pos.x >= 0 && pos.x < cols * cellSize &&
+                     pos.y >= 0 && pos.y < rows * cellSize;
     const notSelf  = !this.positions.some(p => p.x === pos.x && p.y === pos.y);
     return inBounds && notSelf;
   }
@@ -124,24 +129,20 @@ class GameController {
     this.SPEED_BASE  = 400;
     this.MIN_SPEED   = 50;
     this.FLASH_COUNT = 6;
-    this.MAX_SPEEDUP = 8;      // 8× fastest
+    this.MAX_SPEEDUP = 8;      // cap at 8×
 
-    // cycle through images in order, across *all* rounds:
-    this.nextImageIndex = 0;
-
-    // track how many times we've bumped speed:
-    this.speedup = 1;
+    this.nextImageIndex = 0;  // cycles across rounds
+    this.speedup        = 1;  // bumps only in _die()
 
     this.board          = new Board('game-canvas', this.CELL);
     this.spotifyEmbed   = document.getElementById('spotify-embed');
     this.embedContainer = document.getElementById('spotify-embed-container');
     this.infoBox        = document.getElementById('info-box');
 
-    // your original IMAGES metadata:
     this.imagesData = [
-      { src: 'assets/photo1.jpg', title: 'Verbathim', artist: 'Nemahsis',
+      { src: 'assets/photo1.jpg', title: 'Verbathim',     artist: 'Nemahsis',
         spotifyUrl: 'https://open.spotify.com/album/6aLc5t3mdbmonoCZMAnZ7N?si=kf-sDHxGT_qNrv2ax59iPw' },
-      { src: 'assets/photo2.jpg', title: 'TV Show', artist: 'Katie Gregson-MacLeod',
+      { src: 'assets/photo2.jpg', title: 'TV Show',       artist: 'Katie Gregson-MacLeod',
         spotifyUrl: 'https://open.spotify.com/track/0hQZyBWcYejAzb9WYM96pr?si=866aa6756cb24293' },
       /* …etc… */
     ];
@@ -206,10 +207,10 @@ class GameController {
   _handleKey(e) {
     const d = this.CELL;
     const map = {
-      ArrowUp:    { x: 0,  y: -d },
-      ArrowDown:  { x: 0,  y:  d },
-      ArrowLeft:  { x: -d, y: 0 },
-      ArrowRight: { x: d,  y: 0 }
+      ArrowUp:    { x:  0, y: -d },
+      ArrowDown:  { x:  0, y:  d },
+      ArrowLeft:  { x: -d, y:  0 },
+      ArrowRight: { x:  d, y:  0 }
     };
     if (map[e.key]) {
       this.isManual  = true;
@@ -238,32 +239,28 @@ class GameController {
     this.nextImageIndex = (this.nextImageIndex + 1) % this.loadedImages.length;
   }
 
-start() {
-  if (this.rafId) cancelAnimationFrame(this.rafId);
+  start() {
+    if (this.rafId) cancelAnimationFrame(this.rafId);
 
-  // 1) reset / bump speed
-  this.speedup = this.speedup >= this.MAX_SPEEDUP ? 1 : this.speedup + 1;
-  this.interval = Math.max(this.MIN_SPEED, this.SPEED_BASE / this.speedup);
+    // only compute interval from current speedup (bumped in _die)
+    this.interval = Math.max(this.MIN_SPEED, this.SPEED_BASE / this.speedup);
 
-  // 2) initialize snake *first*
-  this.snake = new Snake(this.loadedImages, this.board);
-  this.snake.init();
+    // init snake before spawning target
+    this.snake = new Snake(this.loadedImages, this.board);
+    this.snake.init();
+    this._spawnTarget();
 
-  // 3) THEN spawn a target
-  this._spawnTarget();
+    // debug log as a single object
+    console.log('🏁 New round', {
+      head:    this.snake.positions[0],
+      target:  this.target,
+      speedup: this.speedup
+    });
 
-  // 4) now it’s safe to log & start the loop
-  console.log(
-    '🏁 New round – head at:', this.snake.positions[0],
-    ' target at:', this.target,
-    '(speedup =', this.speedup, ')'
-  );
-
-  this.lastTime = performance.now();
-  this.isManual = false;
-  this.rafId    = requestAnimationFrame(ts => this._loop(ts));
-}
-
+    this.lastTime = performance.now();
+    this.isManual = false;
+    this.rafId    = requestAnimationFrame(ts => this._loop(ts));
+  }
 
   _loop(timestamp) {
     const delta = timestamp - this.lastTime;
@@ -289,7 +286,6 @@ start() {
 
     const ate = nextPos.x === this.target.x && nextPos.y === this.target.y;
     this.snake.growOrMove(nextPos, ate ? this.target.metaIndex : null);
-
     if (ate) this._spawnTarget();
     this.draw();
   }
@@ -300,17 +296,30 @@ start() {
 
     const flash = () => {
       this.board.clear();
+
+      // draw target
+      this.board.drawCell(this.target.x, this.target.y, (ctx, x, y, s) => {
+        ctx.globalAlpha = 0.8;
+        const img = this.loadedImages[this.target.metaIndex];
+        if (img.naturalWidth) ctx.drawImage(img, x, y, s, s);
+        else ctx.fillRect(x, y, s, s);
+        ctx.globalAlpha = 1;
+      });
+
+      // draw flashing snake
       this.snake.positions.forEach(pos => {
         this.board.drawCell(pos.x, pos.y, (ctx, x, y, s) => {
           ctx.fillStyle = flashes % 2 ? 'red' : 'white';
           ctx.fillRect(x, y, s, s);
         });
       });
+
       flashes++;
       if (flashes < this.FLASH_COUNT) {
         setTimeout(flash, 100);
       } else {
-        this.speedup = this.speedup >= this.MAX_SPEEDUP ? 1 : this.speedup + 1;
+        // bump speed once
+        this.speedup = (this.speedup >= this.MAX_SPEEDUP ? 1 : this.speedup + 1);
         this.start();
       }
     };
@@ -319,11 +328,10 @@ start() {
   }
 
   draw() {
-  // nothing to draw until we've got both snake & target
-  if (!this.snake || !this.target) return;
+    // nothing until snake + target exist
+    if (!this.snake || !this.target) return;
 
-  this.board.clear();
-
+    this.board.clear();
 
     // draw target
     this.board.drawCell(this.target.x, this.target.y, (ctx, x, y, s) => {
@@ -346,5 +354,5 @@ start() {
   }
 }
 
-// kick it off
+// Initialize when DOM is ready
 window.addEventListener('DOMContentLoaded', () => new GameController());
