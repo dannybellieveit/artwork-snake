@@ -39,7 +39,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function preloadAll(images) {
     return Promise.all(
-      images.map(img => new Promise(res => { img.onload = img.onerror = res; }))
+      images.map(img => new Promise(res => {
+        img.onload = res;
+        img.onerror = () => {
+          console.error('Image failed to load:', img.src);
+          res();
+        };
+      }))
+    );
+  }))
     );
   }
 
@@ -103,11 +111,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const flashTimer = setInterval(() => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const tImg = loaded[target.img];
-      if (tImg) {
-        ctx.globalAlpha = 0.8;
-        ctx.drawImage(tImg, target.x, target.y, S, S);
-        ctx.globalAlpha = 1;
-      }
+      if (tImg && tImg.complete && tImg.naturalWidth !== 0) {
+      ctx.globalAlpha = 0.8;
+      ctx.drawImage(tImg, target.x, target.y, S, S);
+      ctx.globalAlpha = 1;
+    } else {
+      ctx.fillStyle = '#888';
+      ctx.fillRect(target.x, target.y, S, S);
+    }
       snakePos.forEach(pos => {
         ctx.fillStyle = (flashes % 2 === 0 ? 'white' : 'red');
         ctx.fillRect(pos.x, pos.y, S, S);
@@ -140,14 +151,22 @@ document.addEventListener('DOMContentLoaded', () => {
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const tImg = loaded[target.img];
-    if (tImg) {
+    if (tImg && tImg.complete && tImg.naturalWidth !== 0) {
       ctx.globalAlpha = 0.8;
       ctx.drawImage(tImg, target.x, target.y, S, S);
       ctx.globalAlpha = 1;
+    } else {
+      ctx.fillStyle = '#888';
+      ctx.fillRect(target.x, target.y, S, S);
     }
     snakePos.forEach((pos, i) => {
       const img = loaded[snakeImg[i]];
-      if (img) ctx.drawImage(img, pos.x, pos.y, S, S);
+      if (img && img.complete && img.naturalWidth !== 0) {
+        ctx.drawImage(img, pos.x, pos.y, S, S);
+      } else {
+        ctx.fillStyle = '#ccc';
+        ctx.fillRect(pos.x, pos.y, S, S);
+      }
     });
   }
 
