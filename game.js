@@ -228,17 +228,17 @@ class GameController {
     }
   }
 
-  _handleMouseMove(e) {
+_handleMouseMove(e) {
     const pos = this._getEventPos(e);
     if (this.target && pos.x === this.target.x && pos.y === this.target.y) {
-      const md = this.imagesData[this.target.metaIndex];
-      this.infoBox.textContent = `${md.title} — ${md.artist}`;
-      this.board.canvas.style.cursor = 'pointer';
+        const md = this.imagesData[this.target.metaIndex];
+        this.infoBox.textContent = `${md.title} — ${md.artist}`;
+        this.board.canvas.style.cursor = 'pointer'; // Standard hyperlink hand
     } else {
-      this.infoBox.textContent = '';
-      this.board.canvas.style.cursor = 'default';
+        this.infoBox.textContent = '';
+        this.board.canvas.style.cursor = 'default'; // Reset to default cursor
     }
-  }
+}
 
   _handleKey(e) {
     const d = this.CELL;
