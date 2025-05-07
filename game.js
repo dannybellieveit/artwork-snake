@@ -138,7 +138,7 @@ class GameController {
     this.SPEED_BASE        = 400;
     this.MIN_SPEED         = 50;
     this.MAX_SPEEDUP       = 5;
-    this.SPEEDUP_INCREMENT = 0.3;
+    this.SPEEDUP_INCREMENT = 0.1;
 
     this.speedup   = 1;
     this.imagePool = [];
