@@ -230,10 +230,20 @@ class GameController {
 
 _handleMouseMove(e) {
     const pos = this._getEventPos(e);
-    if (this.target && pos.x === this.target.x && pos.y === this.target.y) {
-        /*const md = this.imagesData[this.target.metaIndex];
-        this.infoBox.textContent = `${md.title} — ${md.artist}`;*/
-        this.board.canvas.style.cursor = 'pointer'; // Standard hyperlink hand
+    const { cellSize } = this.board;
+
+    // Check if the mouse is within the target's bounding box
+    const isOverTarget =
+        this.target &&
+        pos.x >= this.target.x &&
+        pos.x < this.target.x + cellSize &&
+        pos.y >= this.target.y &&
+        pos.y < this.target.y + cellSize;
+
+    if (isOverTarget) {
+        const md = this.imagesData[this.target.metaIndex];
+        this.infoBox.textContent = `${md.title} — ${md.artist}`;
+        this.board.canvas.style.cursor = 'pointer'; // Show pointer cursor
     } else {
         this.infoBox.textContent = '';
         this.board.canvas.style.cursor = 'default'; // Reset to default cursor
