@@ -126,7 +126,7 @@ class GameController {
     this.SPEED_BASE  = 400;
     this.MIN_SPEED   = 50;
     this.FLASH_COUNT = 6;
-    this.MAX_SPEEDUP = 8;      // cap at 8×
+    this.MAX_SPEEDUP = 5;      // cap at 8×
 
     this.nextImageIndex = 0;  // cycles across rounds
     this.speedup        = 1;  // bumped only in _die()
@@ -320,7 +320,10 @@ class GameController {
 
     const ate = nextPos.x === this.target.x && nextPos.y === this.target.y;
     this.snake.growOrMove(nextPos, ate ? this.target.metaIndex : null);
-    if (ate) this._spawnTarget();
+    if (ate) {this.speedup += 0.1; // Increment speedup factor
+              this.interval = Math.max(this.MIN_SPEED, this.SPEED_BASE / this.speedup);
+              this._spawnTarget();
+             }
     this.draw();
   }
 
@@ -352,7 +355,7 @@ class GameController {
       if (flashes < this.FLASH_COUNT) {
         setTimeout(flash, 100);
       } else {
-        this.speedup = (this.speedup >= this.MAX_SPEEDUP ? 1 : this.speedup + 1);
+        this.speedup = 1;
         this.start();
       }
     };
