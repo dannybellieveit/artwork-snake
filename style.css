@@ -37,7 +37,7 @@ canvas {
   color: #000;
 }
 
-/* Spotify Embed Container now styled via CSS */
+/* SPOTIFY EMBED Container */
 #spotify-embed-container {
   display: none;
   width: 90vw;
@@ -87,4 +87,25 @@ footer {
     width: 100%;
     height: auto;
   }
+}
+
+/* ——— SONG INFO OVERLAY ——— */
+#song-info {
+  position: absolute;
+  top: 10px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+#song-title,
+#song-artist {
+  font-family: 'YourDesignFont', cursive;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
 }
