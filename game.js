@@ -1,5 +1,5 @@
 // game.js — Complete, ready to paste in:
-// • Non-repeating images
+// • Non-repeating images (including initial head)
 // • Gradual speedup & reset on death
 // • Title & artist overlay
 
@@ -79,7 +79,8 @@ class Snake {
     const x = Math.floor(Math.random() * cols) * cellSize;
     const y = Math.floor(Math.random() * rows) * cellSize;
     this.positions    = [{ x, y }];
-    this.imageIndices = [Math.floor(Math.random() * this.images.length)];
+    // use first image index from pool (will be removed by GameController)
+    this.imageIndices = [null];
   }
 
   move(target, manualDir) {
@@ -88,7 +89,6 @@ class Snake {
       const next = { x: head.x + manualDir.x, y: head.y + manualDir.y };
       return this._isValid(next) ? next : head;
     }
-
     const candidates = this._getCandidates(head, target);
     return candidates.length ? candidates[0] : null;
   }
@@ -134,18 +134,15 @@ class Snake {
 // ─── GameController ──────────────────────────────────────────────────────────────
 class GameController {
   constructor() {
-    // GRID & TIMING
     this.CELL              = 50;
-    this.SPEED_BASE        = 400;    // ms between moves at 1×
-    this.MIN_SPEED         = 50;     // fastest possible interval
-    this.MAX_SPEEDUP       = 5;      // cap speed at 5×
-    this.SPEEDUP_INCREMENT = 0.3;    // +0.3× per apple
+    this.SPEED_BASE        = 400;
+    this.MIN_SPEED         = 50;
+    this.MAX_SPEEDUP       = 5;
+    this.SPEEDUP_INCREMENT = 0.3;
 
-    // dynamic state
     this.speedup   = 1;
     this.imagePool = [];
 
-    // DOM & board
     this.board          = new Board('game-canvas', this.CELL);
     this.infoBox        = document.getElementById('info-box');
     this.spotifyEmbed   = document.getElementById('spotify-embed');
@@ -153,44 +150,40 @@ class GameController {
     this.titleEl        = document.getElementById('song-title');
     this.artistEl       = document.getElementById('song-artist');
 
-    // your metadata array
-   this.imagesData = [
-  { src: 'assets/photo1.jpg',  title: 'Verbathim (Album)',             artist: 'Nemahsis',
-    spotifyUrl: 'https://open.spotify.com/track/2lmT9NiqohWoRf9yAxt4Ru?si=7291e441baaa452a' },
-  { src: 'assets/photo2.jpg',  title: 'TV Show',                        artist: 'Katie Gregson-MacLeod',
-    spotifyUrl: 'https://open.spotify.com/track/0hQZyBWcYejAzb9WYM96pr?si=866aa6756cb24293' },
-  { src: 'assets/photo3.jpg',  title: 'We Need To Talk',                artist: 'Matt Maltese',
-    spotifyUrl: 'https://open.spotify.com/track/1gqMcDslzFtgOsAZDY58JX?si=f1e735a57f8e4076' },
-  { src: 'assets/photo4.jpg',  title: 'Alone At The Party',             artist: 'Sam Tompkins',
-    spotifyUrl: 'https://open.spotify.com/track/0YO7moiEboCUBDFf0hefSk?si=6abe803a16734b2e' },
-  { src: 'assets/photo5.jpg',  title: 'Dollar Signs',                   artist: 'Nemahsis',
-    spotifyUrl: 'https://open.spotify.com/track/6YyEuMnthCvLOZCGEbksAF?si=ea15d86f0f7d416d' },
-  { src: 'assets/photo6.jpg',  title: 'Coming Closer',                  artist: 'Duckwrth',
-    spotifyUrl: 'https://open.spotify.com/track/238p3EKRYESqsZdgE5DCDR?si=7f4332128f954948' },
-  { src: 'assets/photo7.jpg',  title: 'This Is The Place',              artist: 'Tom Grennan',
-    spotifyUrl: 'https://open.spotify.com/track/0UtoTf0kuz8x6Zfy59r8hp?si=9f2dc0ed23c54266' },
-  { src: 'assets/photo8.jpg',  title: 'Skin',                           artist: 'Joy Crookes',
-    spotifyUrl: 'https://open.spotify.com/track/7k8b5u5fisGTDNahrJK6dw?si=2a87e548bd1c45ef' },
-  { src: 'assets/photo9.jpg',  title: 'Paradise',                       artist: 'Griff',
-    spotifyUrl: 'https://open.spotify.com/track/7nfaD0trhQiStQ8DOQRC0h?si=9e7715a383e14fca' },
-  { src: 'assets/photo10.jpg', title: 'LMLY',                           artist: 'Jackson Wang',
-    spotifyUrl: 'https://open.spotify.com/track/3kPoV6L9vXpbxoM4Ux0KnX?si=6891a359c7fb4f50' },
-  { src: 'assets/photo11.jpg', title: '54321',                          artist: 'April',
-    spotifyUrl: 'https://open.spotify.com/track/6Vn5hk8NQIkzGsdkx5nF4q?si=42dbda986fb842fe' },
-  { src: 'assets/photo12.jpg', title: 'Boy Clothes',                    artist: 'Nxdia',
-    spotifyUrl: 'https://open.spotify.com/track/7nuCxvFVT5YEAjSDd6Glr?si=a241207fac3348d8' },
-  { src: 'assets/photo13.jpg', title: 'Options (feat. Lil Baby)',       artist: 'Jordan Adetunji',
-    spotifyUrl: 'https://open.spotify.com/track/0aQD4RI0U4pHWzNzQWTq9r?si=e5080b16576548f3' },
-  { src: 'assets/photo14.jpg', title: '305 (feat. Bryson Tiller)',      artist: 'Jordan Adetunji',
-    spotifyUrl: 'https://open.spotify.com/track/494f07w2ArJNlkwnWWZViK?si=a3ff4f4b26ce4a53' },
-  { src: 'assets/photo15.jpg', title: 'Stick Of Gum',                   artist: 'Nemahsis',
-    spotifyUrl: 'https://open.spotify.com/track/7DvOMvKBZESff6Etf0v9MY?si=c31005880f374552' },
-  /* add any additional entries here… */
-];
-
+    this.imagesData = [
+      { src: 'assets/photo1.jpg', title: 'Verbathim (Album)', artist: 'Nemahsis',
+        spotifyUrl: 'https://open.spotify.com/track/2lmT9NiqohWoRf9yAxt4Ru?si=7291e441baaa452a' },
+      { src: 'assets/photo2.jpg', title: 'TV Show', artist: 'Katie Gregson-MacLeod',
+        spotifyUrl: 'https://open.spotify.com/track/0hQZyBWcYejAzb9WYM96pr?si=866aa6756cb24293' },
+      { src: 'assets/photo3.jpg', title: 'We Need To Talk', artist: 'Matt Maltese',
+        spotifyUrl: 'https://open.spotify.com/track/1gqMcDslzFtgOsAZDY58JX?si=f1e735a57f8e4076' },
+      { src: 'assets/photo4.jpg', title: 'Alone At The Party', artist: 'Sam Tompkins',
+        spotifyUrl: 'https://open.spotify.com/track/0YO7moiEboCUBDFf0hefSk?si=6abe803a16734b2e' },
+      { src: 'assets/photo5.jpg', title: 'Dollar Signs', artist: 'Nemahsis',
+        spotifyUrl: 'https://open.spotify.com/track/6YyEuMnthCvLOZCGEbksAF?si=ea15d86f0f7d416d' },
+      { src: 'assets/photo6.jpg', title: 'Coming Closer', artist: 'Duckwrth',
+        spotifyUrl: 'https://open.spotify.com/track/238p3EKRYESqsZdgE5DCDR?si=7f4332128f954948' },
+      { src: 'assets/photo7.jpg', title: 'This Is The Place', artist: 'Tom Grennan',
+        spotifyUrl: 'https://open.spotify.com/track/0UtoTf0kuz8x6Zfy59r8hp?si=9f2dc0ed23c54266' },
+      { src: 'assets/photo8.jpg', title: 'Skin', artist: 'Joy Crookes',
+        spotifyUrl: 'https://open.spotify.com/track/7k8b5u5fisGTDNahrJK6dw?si=2a87e548bd1c45ef' },
+      { src: 'assets/photo9.jpg', title: 'Paradise', artist: 'Griff',
+        spotifyUrl: 'https://open.spotify.com/track/7nfaD0trhQiStQ8DOQRC0h?si=9e7715a383e14fca' },
+      { src: 'assets/photo10.jpg',title: 'LMLY', artist: 'Jackson Wang',
+        spotifyUrl: 'https://open.spotify.com/track/3kPoV6L9vXpbxoM4Ux0KnX?si=6891a359c7fb4f50' },
+      { src: 'assets/photo11.jpg',title: '54321', artist: 'April',
+        spotifyUrl: 'https://open.spotify.com/track/6Vn5hk8NQIkzGsdkx5nF4q?si=42dbda986fb842fe' },
+      { src: 'assets/photo12.jpg',title: 'Boy Clothes', artist: 'Nxdia',
+        spotifyUrl: 'https://open.spotify.com/track/7nuCxvFVT5YEAjSDd6Glr?si=a241207fac3348d8' },
+      { src: 'assets/photo13.jpg',title: 'Options (feat. Lil Baby)', artist: 'Jordan Adetunji',
+        spotifyUrl: 'https://open.spotify.com/track/0aQD4RI0U4pHWzNzQWTq9r?si=e5080b16576548f3' },
+      { src: 'assets/photo14.jpg',title: '305 (feat. Bryson Tiller)',artist: 'Jordan Adetunji',
+        spotifyUrl: 'https://open.spotify.com/track/494f07w2ArJNlkwnWWZViK?si=a3ff4f4b26ce4a53' },
+      { src: 'assets/photo15.jpg',title: 'Stick Of Gum', artist: 'Nemahsis',
+        spotifyUrl: 'https://open.spotify.com/track/7DvOMvKBZESff6Etf0v9MY?si=c31005880f374552' }
+    ];
     this.loadedImages = [];
 
-    // game state
     this.snake     = null;
     this.target    = null;
     this.manualDir = null;
@@ -198,11 +191,10 @@ class GameController {
     this.rafId     = null;
     this.lastTime  = 0;
 
-    // wire up
     this._bindEvents();
     this.board.onResize = () => this.draw();
 
-    // preload then start
+    // preload images, init pool, start game
     this._preload().then(() => {
       this._resetImagePool();
       this.start();
@@ -240,41 +232,6 @@ class GameController {
     window.addEventListener('keydown', e => this._handleKey(e));
   }
 
-  _handleClick(e) {
-    const pos = this._getEventPos(e);
-    if (this.target && pos.x === this.target.x && pos.y === this.target.y) {
-      const id = this.imagesData[this.target.metaIndex].spotifyUrl.match(/track\/(\w+)/)[1];
-      this.spotifyEmbed.src = `https://open.spotify.com/embed/track/${id}?utm_source=generator&autoplay=1`;
-      this.embedContainer.style.display = 'block';
-    }
-  }
-
-  _handleMouseMove(e) {
-    const pos = this._getEventPos(e);
-    if (this.target && pos.x === this.target.x && pos.y === this.target.y) {
-      const md = this.imagesData[this.target.metaIndex];
-      this.infoBox.textContent = `${md.title} — ${md.artist}`;
-      this.board.canvas.style.cursor = 'pointer';
-    } else {
-      this.infoBox.textContent = '';
-      this.board.canvas.style.cursor = 'default';
-    }
-  }
-
-  _handleKey(e) {
-    const d = this.CELL;
-    const map = {
-      ArrowUp:    { x:  0, y: -d },
-      ArrowDown:  { x:  0, y:  d },
-      ArrowLeft:  { x: -d, y:  0 },
-      ArrowRight: { x:  d, y:  0 }
-    };
-    if (map[e.key]) {
-      this.isManual  = true;
-      this.manualDir = map[e.key];
-    }
-  }
-
   _getEventPos(e) {
     const rect = this.board.canvas.getBoundingClientRect();
     const xCSS = e.clientX - rect.left;
@@ -302,38 +259,47 @@ class GameController {
   start() {
     if (this.rafId) cancelAnimationFrame(this.rafId);
     this.interval = Math.max(this.MIN_SPEED, this.SPEED_BASE / this.speedup);
-    this.snake    = new Snake(this.loadedImages, this.board);
+
+    this.snake = new Snake(this.loadedImages, this.board);
     this.snake.init();
+
+    // consume the initial head image so it isn't reused
+    const initialIdx = this.snake.imageIndices[0] = this._nextImageIndex();
+    const poolPos    = this.imagePool.indexOf(initialIdx);
+    if (poolPos !== -1) this.imagePool.splice(poolPos, 1);
+
     this._spawnTarget();
+
     this.lastTime = performance.now();
     this.isManual = false;
     this.rafId    = requestAnimationFrame(ts => this._loop(ts));
   }
 
-  _loop(ts) {
-    const delta = ts - this.lastTime;
+  _loop(timestamp) {
+    const delta = timestamp - this.lastTime;
     if (delta >= this.interval) {
-      this.lastTime = ts;
+      this.lastTime = timestamp;
       this._step();
     }
-    this.rafId = requestAnimationFrame(t => this._loop(t));
+    this.rafId = requestAnimationFrame(ts => this._loop(ts));
   }
 
   _step() {
-    const nextPos = this.snake.move(this.target, this.isManual ? this.manualDir : null);
+    const nextPos = this.snake.move(
+      this.target,
+      this.isManual ? this.manualDir : null
+    );
+    // death
     if (!nextPos || this.snake.positions.some(p => p.x === nextPos.x && p.y === nextPos.y)) {
       return this._die();
     }
-
     const ate = nextPos.x === this.target.x && nextPos.y === this.target.y;
     this.snake.growOrMove(nextPos, ate ? this.target.metaIndex : null);
-
     if (ate) {
       this.speedup = Math.min(this.speedup + this.SPEEDUP_INCREMENT, this.MAX_SPEEDUP);
       this.interval = Math.max(this.MIN_SPEED, this.SPEED_BASE / this.speedup);
       this._spawnTarget();
     }
-
     this.draw();
   }
 
@@ -387,5 +353,4 @@ class GameController {
   }
 }
 
-// ─── Initialize when DOM is ready ────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => new GameController());
