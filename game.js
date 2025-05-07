@@ -147,8 +147,8 @@ class GameController {
     this.infoBox        = document.getElementById('info-box');
     this.spotifyEmbed   = document.getElementById('spotify-embed');
     this.embedContainer = document.getElementById('spotify-embed-container');
-    this.titleEl        = document.getElementById('song-title');
-    this.artistEl       = document.getElementById('song-artist');
+   /* this.titleEl        = document.getElementById('song-title');
+    this.artistEl       = document.getElementById('song-artist');*/
 
     this.imagesData = [
       { src: 'assets/photo1.jpg', title: 'Verbathim (Album)', artist: 'Nemahsis',
@@ -256,11 +256,11 @@ class GameController {
       y = Math.floor(Math.random() * rows) * cellSize;
     } while (this.snake.positions.some(p => p.x === x && p.y === y));
 
-    const idx = this._nextImageIndex();
+    /*const idx = this._nextImageIndex();
     this.target = { x, y, metaIndex: idx };
     const md    = this.imagesData[idx];
     this.titleEl.textContent  = md.title;
-    this.artistEl.textContent = md.artist;
+    this.artistEl.textContent = md.artist;*/
   }
 
   start() {
