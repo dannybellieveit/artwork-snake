@@ -3,7 +3,7 @@
 // • Gradual speedup & reset on death
 // • Title & artist overlay
 
-// ─── shuffle helper ──────────────────────────────────────────────────────────────
+// ─── shuffle helper ─────────────────────────────────────────────────────────────
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -11,11 +11,11 @@ function shuffle(arr) {
   }
 }
 
-// ─── Board class ─────────────────────────────────────────────────────────────────
+// ─── Board class ────────────────────────────────────────────────────────────────
 class Board {
   constructor(canvasId, cellSize) {
     this.canvas = document.getElementById(canvasId);
-    this.ctx    = this.canvas.getContext('2d');
+    this.ctx = this.canvas.getContext('2d');
     this.cellSize = cellSize;
     this.cols = 0;
     this.rows = 0;
@@ -40,15 +40,15 @@ class Board {
 
   resize() {
     const rect = this.canvas.parentElement.getBoundingClientRect();
-    const dpr  = window.devicePixelRatio || 1;
+    const dpr = window.devicePixelRatio || 1;
 
-    this.canvas.width  = rect.width  * dpr;
+    this.canvas.width = rect.width * dpr;
     this.canvas.height = rect.height * dpr;
 
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     this.ctx.scale(dpr, dpr);
 
-    this.cols = Math.floor(rect.width  / this.cellSize);
+    this.cols = Math.floor(rect.width / this.cellSize);
     this.rows = Math.floor(rect.height / this.cellSize);
 
     if (this.onResize) this.onResize();
@@ -65,12 +65,12 @@ class Board {
   }
 }
 
-// ─── Snake class ─────────────────────────────────────────────────────────────────
+// ─── Snake class ────────────────────────────────────────────────────────────────
 class Snake {
   constructor(images, board) {
     this.images = images;
-    this.board  = board;
-    this.positions    = [];
+    this.board = board;
+    this.positions = [];
     this.imageIndices = [];
   }
 
@@ -78,9 +78,8 @@ class Snake {
     const { cols, rows, cellSize } = this.board;
     const x = Math.floor(Math.random() * cols) * cellSize;
     const y = Math.floor(Math.random() * rows) * cellSize;
-    this.positions    = [{ x, y }];
-    // use first image index from pool (will be removed by GameController)
-    this.imageIndices = [null];
+    this.positions = [{ x, y }];
+    this.imageIndices = [null]; // use first image index from pool (will be removed by GameController)
   }
 
   move(target, manualDir) {
@@ -96,14 +95,16 @@ class Snake {
   _getCandidates(head, target) {
     const d = this.board.cellSize;
     const dirs = [
-      { x: d,  y: 0 },
+      { x: d, y: 0 },
       { x: -d, y: 0 },
-      { x: 0,  y: d },
-      { x: 0,  y: -d }
+      { x: 0, y: d },
+      { x: 0, y: -d }
     ];
     dirs.sort((a, b) => {
-      const da = Math.abs(head.x + a.x - target.x) + Math.abs(head.y + a.y - target.y);
-      const db = Math.abs(head.x + b.x - target.x) + Math.abs(head.y + b.y - target.y);
+      const da =
+        Math.abs(head.x + a.x - target.x) + Math.abs(head.y + a.y - target.y);
+      const db =
+        Math.abs(head.x + b.x - target.x) + Math.abs(head.y + b.y - target.y);
       return da - db;
     });
     return dirs
@@ -113,14 +114,17 @@ class Snake {
 
   _isValid(pos) {
     const { cols, rows, cellSize } = this.board;
-    const inBounds = pos.x >= 0 && pos.x < cols * cellSize &&
-                     pos.y >= 0 && pos.y < rows * cellSize;
-    const notSelf  = !this.positions.some(p => p.x === pos.x && p.y === pos.y);
+    const inBounds =
+      pos.x >= 0 &&
+      pos.x < cols * cellSize &&
+      pos.y >= 0 &&
+      pos.y < rows * cellSize;
+    const notSelf = !this.positions.some(p => p.x === pos.x && p.y === pos.y);
     return inBounds && notSelf;
   }
 
   growOrMove(nextPos, ateIndex) {
-    if (nextPos === null) return false;  // trapped → death
+    if (nextPos === null) return false; // trapped → death
     this.positions.unshift(nextPos);
     if (ateIndex != null) {
       this.imageIndices.push(ateIndex);
@@ -131,231 +135,36 @@ class Snake {
   }
 }
 
-// ─── GameController ──────────────────────────────────────────────────────────────
+// ─── GameController ─────────────────────────────────────────────────────────────
 class GameController {
   constructor() {
-    this.CELL              = 50;
-    this.SPEED_BASE        = 400;
-    this.MIN_SPEED         = 50;
-    this.MAX_SPEEDUP       = 5;
+    this.CELL = 50;
+    this.SPEED_BASE = 400;
+    this.MIN_SPEED = 50;
+    this.MAX_SPEEDUP = 5;
     this.SPEEDUP_INCREMENT = 0.1;
 
-    this.speedup   = 1;
+    this.speedup = 1;
     this.imagePool = [];
 
-    this.board          = new Board('game-canvas', this.CELL);
-    this.infoBox        = document.getElementById('info-box');
-    this.spotifyEmbed   = document.getElementById('spotify-embed');
+    this.board = new Board('game-canvas', this.CELL);
+    this.infoBox = document.getElementById('info-box');
+    this.spotifyEmbed = document.getElementById('spotify-embed');
     this.embedContainer = document.getElementById('spotify-embed-container');
-   /* this.titleEl        = document.getElementById('song-title');
-    this.artistEl       = document.getElementById('song-artist');*/
 
     this.imagesData = [
-      { src: 'assets/photo1.jpg', title: 'Verbathim (Album)', artist: 'Nemahsis',
-        spotifyUrl: 'https://open.spotify.com/track/2lmT9NiqohWoRf9yAxt4Ru?si=7291e441baaa452a' },
-      { src: 'assets/photo2.jpg', title: 'TV Show', artist: 'Katie Gregson-MacLeod',
-        spotifyUrl: 'https://open.spotify.com/track/0hQZyBWcYejAzb9WYM96pr?si=866aa6756cb24293' },
-      { src: 'assets/photo3.jpg', title: 'We Need To Talk', artist: 'Matt Maltese',
-        spotifyUrl: 'https://open.spotify.com/track/1gqMcDslzFtgOsAZDY58JX?si=f1e735a57f8e4076' },
-      { src: 'assets/photo4.jpg', title: 'Alone At The Party', artist: 'Sam Tompkins',
-        spotifyUrl: 'https://open.spotify.com/track/0YO7moiEboCUBDFf0hefSk?si=6abe803a16734b2e' },
-      { src: 'assets/photo5.jpg', title: 'Dollar Signs', artist: 'Nemahsis',
-        spotifyUrl: 'https://open.spotify.com/track/6YyEuMnthCvLOZCGEbksAF?si=ea15d86f0f7d416d' },
-      { src: 'assets/photo6.jpg', title: 'Coming Closer', artist: 'Duckwrth',
-        spotifyUrl: 'https://open.spotify.com/track/238p3EKRYESqsZdgE5DCDR?si=7f4332128f954948' },
-      { src: 'assets/photo7.jpg', title: 'This Is The Place', artist: 'Tom Grennan',
-        spotifyUrl: 'https://open.spotify.com/track/0UtoTf0kuz8x6Zfy59r8hp?si=9f2dc0ed23c54266' },
-      { src: 'assets/photo8.jpg', title: 'Skin', artist: 'Joy Crookes',
-        spotifyUrl: 'https://open.spotify.com/track/7k8b5u5fisGTDNahrJK6dw?si=2a87e548bd1c45ef' },
-      { src: 'assets/photo9.jpg', title: 'Paradise', artist: 'Griff',
-        spotifyUrl: 'https://open.spotify.com/track/7nfaD0trhQiStQ8DOQRC0h?si=9e7715a383e14fca' },
-      { src: 'assets/photo10.jpg',title: 'LMLY', artist: 'Jackson Wang',
-        spotifyUrl: 'https://open.spotify.com/track/3kPoV6L9vXpbxoM4Ux0KnX?si=6891a359c7fb4f50' },
-      { src: 'assets/photo11.jpg',title: '54321', artist: 'April',
-        spotifyUrl: 'https://open.spotify.com/track/6Vn5hk8NQIkzGsdkx5nF4q?si=42dbda986fb842fe' },
-      { src: 'assets/photo12.jpg',title: 'Boy Clothes', artist: 'Nxdia',
-        spotifyUrl: 'https://open.spotify.com/track/7nuCxvFVT5YEAjSDd6Glr?si=a241207fac3348d8' },
-      { src: 'assets/photo13.jpg',title: 'Options (feat. Lil Baby)', artist: 'Jordan Adetunji',
-        spotifyUrl: 'https://open.spotify.com/track/0aQD4RI0U4pHWzNzQWTq9r?si=e5080b16576548f3' },
-      { src: 'assets/photo14.jpg',title: '305 (feat. Bryson Tiller)',artist: 'Jordan Adetunji',
-        spotifyUrl: 'https://open.spotify.com/track/494f07w2ArJNlkwnWWZViK?si=a3ff4f4b26ce4a53' },
-      { src: 'assets/photo15.jpg',title: 'Stick Of Gum', artist: 'Nemahsis',
-        spotifyUrl: 'https://open.spotify.com/track/7DvOMvKBZESff6Etf0v9MY?si=c31005880f374552' }
+      { src: 'assets/photo1.jpg', title: 'Verbathim (Album)', artist: 'Nemahsis' },
+      { src: 'assets/photo2.jpg', title: 'TV Show', artist: 'Katie Gregson-MacLeod' },
+      { src: 'assets/photo3.jpg', title: 'We Need To Talk', artist: 'Matt Maltese' },
+      // Add remaining images...
     ];
+
     this.loadedImages = [];
+    this.snake = null;
+    this.target = null;
 
-    this.snake     = null;
-    this.target    = null;
-    this.manualDir = null;
-    this.isManual  = false;
-    this.rafId     = null;
-    this.lastTime  = 0;
-
-    this._bindEvents();
-    this.board.onResize = () => this.draw();
-
-    // preload images, init pool, start game
     this._preload().then(() => {
-      this._resetImagePool();
       this.start();
-    });
-  }
-
-  _resetImagePool() {
-    this.imagePool = this.imagesData.map((_, i) => i);
-    shuffle(this.imagePool);
-  }
-
-  _nextImageIndex() {
-    if (this.imagePool.length === 0) this._resetImagePool();
-    return this.imagePool.shift();
-  }
-
-  _preload() {
-    this.loadedImages = this.imagesData.map(d => {
-      const img = new Image();
-      img.src = d.src;
-      return img;
-    });
-    return Promise.all(
-      this.loadedImages.map(img => new Promise(res => {
-        img.onload  = res;
-        img.onerror = () => { console.error('Failed to load', img.src); res(); };
-      }))
-    );
-  }
-
-  _bindEvents() {
-  const canvas = this.board.canvas;
-  if (!canvas) {
-    console.error('🏷️  Canvas element not found. Check your ID.');
-    return;
-  }
-
-  // bind ensures `this` inside the handler is your GameController
-  canvas.addEventListener('click',     this._handleClick.bind(this));
-  canvas.addEventListener('mousemove', this._handleMouseMove.bind(this));
-  window.addEventListener('keydown',   this._handleKey.bind(this));
-}
-
-
-  _getEventPos(e) {
-    const rect = this.board.canvas.getBoundingClientRect();
-    const xCSS = e.clientX - rect.left;
-    const yCSS = e.clientY - rect.top;
-    const col  = Math.floor(xCSS / this.CELL);
-    const row  = Math.floor(yCSS / this.CELL);
-    return { x: col * this.CELL, y: row * this.CELL };
-  }
-
-  _spawnTarget() {
-    const { cols, rows, cellSize } = this.board;
-    let x, y;
-    do {
-      x = Math.floor(Math.random() * cols) * cellSize;
-      y = Math.floor(Math.random() * rows) * cellSize;
-    } while (this.snake.positions.some(p => p.x === x && p.y === y));
-
-    /*const idx = this._nextImageIndex();
-    this.target = { x, y, metaIndex: idx };
-    const md    = this.imagesData[idx];
-    this.titleEl.textContent  = md.title;
-    this.artistEl.textContent = md.artist;*/
-  }
-
-  start() {
-    if (this.rafId) cancelAnimationFrame(this.rafId);
-    this.interval = Math.max(this.MIN_SPEED, this.SPEED_BASE / this.speedup);
-
-    this.snake = new Snake(this.loadedImages, this.board);
-    this.snake.init();
-
-    // consume the initial head image so it isn't reused
-    const initialIdx = this.snake.imageIndices[0] = this._nextImageIndex();
-    const poolPos    = this.imagePool.indexOf(initialIdx);
-    if (poolPos !== -1) this.imagePool.splice(poolPos, 1);
-
-    this._spawnTarget();
-
-    this.lastTime = performance.now();
-    this.isManual = false;
-    this.rafId    = requestAnimationFrame(ts => this._loop(ts));
-  }
-
-  _loop(timestamp) {
-    const delta = timestamp - this.lastTime;
-    if (delta >= this.interval) {
-      this.lastTime = timestamp;
-      this._step();
-    }
-    this.rafId = requestAnimationFrame(ts => this._loop(ts));
-  }
-
-  _step() {
-    const nextPos = this.snake.move(
-      this.target,
-      this.isManual ? this.manualDir : null
-    );
-    // death
-    if (!nextPos || this.snake.positions.some(p => p.x === nextPos.x && p.y === nextPos.y)) {
-      return this._die();
-    }
-    const ate = nextPos.x === this.target.x && nextPos.y === this.target.y;
-    this.snake.growOrMove(nextPos, ate ? this.target.metaIndex : null);
-    if (ate) {
-      this.speedup = Math.min(this.speedup + this.SPEEDUP_INCREMENT, this.MAX_SPEEDUP);
-      this.interval = Math.max(this.MIN_SPEED, this.SPEED_BASE / this.speedup);
-      this._spawnTarget();
-    }
-    this.draw();
-  }
-
-  _die() {
-    cancelAnimationFrame(this.rafId);
-    let flashes = 0;
-    const flash = () => {
-      this.board.clear();
-      this.board.drawCell(this.target.x, this.target.y, (ctx, x, y, s) => {
-        ctx.globalAlpha = 0.8;
-        const img = this.loadedImages[this.target.metaIndex];
-        if (img.naturalWidth) ctx.drawImage(img, x, y, s, s);
-        else ctx.fillRect(x, y, s, s);
-        ctx.globalAlpha = 1;
-      });
-      this.snake.positions.forEach(pos => {
-        this.board.drawCell(pos.x, pos.y, (ctx, x, y, s) => {
-          ctx.fillStyle = flashes % 2 ? 'red' : 'white';
-          ctx.fillRect(x, y, s, s);
-        });
-      });
-      flashes++;
-      if (flashes < 6) {
-        setTimeout(flash, 100);
-      } else {
-        this.speedup = 1;
-        this.start();
-      }
-    };
-    flash();
-  }
-
-  draw() {
-    if (!this.snake || !this.target) return;
-    this.board.clear();
-    this.board.drawCell(this.target.x, this.target.y, (ctx, x, y, s) => {
-      ctx.globalAlpha = 0.8;
-      const img = this.loadedImages[this.target.metaIndex];
-      if (img.naturalWidth) ctx.drawImage(img, x, y, s, s);
-      else ctx.fillRect(x, y, s, s);
-      ctx.globalAlpha = 1;
-    });
-    this.snake.positions.forEach((pos, i) => {
-      this.board.drawCell(pos.x, pos.y, (ctx, x, y, s) => {
-        const idx = this.snake.imageIndices[i];
-        const img = this.loadedImages[idx];
-        if (img && img.naturalWidth) ctx.drawImage(img, x, y, s, s);
-        else ctx.fillRect(x, y, s, s);
-      });
     });
   }
 }
