@@ -226,11 +226,18 @@ class GameController {
   }
 
   _bindEvents() {
-    const c = this.board.canvas;
-    c.addEventListener('click',     e => this._handleClick(e));
-    c.addEventListener('mousemove', e => this._handleMouseMove(e));
-    window.addEventListener('keydown', e => this._handleKey(e));
+  const canvas = this.board.canvas;
+  if (!canvas) {
+    console.error('🏷️  Canvas element not found. Check your ID.');
+    return;
   }
+
+  // bind ensures `this` inside the handler is your GameController
+  canvas.addEventListener('click',     this._handleClick.bind(this));
+  canvas.addEventListener('mousemove', this._handleMouseMove.bind(this));
+  window.addEventListener('keydown',   this._handleKey.bind(this));
+}
+
 
   _getEventPos(e) {
     const rect = this.board.canvas.getBoundingClientRect();
