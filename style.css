@@ -40,7 +40,7 @@ canvas {
   display: block;
 }
 
-.info-box {
+/*.info-box {
   position: absolute;
   bottom: 0;
   left: 50%;
@@ -53,6 +53,7 @@ canvas {
   white-space: nowrap;
   color: var(--font-color-light);
 }
+*/
 
 /* SPOTIFY EMBED Container */
 #spotify-embed-container {
