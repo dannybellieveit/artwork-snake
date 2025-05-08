@@ -103,7 +103,8 @@ footer {
     font-size: var(--font-size-sm);
   }
   .game-container {
-    width: var(--container-width);
+    width: 100vw;
+    max-width: none;
   }
   canvas {
     aspect-ratio: 3 / 4;
