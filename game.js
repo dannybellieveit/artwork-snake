@@ -134,7 +134,7 @@ class GameController {
     this.board          = new Board('game-canvas', this.CELL);
     this.spotifyEmbed   = document.getElementById('spotify-embed');
     this.embedContainer = document.getElementById('spotify-embed-container');
-    this.        = document.getElementById('info-box');
+    this.infobox = document.getElementById('info-box');
 
     this.imagesData = [
       { src: 'assets/photo1.jpg', title: 'Verbathim (Album)', artist: 'Nemahsis',
