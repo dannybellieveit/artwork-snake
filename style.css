@@ -14,95 +14,65 @@ html, body {
   font-family: sans-serif;
 }
 
-/* 2. Page background & layout */
+/* 1a. Restore your sky‐blue background */
 body {
   background: skyblue;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  min-height: 100vh;
 }
 
-/* 3. Game container: 16:9 ratio, max-width, centered */
+/* 2. Game container: keep 16:9, fluid up to 800px */
 .game-container {
-  position: relative;
-  width: 90vw;
+  width: 90%;
   max-width: 800px;
+  margin: 2rem auto;
+  position: relative;
   aspect-ratio: 16 / 9;
-  border: 5px solid black;
   background: #000;
-  margin: 2rem 0;
-  overflow: hidden;
+  border: 5px solid black; /* if you want the old thick border back */
 }
 
-canvas {
+/* 3. Canvas always fills its container */
+#game-canvas {
   width: 100%;
   height: 100%;
   display: block;
 }
 
-/* 4. Info box overlay */
-.info-box {
+/* 4. Info-box overlay */
+#info-box {
   position: absolute;
-  bottom: 1rem;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(255, 255, 255, 0.8);
-  color: #000;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-size: 1rem;
+  top: 1rem;
+  left: 1rem;
+  color: #fff;
   pointer-events: none;
-  white-space: nowrap;
 }
 
-/* 5. Spotify embed */
+/* 5. Hide the empty Spotify iframe by default */
 #spotify-embed-container {
-  width: 90vw;
-  max-width: 800px;
-  margin-bottom: 2rem;
+  display: none;
 }
 
-#spotify-embed {
-  width: 100%;
-  height: 152px; /* default playlist embed height */
-  border: none;
-  display: block;
-}
-
-/* 6. Footer & contact links */
+/* 6. Footer links (email/Instagram/Spotify link) */
 footer {
-  width: 100%;
   background: #f8f8f8;
   padding: 1.5rem 0;
-  margin-top: auto;
 }
-
 ul.contacts {
   list-style: none;
   display: flex;
-  flex-wrap: wrap;
   justify-content: center;
+  flex-wrap: wrap;
   gap: 1.5rem;
   margin: 0;
   padding: 0;
 }
-
 ul.contacts li a {
   text-decoration: none;
-  color: #333;
-  font-weight: bold;
   font-size: 1.1rem;
+  color: #0073e6;
 }
 
-/* 7. Tweak for smaller screens */
-@media (max-width: 600px) {
-  .info-box {
-    font-size: 0.9rem;
-    padding: 0.4rem 0.8rem;
-  }
-
+/* 7. Tweak for very small screens */
+@media (max-width: 400px) {
   ul.contacts {
     gap: 1rem;
   }
