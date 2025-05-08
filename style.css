@@ -1,63 +1,51 @@
 /* style.css */
 
-/* Define CSS Variables for Reusability and Consistency */
+/* CSS Variables for Reusability */
 :root {
   --primary-bg-color: skyblue;
   --border-color: black;
   --font-color-dark: #333;
-  --font-color-light: #000;
-  --font-size-lg: 16px;
-  --font-size-sm: 14px;
-  --gap-large: 16px;
-  --gap-small: 8px;
+  --font-family: sans-serif;
   --container-width: 90vw;
   --container-max-width: 800px;
-  --spotify-height: 80px;
-  --border-radius: 4px;
-  /* …other variables… */
+  --padding-top-16-9: 56.25%; /* 9/16 = 0.5625 */
 }
 
 /* Global Styles */
 body {
   margin: 0;
   padding: 0;
-  font-family: sans-serif;
+  font-family: var(--font-family);
   background-color: var(--primary-bg-color);
   color: var(--font-color-dark);
 }
 
-/* Game Container – fixed aspect ratio ensures JS can size the canvas reliably */
+/* Game Container – uses padding-top for a 16:9 box */
 .game-container {
+  position: relative;
   width: var(--container-width);
   max-width: var(--container-max-width);
-  aspect-ratio: 16 / 9;    /* enforce a 16:9 container */
+  padding-top: var(--padding-top-16-9);
   margin: 0 auto;
-  /* you can also add padding or borders here */
+  /* height is implied by padding-top */
 }
 
-/* Canvas fills its container exactly */
+/* Canvas absolutely fills that padded box */
 canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   display: block;
   border: 1px solid var(--border-color);
-  /* remove any CSS aspect-ratio here */
 }
-
-/* …other component styles… */
 
 /* Mobile adjustments */
 @media (max-width: 600px) {
-  /* Let the container span full width on small screens */
   .game-container {
     width: 100vw;
     max-width: none;
-    /* aspect-ratio stays 16:9 */
-  }
-  /* Canvas continues to fill container – no tug-of-war */
-  canvas {
-    /* no aspect-ratio here */
-    width: 100%;
-    height: 100%;
+    /* padding-top stays 56.25% for 16:9 */
   }
 }
