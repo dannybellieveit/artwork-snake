@@ -2,41 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <!-- Responsive viewport -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <!-- Your SEO tags -->
+  <meta name="description" content="Songwriter/Producer based in London, UK">
+  <meta name="keywords" content="Danny Casio, games, music, Spotify, Instagram, website, the six, discography, genius, wikipedia, biography, about, age, producer, songwriter, chorley, manchester, london, the dairy, brixton, juno, junos, nemahsis, jordan adetunji, boyle">
+  
   <title>Danny Casio</title>
   <link rel="stylesheet" href="style.css">
 </head>
-  
 <body>
 
-  <!-- Game Container -->
+  <!-- Game + metadata overlay -->
   <div class="game-container">
     <canvas id="game-canvas" width="800" height="450"></canvas>
-    <div id="info-box"></div>
+    <div id="info-box" class="info-box"></div>
   </div>
 
-  <!-- Spotify Embed Container -->
-  <div id="spotify-embed-container">
-    <iframe
-      id="spotify-embed"
-      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-      loading="lazy"
-      /src="https://open.spotify.com/embed/playlist/37i9dQZF1EFCSLSz1lSDiP?si=45a9c9f28bfe43e8"
-    >
-      Your browser does not support iframes.
-    </iframe>
-  </div>
-
-  <!-- Footer Section -->
-  <footer>
-    <ul class="contacts">
-      <li><a href="mailto:info@dannycasio.com" aria-label="Email Danny Casio">Email</a></li>
-      <li><a href="https://instagram.com/dannycasio_/" target="_blank" aria-label="Visit Danny Casio's Instagram">Instagram</a></li>
-      <li><a href="https://open.spotify.com/playlist/37i9dQZF1EFCSLSz1lSDiP?si=45a9c9f28bfe43e8" target="_blank" aria-label="Listen to Danny Casio on Spotify">Spotify</a></li>
-    </ul>
-  </footer>
-
-  <!-- JavaScript File -->
   <script src="game.js" defer></script>
 </body>
 </html>
