@@ -65,7 +65,7 @@ body {
 
 /* 7) Footer styling */
 footer {
-  background: #f8f8f8;
+  background: transparent;
   width: 100%;
   padding: 1.5rem 0;
 }
