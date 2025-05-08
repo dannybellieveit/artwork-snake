@@ -1,9 +1,10 @@
-/* style.css */
-
 /* 1) Global reset & box-sizing */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
+
 html, body {
   margin: 0;
   padding: 0;
@@ -11,85 +12,55 @@ html, body {
   font-family: sans-serif;
 }
 
-/* 2) Your original sky-blue background */
+/* 2) Your original sky-blue background & centering */
 body {
   background: skyblue;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   min-height: 100vh;
 }
 
-/* 3) Game container keeps 16:9, max-width 800px */
+/* 3) Game container: fixed aspect ratio, max-width, black border */
 .game-container {
-  width: 90%;
-  max-width: 800px;
-  margin: 2rem auto;
   position: relative;
+  width: 90vw;
+  max-width: 800px;
   aspect-ratio: 16 / 9;
+  border: 5px solid black;
   background: #000;
-  border: 5px solid black; /* bring back your thick black border */
   overflow: hidden;
 }
 
-/* 4) Canvas fills it completely */
-#game-canvas {
+/* 4) Canvas fills its container */
+canvas {
   width: 100%;
-  height: 100%;
+  height: auto;
   display: block;
 }
 
-/* 5) Info-box overlay on top */
-#info-box {
+/* 5) Info-box overlay (image number / metadata) */
+.info-box {
   position: absolute;
-  top: 1rem;
-  left: 1rem;
-  color: #fff;
+  bottom: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.8);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 1rem;
   pointer-events: none;
+  white-space: nowrap;
+  color: #000;
 }
 
-/* 6) Hide the Spotify area until your click handler shows it */
-#spotify-embed-container {
-  display: none;
-  width: 90%;
-  max-width: 800px;
-  margin: 2rem auto;
-}
-#spotify-embed {
-  width: 100%;
-  height: 152px; /* default Spotify embed height */
-  border: none;
-  display: block;
-}
-
-/* 7) Footer styling */
-footer {
-  background: transparent;
-  width: 100%;
-  padding: 1.5rem 0;
-}
-ul.contacts {
-  list-style: none;
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-  margin: 0;
-  padding: 0;
-}
-ul.contacts li a {
-  text-decoration: none;
-  font-size: 1.1rem;
-  color: #0073e6;
-}
-
-/* 8) Small-screen tweaks */
-@media (max-width: 400px) {
-  ul.contacts {
-    gap: 1rem;
+/* 6) Mobile tweaks */
+@media (max-width: 600px) {
+  .game-container {
+    width: 95vw;
   }
-  ul.contacts li a {
-    font-size: 1rem;
+  .info-box {
+    font-size: 0.9rem;
+    padding: 3px 6px;
   }
 }
