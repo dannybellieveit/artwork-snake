@@ -1,12 +1,9 @@
 /* style.css */
 
-/* 1. Global reset & box-sizing */
-*,
-*::before,
-*::after {
+/* 1) Global reset & box-sizing */
+*, *::before, *::after {
   box-sizing: border-box;
 }
-
 html, body {
   margin: 0;
   padding: 0;
@@ -14,12 +11,17 @@ html, body {
   font-family: sans-serif;
 }
 
-/* 1a. Restore your sky‐blue background */
+/* 2) Your original sky-blue background */
 body {
   background: skyblue;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100vh;
 }
 
-/* 2. Game container: keep 16:9, fluid up to 800px */
+/* 3) Game container keeps 16:9, max-width 800px */
 .game-container {
   width: 90%;
   max-width: 800px;
@@ -27,17 +29,18 @@ body {
   position: relative;
   aspect-ratio: 16 / 9;
   background: #000;
-  border: 5px solid black; /* if you want the old thick border back */
+  border: 5px solid black; /* bring back your thick black border */
+  overflow: hidden;
 }
 
-/* 3. Canvas always fills its container */
+/* 4) Canvas fills it completely */
 #game-canvas {
   width: 100%;
   height: 100%;
   display: block;
 }
 
-/* 4. Info-box overlay */
+/* 5) Info-box overlay on top */
 #info-box {
   position: absolute;
   top: 1rem;
@@ -46,14 +49,24 @@ body {
   pointer-events: none;
 }
 
-/* 5. Hide the empty Spotify iframe by default */
+/* 6) Hide the Spotify area until your click handler shows it */
 #spotify-embed-container {
   display: none;
+  width: 90%;
+  max-width: 800px;
+  margin: 2rem auto;
+}
+#spotify-embed {
+  width: 100%;
+  height: 152px; /* default Spotify embed height */
+  border: none;
+  display: block;
 }
 
-/* 6. Footer links (email/Instagram/Spotify link) */
+/* 7) Footer styling */
 footer {
   background: #f8f8f8;
+  width: 100%;
   padding: 1.5rem 0;
 }
 ul.contacts {
@@ -71,7 +84,7 @@ ul.contacts li a {
   color: #0073e6;
 }
 
-/* 7. Tweak for very small screens */
+/* 8) Small-screen tweaks */
 @media (max-width: 400px) {
   ul.contacts {
     gap: 1rem;
