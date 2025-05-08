@@ -1,5 +1,9 @@
-/* Reset and global box-sizing */
-*, *::before, *::after {
+/* style.css */
+
+/* 1. Global reset & box-sizing */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -10,67 +14,95 @@ html, body {
   font-family: sans-serif;
 }
 
-/* Game container keeps a 16:9 ratio and scales */
-.game-container {
-  width: 90%;
-  max-width: 800px;
-  margin: 2rem auto;
-  position: relative;
-  aspect-ratio: 16 / 9;
-  background: #000;
+/* 2. Page background & layout */
+body {
+  background: skyblue;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100vh;
 }
 
-/* Canvas fills the container */
-#game-canvas {
+/* 3. Game container: 16:9 ratio, max-width, centered */
+.game-container {
+  position: relative;
+  width: 90vw;
+  max-width: 800px;
+  aspect-ratio: 16 / 9;
+  border: 5px solid black;
+  background: #000;
+  margin: 2rem 0;
+  overflow: hidden;
+}
+
+canvas {
   width: 100%;
   height: 100%;
   display: block;
 }
 
-/* Info box sits on top if you need it */
-#info-box {
+/* 4. Info box overlay */
+.info-box {
   position: absolute;
-  top: 1rem;
-  left: 1rem;
-  color: #fff;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.8);
+  color: #000;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 1rem;
   pointer-events: none;
+  white-space: nowrap;
 }
 
-/* Spotify embed wrapper */
+/* 5. Spotify embed */
 #spotify-embed-container {
-  width: 90%;
+  width: 90vw;
   max-width: 800px;
-  margin: 2rem auto;
+  margin-bottom: 2rem;
 }
+
 #spotify-embed {
   width: 100%;
-  height: 152px;
+  height: 152px; /* default playlist embed height */
   border: none;
   display: block;
 }
 
-/* Footer links */
+/* 6. Footer & contact links */
 footer {
+  width: 100%;
   background: #f8f8f8;
   padding: 1.5rem 0;
+  margin-top: auto;
 }
+
 ul.contacts {
   list-style: none;
   display: flex;
-  justify-content: center;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 1.5rem;
   margin: 0;
   padding: 0;
 }
+
 ul.contacts li a {
   text-decoration: none;
+  color: #333;
+  font-weight: bold;
   font-size: 1.1rem;
-  color: #0073e6;
 }
 
-/* Tweak for very small screens */
-@media (max-width: 400px) {
+/* 7. Tweak for smaller screens */
+@media (max-width: 600px) {
+  .info-box {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.8rem;
+  }
+
   ul.contacts {
     gap: 1rem;
   }
