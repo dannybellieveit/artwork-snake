@@ -402,3 +402,32 @@ _handleMouseMove(e) {
 
 // Initialize when DOM is ready
 window.addEventListener('DOMContentLoaded', () => new GameController());
+
+// ===== Add this to the end of game.js =====
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Grab the footer link, the hidden iframe and its container
+  const launchLink = document.getElementById('spotify-launch');
+  const embed      = document.getElementById('spotify-embed');
+  const container  = document.getElementById('spotify-embed-container');
+
+  launchLink.addEventListener('click', function(e) {
+    e.preventDefault();  // Stop the normal link navigation
+
+    // 1) Read the playlist URL from the link
+    const playlistUrl = this.href;
+
+    // 2) Convert to the embed form:
+    //    https://open.spotify.com/playlist/... → https://open.spotify.com/embed/playlist/...
+    const embedUrl = playlistUrl.replace(
+      'open.spotify.com/',
+      'open.spotify.com/embed/'
+    );
+
+    // 3) Load it into the iframe
+    embed.src = embedUrl;
+
+    // 4) Reveal the iframe container
+    container.style.display = 'block';
+  });
+});
