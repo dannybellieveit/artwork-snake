@@ -134,7 +134,7 @@ class GameController {
     this.board          = new Board('game-canvas', this.CELL);
     this.spotifyEmbed   = document.getElementById('spotify-embed');
     this.embedContainer = document.getElementById('spotify-embed-container');
-    this.infoBox        = document.getElementById('info-box');
+    this.        = document.getElementById('info-box');
 
     this.imagesData = [
       { src: 'assets/photo1.jpg', title: 'Verbathim (Album)', artist: 'Nemahsis',
@@ -242,7 +242,7 @@ _handleMouseMove(e) {
 
     if (isOverTarget) {
         const md = this.imagesData[this.target.metaIndex];
-        this.infoBox.textContent = `${md.title} — ${md.artist}`;
+        /*this.infoBox.textContent = `${md.title} — ${md.artist}`;*/
         this.board.canvas.style.cursor = 'pointer'; // Show pointer cursor
         console.log('Cursor set to pointer over target'); // Debugging log
     } else {
