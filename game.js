@@ -242,11 +242,11 @@ _handleMouseMove(e) {
 
     if (isOverTarget) {
         const md = this.imagesData[this.target.metaIndex];
-        this.infoBox.textContent = `${md.title} — ${md.artist}`;
+        /*this.infoBox.textContent = `${md.title} — ${md.artist}`;*/
         this.board.canvas.style.cursor = 'pointer'; // Show pointer cursor
         console.log('Cursor set to pointer over target'); // Debugging log
     } else {
-        this.infoBox.textContent = '';
+        /*this.infoBox.textContent = '';*/
         this.board.canvas.style.cursor = 'default'; // Reset to default cursor
         console.log('Cursor reset to default'); // Debugging log
     }
