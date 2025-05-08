@@ -14,103 +14,50 @@
   --container-max-width: 800px;
   --spotify-height: 80px;
   --border-radius: 4px;
+  /* …other variables… */
 }
 
+/* Global Styles */
 body {
   margin: 0;
-  background: var(--primary-bg-color);
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  align-items: center;
-  justify-content: center;
-}
-
-.game-container {
-  position: relative;
-  width: var(--container-width);
-  max-width: var(--container-max-width);
-  border: 5px solid var(--border-color);
-  box-sizing: border-box;
-}
-
-canvas {
-  width: auto;
-  height: auto;
-  display: block;
-}
-
-/*.info-box {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  background: transparent;
-  padding: 6px 12px;
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-lg);
-  pointer-events: none;
-  white-space: nowrap;
-  color: var(--font-color-light);
-}
-*/
-
-/* SPOTIFY EMBED Container */
-#spotify-embed-container {
-  display: none;
-  width: var(--container-width);
-  max-width: var(--container-max-width);
-  margin: var(--gap-large) auto 0;
-  box-sizing: border-box;
-}
-
-#spotify-embed-container iframe {
-  width: 100%;
-  height: var(--spotify-height);
-  border: none;
-  border-radius: var(--border-radius);
-}
-
-footer {
-  padding: 12px 0;
-}
-
-.contacts {
-  list-style: none;
-  display: flex;
-  gap: var(--gap-large);
   padding: 0;
-  margin: 0;
-}
-
-.contacts a {
-  text-decoration: none;
+  font-family: sans-serif;
+  background-color: var(--primary-bg-color);
   color: var(--font-color-dark);
-  font-weight: bold;
 }
 
-/* Add Accessibility Features */
-.contacts a:focus {
-  outline: 2px solid var(--font-color-dark);
-  outline-offset: 4px;
+/* Game Container – fixed aspect ratio ensures JS can size the canvas reliably */
+.game-container {
+  width: var(--container-width);
+  max-width: var(--container-max-width);
+  aspect-ratio: 16 / 9;    /* enforce a 16:9 container */
+  margin: 0 auto;
+  /* you can also add padding or borders here */
 }
 
+/* Canvas fills its container exactly */
+canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 1px solid var(--border-color);
+  /* remove any CSS aspect-ratio here */
+}
+
+/* …other component styles… */
+
+/* Mobile adjustments */
 @media (max-width: 600px) {
-  .info-box {
-    font-size: var(--font-size-sm);
-  }
-  .contacts {
-    gap: var(--gap-small);
-    font-size: var(--font-size-sm);
-  }
+  /* Let the container span full width on small screens */
   .game-container {
-    width: var(--container-width);
+    width: 100vw;
+    max-width: none;
+    /* aspect-ratio stays 16:9 */
   }
+  /* Canvas continues to fill container – no tug-of-war */
   canvas {
-    aspect-ratio: 3 / 4;
+    /* no aspect-ratio here */
     width: 100%;
-    height: auto;
+    height: 100%;
   }
 }
-
-/* Remove unused or commented-out code for clarity */
