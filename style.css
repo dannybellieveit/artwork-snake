@@ -1,51 +1,115 @@
 /* style.css */
 
-/* CSS Variables for Reusability */
+/* Define CSS Variables for Reusability and Consistency */
 :root {
   --primary-bg-color: skyblue;
   --border-color: black;
   --font-color-dark: #333;
-  --font-family: sans-serif;
+  --font-color-light: #000;
+  --font-size-lg: 16px;
+  --font-size-sm: 14px;
+  --gap-large: 16px;
+  --gap-small: 8px;
   --container-width: 90vw;
   --container-max-width: 800px;
-  --padding-top-16-9: 56.25%; /* 9/16 = 0.5625 */
+  --spotify-height: 80px;
+  --border-radius: 4px;
 }
 
-/* Global Styles */
 body {
   margin: 0;
-  padding: 0;
-  font-family: var(--font-family);
-  background-color: var(--primary-bg-color);
-  color: var(--font-color-dark);
+  background: var(--primary-bg-color);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Game Container – uses padding-top for a 16:9 box */
 .game-container {
   position: relative;
   width: var(--container-width);
   max-width: var(--container-max-width);
-  padding-top: var(--padding-top-16-9);
-  margin: 0 auto;
-  /* height is implied by padding-top */
+  border: 5px solid var(--border-color);
+  box-sizing: border-box;
 }
 
-/* Canvas absolutely fills that padded box */
 canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
   height: 100%;
   display: block;
-  border: 1px solid var(--border-color);
 }
 
-/* Mobile adjustments */
+.info-box {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: transparent;
+  padding: 6px 12px;
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-lg);
+  pointer-events: none;
+  white-space: nowrap;
+  color: var(--font-color-light);
+}
+
+/* SPOTIFY EMBED Container */
+#spotify-embed-container {
+  display: none;
+  width: var(--container-width);
+  max-width: var(--container-max-width);
+  margin: var(--gap-large) auto 0;
+  box-sizing: border-box;
+}
+
+#spotify-embed-container iframe {
+  width: 100%;
+  height: var(--spotify-height);
+  border: none;
+  border-radius: var(--border-radius);
+}
+
+footer {
+  padding: 12px 0;
+}
+
+.contacts {
+  list-style: none;
+  display: flex;
+  gap: var(--gap-large);
+  padding: 0;
+  margin: 0;
+}
+
+.contacts a {
+  text-decoration: none;
+  color: var(--font-color-dark);
+  font-weight: bold;
+}
+
+/* Add Accessibility Features */
+.contacts a:focus {
+  outline: 2px solid var(--font-color-dark);
+  outline-offset: 4px;
+}
+
 @media (max-width: 600px) {
+  .info-box {
+    font-size: var(--font-size-sm);
+  }
+  .contacts {
+    gap: var(--gap-small);
+    font-size: var(--font-size-sm);
+  }
   .game-container {
-    width: 100vw;
-    max-width: none;
-    /* padding-top stays 56.25% for 16:9 */
+    width: var(--container-width);
+  }
+  canvas {
+    aspect-ratio: 3 / 4;
+    width: 100%;
+    height: auto;
   }
 }
+
+/* Remove unused or commented-out code for clarity */
