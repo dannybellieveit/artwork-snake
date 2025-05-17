@@ -167,7 +167,7 @@ class GameController {
         spotifyUrl: 'https://open.spotify.com/track/494f07w2ArJNlkwnWWZViK?si=a3ff4f4b26ce4a53' },
        { src: 'assets/photo15.jpg', title: 'Stick Of Gum', artist: 'Nemahsis',
         spotifyUrl: 'https://open.spotify.com/track/7DvOMvKBZESff6Etf0v9MY?si=c31005880f374552' },
-         { src: 'assets/photo16.jpg', title: 'Stick Of Gum', artist: 'Nemahsis',
+         { src: 'assets/photo16.jpg', title: 'congrats! u did it!', artist: 'flowerovlove',
         spotifyUrl: 'https://open.spotify.com/track/5bp8CvtJ8pbh2OK2HSfTwE?si=6895384a7d2343b5' },
       /* …etc… */
     ];
