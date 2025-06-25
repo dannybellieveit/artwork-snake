@@ -171,6 +171,8 @@ class GameController {
         spotifyUrl: 'https://open.spotify.com/track/5bp8CvtJ8pbh2OK2HSfTwE?si=6895384a7d2343b5' },
        { src: 'assets/photo17.jpg', title: 'Appetite', artist: 'Arthur Hill',
         spotifyUrl: 'https://open.spotify.com/track/0q5zMDVszIVZb7kPi2XiOj?si=34033487b3344e8a' },
+       { src: 'assets/photo18.jpg', title: 'Body On Me', artist: 'Nxdia',
+        spotifyUrl: 'https://open.spotify.com/track/6MglZeuPDQwHzZTxrRZfCW?si=11e2487a15304c89' },
       /* …etc… */
     ];
     this.loadedImages = [];
