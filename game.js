@@ -78,7 +78,6 @@ class Snake {
     }
 
     const candidates = this._getCandidates(head, target);
-    console.log('    [move] head @', head, '→ candidates:', candidates);
     return candidates.length ? candidates[0] : null;
   }
 
@@ -249,7 +248,7 @@ class GameController {
         btn.addEventListener(evt, ev => {
           ev.preventDefault();
           this._handleKey({ key });
-        });
+        }, { passive: false });
       });
     };
     bindBtn('.btn-up', 'ArrowUp');
@@ -280,7 +279,7 @@ class GameController {
         }
       }
       startX = startY = null;
-    });
+    }, { passive: false });
   }
 
   _handleClick(e) {
@@ -309,12 +308,10 @@ _handleMouseMove(e) {
     if (isOverTarget) {
         const md = this.imagesData[this.target.metaIndex];
         /*this.infoBox.textContent = `${md.title} — ${md.artist}`;*/
-        this.board.canvas.style.cursor = 'pointer'; // Show pointer cursor
-        console.log('Cursor set to pointer over target'); // Debugging log
+        this.board.canvas.style.cursor = 'pointer';
     } else {
         /*this.infoBox.textContent = '';*/
-        this.board.canvas.style.cursor = 'default'; // Reset to default cursor
-        console.log('Cursor reset to default'); // Debugging log
+        this.board.canvas.style.cursor = 'default';
     }
 }
 
@@ -375,11 +372,6 @@ _handleMouseMove(e) {
     this.snake.init();
     this._spawnTarget();
 
-    console.log('🏁 New round', {
-      head:    this.snake.positions[0],
-      target:  this.target,
-      speedup: this.speedup
-    });
 
     this.lastTime = performance.now();
     this.isManual = false;
@@ -496,11 +488,9 @@ _handleMouseMove(e) {
 }
 
 // Initialize when DOM is ready
-window.addEventListener('DOMContentLoaded', () => new GameController());
+window.addEventListener('DOMContentLoaded', () => {
+  new GameController();
 
-// ===== Add this to the end of game.js =====
-
-document.addEventListener('DOMContentLoaded', () => {
   // Grab the footer link, the hidden iframe and its container
   const launchLink = document.getElementById('spotify-launch');
   const embed      = document.getElementById('spotify-embed');
