@@ -134,7 +134,18 @@ class GameController {
     this.board          = new Board('game-canvas', this.CELL);
     this.spotifyEmbed   = document.getElementById('spotify-embed');
     this.embedContainer = document.getElementById('spotify-embed-container');
-    this.infobox = document.getElementById('info-box');
+    this.infobox        = document.getElementById('info-box');
+
+    this.scoreElem     = document.getElementById('score');
+    this.highScoreElem = document.getElementById('high-score');
+
+    this.scoreElem.style.display = 'none';
+    this.highScoreElem.style.display = 'none';
+
+    this.score          = 0;
+    this.highScore      = parseInt(localStorage.getItem('highScore')) || 0;
+    this.highScoreDate  = localStorage.getItem('highScoreDate') || '';
+    this._updateScores();
 
     this.imagesData = [
       { src: 'assets/photo1.jpg', title: 'Verbathim (Album)', artist: 'Nemahsis',
@@ -202,6 +213,15 @@ class GameController {
     this._preload().then(() => this.start());
   }
 
+  _updateScores() {
+    if (this.scoreElem)
+      this.scoreElem.textContent = `Score: ${this.score}`;
+    if (this.highScoreElem) {
+      const when = this.highScoreDate ? ` (${this.highScoreDate})` : '';
+      this.highScoreElem.textContent = `High Score: ${this.highScore}${when}`;
+    }
+  }
+
   _preload() {
     this.loadedImages = this.imagesData.map(d => {
       const img = new Image();
@@ -267,7 +287,13 @@ _handleMouseMove(e) {
       ArrowRight: { x:  d, y:  0 }
     };
     if (map[e.key]) {
-      this.isManual  = true;
+      if (!this.isManual) {
+        this.isManual = true;
+        this.score = 0;
+        this.scoreElem.style.display = 'block';
+        this.highScoreElem.style.display = 'block';
+        this._updateScores();
+      }
       this.manualDir = map[e.key];
     }
   }
@@ -295,6 +321,11 @@ _handleMouseMove(e) {
 
   start() {
     if (this.rafId) cancelAnimationFrame(this.rafId);
+
+    this.score = 0;
+    this.scoreElem.style.display = 'none';
+    this.highScoreElem.style.display = 'none';
+    this._updateScores();
 
     // compute interval from current speedup (bumped only in _die)
     this.interval = Math.max(this.MIN_SPEED, this.SPEED_BASE / this.speedup);
@@ -338,15 +369,33 @@ _handleMouseMove(e) {
 
     const ate = nextPos.x === this.target.x && nextPos.y === this.target.y;
     this.snake.growOrMove(nextPos, ate ? this.target.metaIndex : null);
-    if (ate) {this.speedup += 0.1; // Increment speedup factor
-              this.interval = Math.max(this.MIN_SPEED, this.SPEED_BASE / this.speedup);
-              this._spawnTarget();
-             }
+    if (ate) {
+      this.speedup += 0.1; // Increment speedup factor
+      this.interval = Math.max(this.MIN_SPEED, this.SPEED_BASE / this.speedup);
+      if (this.isManual) {
+        this.score++;
+        if (this.score > this.highScore) {
+          this.highScore     = this.score;
+          this.highScoreDate = new Date().toLocaleDateString();
+          localStorage.setItem('highScore', this.highScore);
+          localStorage.setItem('highScoreDate', this.highScoreDate);
+        }
+      }
+      this._spawnTarget();
+      if (this.isManual) this._updateScores();
+    }
     this.draw();
   }
 
   _die() {
     cancelAnimationFrame(this.rafId);
+    if (this.isManual && this.score > this.highScore) {
+      this.highScore     = this.score;
+      this.highScoreDate = new Date().toLocaleDateString();
+      localStorage.setItem('highScore', this.highScore);
+      localStorage.setItem('highScoreDate', this.highScoreDate);
+    }
+    if (this.isManual) this._updateScores();
     let flashes = 0;
 
     const flash = () => {
