@@ -134,13 +134,19 @@ class GameController {
     this.board          = new Board('game-canvas', this.CELL);
     this.spotifyEmbed   = document.getElementById('spotify-embed');
     this.embedContainer = document.getElementById('spotify-embed-container');
-      this.infobox = document.getElementById('info-box');
+    this.infobox        = document.getElementById('info-box');
 
-      this.scoreElem     = document.getElementById('score');
-      this.highScoreElem = document.getElementById('high-score');
-      this.score     = 0;
-      this.highScore = parseInt(localStorage.getItem('highScore')) || 0;
-      this._updateScores();
+    this.scoreElem     = document.getElementById('score');
+    this.highScoreElem = document.getElementById('high-score');
+
+    this.scoreElem.style.display = 'none';
+    this.highScoreElem.style.display = 'none';
+
+    this.score      = 0;
+    this.highScore  = parseInt(localStorage.getItem('highScore')) || 0;
+    this.highScorer = localStorage.getItem('highScorer') || '';
+    this.playerName = localStorage.getItem('playerName') || '';
+    this._updateScores();
 
     this.imagesData = [
       { src: 'assets/photo1.jpg', title: 'Verbathim (Album)', artist: 'Nemahsis',
@@ -209,8 +215,10 @@ class GameController {
   _updateScores() {
     if (this.scoreElem)
       this.scoreElem.textContent = `Score: ${this.score}`;
-    if (this.highScoreElem)
-      this.highScoreElem.textContent = `High Score: ${this.highScore}`;
+    if (this.highScoreElem) {
+      const by = this.highScorer ? ` (${this.highScorer})` : '';
+      this.highScoreElem.textContent = `High Score: ${this.highScore}${by}`;
+    }
   }
 
   _preload() {
@@ -278,7 +286,18 @@ _handleMouseMove(e) {
       ArrowRight: { x:  d, y:  0 }
     };
     if (map[e.key]) {
-      this.isManual  = true;
+      if (!this.isManual) {
+        this.isManual = true;
+        this.score = 0;
+        if (!this.playerName) {
+          const name = prompt('Enter your name:', '') || 'Player';
+          this.playerName = name.trim();
+          localStorage.setItem('playerName', this.playerName);
+        }
+        this.scoreElem.style.display = 'block';
+        this.highScoreElem.style.display = 'block';
+        this._updateScores();
+      }
       this.manualDir = map[e.key];
     }
   }
@@ -308,6 +327,8 @@ _handleMouseMove(e) {
     if (this.rafId) cancelAnimationFrame(this.rafId);
 
     this.score = 0;
+    this.scoreElem.style.display = 'none';
+    this.highScoreElem.style.display = 'none';
     this._updateScores();
 
     // compute interval from current speedup (bumped only in _die)
@@ -355,24 +376,30 @@ _handleMouseMove(e) {
     if (ate) {
       this.speedup += 0.1; // Increment speedup factor
       this.interval = Math.max(this.MIN_SPEED, this.SPEED_BASE / this.speedup);
-      this.score++;
-      if (this.score > this.highScore) {
-        this.highScore = this.score;
-        localStorage.setItem('highScore', this.highScore);
+      if (this.isManual) {
+        this.score++;
+        if (this.score > this.highScore) {
+          this.highScore  = this.score;
+          this.highScorer = this.playerName;
+          localStorage.setItem('highScore', this.highScore);
+          localStorage.setItem('highScorer', this.highScorer);
+        }
       }
       this._spawnTarget();
-      this._updateScores();
+      if (this.isManual) this._updateScores();
     }
     this.draw();
   }
 
   _die() {
     cancelAnimationFrame(this.rafId);
-    if (this.score > this.highScore) {
-      this.highScore = this.score;
+    if (this.isManual && this.score > this.highScore) {
+      this.highScore  = this.score;
+      this.highScorer = this.playerName;
       localStorage.setItem('highScore', this.highScore);
+      localStorage.setItem('highScorer', this.highScorer);
     }
-    this._updateScores();
+    if (this.isManual) this._updateScores();
     let flashes = 0;
 
     const flash = () => {
