@@ -193,6 +193,8 @@ class GameController {
     this.manualDir = null;
     this.isManual  = false;
     this.rafId     = null;
+    this.isPaused  = false;
+    this.pauseOverlay = document.getElementById('pause-overlay');
     this.lastTime  = 0;
 
     this._bindEvents();
@@ -286,7 +288,10 @@ _handleMouseMove(e) {
       ArrowLeft:  { x: -d, y:  0 },
       ArrowRight: { x:  d, y:  0 }
     };
-    if (map[e.key]) {
+    if (e.code === 'Space') {
+      e.preventDefault();
+      this.togglePause();
+    } else if (map[e.key]) {
       if (!this.isManual) {
         this.isManual = true;
         this.score = 0;
@@ -295,6 +300,20 @@ _handleMouseMove(e) {
         this._updateScores();
       }
       this.manualDir = map[e.key];
+    }
+  }
+
+  togglePause() {
+    if (this.isPaused) {
+      this.isPaused = false;
+      if (this.pauseOverlay) this.pauseOverlay.style.display = 'none';
+      this.lastTime = performance.now();
+      this.rafId = requestAnimationFrame(ts => this._loop(ts));
+    } else {
+      this.isPaused = true;
+      if (this.pauseOverlay) this.pauseOverlay.style.display = 'block';
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
     }
   }
 
@@ -327,6 +346,9 @@ _handleMouseMove(e) {
     this.highScoreElem.style.display = 'none';
     this._updateScores();
 
+    this.isPaused = false;
+    if (this.pauseOverlay) this.pauseOverlay.style.display = 'none';
+
     // compute interval from current speedup (bumped only in _die)
     this.interval = Math.max(this.MIN_SPEED, this.SPEED_BASE / this.speedup);
 
@@ -347,6 +369,7 @@ _handleMouseMove(e) {
   }
 
   _loop(timestamp) {
+    if (this.isPaused) return;
     const delta = timestamp - this.lastTime;
     if (delta >= this.interval) {
       this.lastTime = timestamp;
