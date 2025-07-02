@@ -129,3 +129,35 @@ footer {
 }
 
 /* Remove unused or commented-out code for clarity */
+
+/* Styles for the More page */
+.songs-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--gap-large);
+  width: var(--container-width);
+  max-width: var(--container-max-width);
+  margin: var(--gap-large) auto;
+}
+
+.song-card {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: var(--gap-small);
+  text-align: center;
+}
+
+.song-card img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--border-radius);
+}
+
+.song-card a {
+  display: inline-block;
+  margin-top: var(--gap-small);
+  text-decoration: none;
+  color: var(--font-color-dark);
+  font-weight: bold;
+}
