@@ -147,7 +147,8 @@ class GameController {
     this._updateScores();
 
     // Song metadata is defined in images-data.js so it can be reused on other pages
-    this.imagesData = window.imagesData || [];
+    this.imagesData = (window.imagesData || []).slice();
+    this._shuffle(this.imagesData);
     this.loadedImages = [];
 
     this.snake       = null;
@@ -395,6 +396,14 @@ _handleMouseMove(e) {
     };
 
     flash();
+  }
+
+  _shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
   }
 
   draw() {
