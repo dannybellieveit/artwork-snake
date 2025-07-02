@@ -505,24 +505,35 @@ document.addEventListener('DOMContentLoaded', () => {
   const launchLink = document.getElementById('spotify-launch');
   const embed      = document.getElementById('spotify-embed');
   const container  = document.getElementById('spotify-embed-container');
+  const playLink   = document.getElementById('play-link');
+  const controls   = document.querySelector('.touch-controls');
 
-  launchLink.addEventListener('click', function(e) {
-    e.preventDefault();  // Stop the normal link navigation
+  if (launchLink) {
+    launchLink.addEventListener('click', function(e) {
+      e.preventDefault();  // Stop the normal link navigation
 
-    // 1) Read the playlist URL from the link
-    const playlistUrl = this.href;
+      // 1) Read the playlist URL from the link
+      const playlistUrl = this.href;
 
-    // 2) Convert to the embed form:
-    //    https://open.spotify.com/playlist/... → https://open.spotify.com/embed/playlist/...
-    const embedUrl = playlistUrl.replace(
-      'open.spotify.com/',
-      'open.spotify.com/embed/'
-    );
+      // 2) Convert to the embed form:
+      //    https://open.spotify.com/playlist/... → https://open.spotify.com/embed/playlist/...
+      const embedUrl = playlistUrl.replace(
+        'open.spotify.com/',
+        'open.spotify.com/embed/'
+      );
 
-    // 3) Load it into the iframe
-    embed.src = embedUrl;
+      // 3) Load it into the iframe
+      embed.src = embedUrl;
 
-    // 4) Reveal the iframe container
-    container.style.display = 'block';
-  });
+      // 4) Reveal the iframe container
+      container.style.display = 'block';
+    });
+  }
+
+  if (playLink && controls) {
+    playLink.addEventListener('click', e => {
+      e.preventDefault();
+      controls.classList.toggle('active');
+    });
+  }
 });
