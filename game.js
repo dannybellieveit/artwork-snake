@@ -193,9 +193,9 @@ class GameController {
     this.manualDir = null;
     this.isManual  = false;
     this.rafId     = null;
+    this.lastTime  = 0;
     this.isPaused  = false;
     this.pauseOverlay = document.getElementById('pause-overlay');
-    this.lastTime  = 0;
 
     this._bindEvents();
 
