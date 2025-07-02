@@ -78,7 +78,6 @@ class Snake {
     }
 
     const candidates = this._getCandidates(head, target);
-    console.log('    [move] head @', head, '→ candidates:', candidates);
     return candidates.length ? candidates[0] : null;
   }
 
@@ -188,13 +187,14 @@ class GameController {
     ];
     this.loadedImages = [];
 
-    this.snake     = null;
-    this.target    = null;
-    this.manualDir = null;
-    this.isManual  = false;
-    this.rafId     = null;
-    this.lastTime  = 0;
-    this.isPaused  = false;
+    this.snake       = null;
+    this.target      = null;
+    this.manualDir   = null;
+    this.isManual    = false;
+    this.cursorActive = true; // disable cursor updates when playing
+    this.rafId       = null;
+    this.lastTime    = 0;
+    this.isPaused    = false;
     this.pauseOverlay = document.getElementById('pause-overlay');
 
     this._bindEvents();
@@ -257,6 +257,11 @@ class GameController {
   }
 
 _handleMouseMove(e) {
+    if (!this.cursorActive) {
+        this.cursorActive = true;
+        return;
+    }
+
     const pos = this._getEventPos(e);
     const { cellSize } = this.board;
 
@@ -272,11 +277,9 @@ _handleMouseMove(e) {
         const md = this.imagesData[this.target.metaIndex];
         /*this.infoBox.textContent = `${md.title} — ${md.artist}`;*/
         this.board.canvas.style.cursor = 'pointer'; // Show pointer cursor
-        console.log('Cursor set to pointer over target'); // Debugging log
     } else {
         /*this.infoBox.textContent = '';*/
         this.board.canvas.style.cursor = 'default'; // Reset to default cursor
-        console.log('Cursor reset to default'); // Debugging log
     }
 }
 
@@ -294,6 +297,8 @@ _handleMouseMove(e) {
     } else if (map[e.key]) {
       if (!this.isManual) {
         this.isManual = true;
+        this.cursorActive = false;
+        this.board.canvas.style.cursor = 'default';
         this.score = 0;
         this.scoreElem.style.display = 'block';
         this.highScoreElem.style.display = 'block';
@@ -356,12 +361,7 @@ _handleMouseMove(e) {
     this.snake = new Snake(this.loadedImages, this.board);
     this.snake.init();
     this._spawnTarget();
-
-    console.log('🏁 New round', {
-      head:    this.snake.positions[0],
-      target:  this.target,
-      speedup: this.speedup
-    });
+    this.cursorActive = true;
 
     this.lastTime = performance.now();
     this.isManual = false;
@@ -412,6 +412,8 @@ _handleMouseMove(e) {
 
   _die() {
     cancelAnimationFrame(this.rafId);
+    this.cursorActive = true;
+    this.board.canvas.style.cursor = 'default';
     if (this.isManual && this.score > this.highScore) {
       this.highScore     = this.score;
       this.highScoreDate = new Date().toLocaleDateString();
