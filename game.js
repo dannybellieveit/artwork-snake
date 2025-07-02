@@ -133,7 +133,6 @@ class GameController {
     this.board          = new Board('game-canvas', this.CELL);
     this.spotifyEmbed   = document.getElementById('spotify-embed');
     this.embedContainer = document.getElementById('spotify-embed-container');
-    this.infobox        = document.getElementById('info-box');
 
     this.scoreElem     = document.getElementById('score');
     this.highScoreElem = document.getElementById('high-score');
@@ -275,10 +274,8 @@ _handleMouseMove(e) {
 
     if (isOverTarget) {
         const md = this.imagesData[this.target.metaIndex];
-        /*this.infoBox.textContent = `${md.title} — ${md.artist}`;*/
         this.board.canvas.style.cursor = 'pointer'; // Show pointer cursor
     } else {
-        /*this.infoBox.textContent = '';*/
         this.board.canvas.style.cursor = 'default'; // Reset to default cursor
     }
 }
