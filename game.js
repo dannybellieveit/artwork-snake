@@ -133,7 +133,6 @@ class GameController {
     this.board          = new Board('game-canvas', this.CELL);
     this.spotifyEmbed   = document.getElementById('spotify-embed');
     this.embedContainer = document.getElementById('spotify-embed-container');
-    this.infobox        = document.getElementById('info-box');
 
     this.scoreElem     = document.getElementById('score');
     this.highScoreElem = document.getElementById('high-score');
@@ -194,6 +193,8 @@ class GameController {
     this.cursorActive = true; // disable cursor updates when playing
     this.rafId       = null;
     this.lastTime    = 0;
+    this.isPaused    = false;
+    this.pauseOverlay = document.getElementById('pause-overlay');
 
     this._bindEvents();
 
@@ -273,10 +274,8 @@ _handleMouseMove(e) {
 
     if (isOverTarget) {
         const md = this.imagesData[this.target.metaIndex];
-        /*this.infoBox.textContent = `${md.title} — ${md.artist}`;*/
         this.board.canvas.style.cursor = 'pointer'; // Show pointer cursor
     } else {
-        /*this.infoBox.textContent = '';*/
         this.board.canvas.style.cursor = 'default'; // Reset to default cursor
     }
 }
@@ -289,7 +288,10 @@ _handleMouseMove(e) {
       ArrowLeft:  { x: -d, y:  0 },
       ArrowRight: { x:  d, y:  0 }
     };
-    if (map[e.key]) {
+    if (e.code === 'Space') {
+      e.preventDefault();
+      this.togglePause();
+    } else if (map[e.key]) {
       if (!this.isManual) {
         this.isManual = true;
         this.cursorActive = false;
@@ -300,6 +302,20 @@ _handleMouseMove(e) {
         this._updateScores();
       }
       this.manualDir = map[e.key];
+    }
+  }
+
+  togglePause() {
+    if (this.isPaused) {
+      this.isPaused = false;
+      if (this.pauseOverlay) this.pauseOverlay.style.display = 'none';
+      this.lastTime = performance.now();
+      this.rafId = requestAnimationFrame(ts => this._loop(ts));
+    } else {
+      this.isPaused = true;
+      if (this.pauseOverlay) this.pauseOverlay.style.display = 'block';
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
     }
   }
 
@@ -332,6 +348,9 @@ _handleMouseMove(e) {
     this.highScoreElem.style.display = 'none';
     this._updateScores();
 
+    this.isPaused = false;
+    if (this.pauseOverlay) this.pauseOverlay.style.display = 'none';
+
     // compute interval from current speedup (bumped only in _die)
     this.interval = Math.max(this.MIN_SPEED, this.SPEED_BASE / this.speedup);
 
@@ -343,12 +362,14 @@ _handleMouseMove(e) {
 
     // Round initialization complete
 
+
     this.lastTime = performance.now();
     this.isManual = false;
     this.rafId    = requestAnimationFrame(ts => this._loop(ts));
   }
 
   _loop(timestamp) {
+    if (this.isPaused) return;
     const delta = timestamp - this.lastTime;
     if (delta >= this.interval) {
       this.lastTime = timestamp;
@@ -462,31 +483,3 @@ _handleMouseMove(e) {
 // Initialize when DOM is ready
 window.addEventListener('DOMContentLoaded', () => new GameController());
 
-// ===== Add this to the end of game.js =====
-
-document.addEventListener('DOMContentLoaded', () => {
-  // Grab the footer link, the hidden iframe and its container
-  const launchLink = document.getElementById('spotify-launch');
-  const embed      = document.getElementById('spotify-embed');
-  const container  = document.getElementById('spotify-embed-container');
-
-  launchLink.addEventListener('click', function(e) {
-    e.preventDefault();  // Stop the normal link navigation
-
-    // 1) Read the playlist URL from the link
-    const playlistUrl = this.href;
-
-    // 2) Convert to the embed form:
-    //    https://open.spotify.com/playlist/... → https://open.spotify.com/embed/playlist/...
-    const embedUrl = playlistUrl.replace(
-      'open.spotify.com/',
-      'open.spotify.com/embed/'
-    );
-
-    // 3) Load it into the iframe
-    embed.src = embedUrl;
-
-    // 4) Reveal the iframe container
-    container.style.display = 'block';
-  });
-});

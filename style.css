@@ -40,6 +40,31 @@ canvas {
   display: block;
 }
 
+.pause-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 48px;
+  height: 48px;
+  display: none;
+  pointer-events: none;
+}
+
+.pause-overlay::before,
+.pause-overlay::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 12px;
+  height: 100%;
+  background: var(--font-color-dark);
+  border-radius: 4px;
+}
+
+.pause-overlay::before { left: 8px; }
+.pause-overlay::after { right: 8px; }
+
 .score-label {
   position: absolute;
   top: -24px;
@@ -54,20 +79,6 @@ canvas {
 #high-score {
   right: 0;
   text-align: right;
-}
-
-.info-box {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  background: transparent;
-  padding: 6px 12px;
-  border-radius: var(--border-radius);
-  font-size: var(--font-size-lg);
-  pointer-events: none;
-  white-space: nowrap;
-  color: var(--font-color-light);
 }
 
 /* SPOTIFY EMBED Container */
@@ -111,9 +122,6 @@ footer {
 }
 
 @media (max-width: 600px) {
-  .info-box {
-    font-size: var(--font-size-sm);
-  }
   .contacts {
     gap: var(--gap-small);
     font-size: var(--font-size-sm);
@@ -128,4 +136,3 @@ footer {
   }
 }
 
-/* Remove unused or commented-out code for clarity */
