@@ -14,9 +14,6 @@
   --container-max-width: 800px;
   --spotify-height: 80px;
   --border-radius: 4px;
-    display: grid;
-    background: rgba(255, 255, 255, 0.6);
-    border-radius: var(--border-radius);
 }
 
 body {
@@ -99,9 +96,6 @@ canvas {
   height: var(--spotify-height);
   border: none;
   border-radius: var(--border-radius);
-    display: grid;
-    background: rgba(255, 255, 255, 0.6);
-    border-radius: var(--border-radius);
 }
 
 footer {
