@@ -142,7 +142,6 @@ class GameController {
 
     this.score          = 0;
     this.highScore      = parseInt(localStorage.getItem('highScore')) || 0;
-    this.highScoreDate  = localStorage.getItem('highScoreDate') || '';
     this._updateScores();
 
     // Song metadata is defined in images-data.js so it can be reused on other pages
@@ -182,8 +181,7 @@ class GameController {
     if (this.scoreElem)
       this.scoreElem.textContent = `Score: ${this.score}`;
     if (this.highScoreElem) {
-      const when = this.highScoreDate ? ` (${this.highScoreDate})` : '';
-      this.highScoreElem.textContent = `High Score: ${this.highScore}${when}`;
+      this.highScoreElem.textContent = `High Score: ${this.highScore}`;
     }
   }
 
@@ -389,10 +387,8 @@ _handleMouseMove(e) {
       if (this.isManual) {
         this.score++;
         if (this.score > this.highScore) {
-          this.highScore     = this.score;
-          this.highScoreDate = new Date().toLocaleDateString();
+          this.highScore = this.score;
           localStorage.setItem('highScore', this.highScore);
-          localStorage.setItem('highScoreDate', this.highScoreDate);
         }
       }
       this._spawnTarget();
@@ -406,10 +402,8 @@ _handleMouseMove(e) {
     this.cursorActive = true;
     this.board.canvas.style.cursor = 'default';
     if (this.isManual && this.score > this.highScore) {
-      this.highScore     = this.score;
-      this.highScoreDate = new Date().toLocaleDateString();
+      this.highScore = this.score;
       localStorage.setItem('highScore', this.highScore);
-      localStorage.setItem('highScoreDate', this.highScoreDate);
     }
     if (this.isManual) this._updateScores();
     let flashes = 0;
