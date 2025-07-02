@@ -121,15 +121,6 @@ footer {
 }
 
 @media (max-width: 600px) {
-  .touch-controls.active {
-    display: grid;
-    background: rgba(255, 255, 255, 0.6);
-    border-radius: var(--border-radius);
-  }
-  #play-link { display: inline; }
-}
-  #play-link { display: inline; }
-}
   .contacts {
     gap: var(--gap-small);
     font-size: var(--font-size-sm);
@@ -144,39 +135,4 @@ footer {
   }
 }
 
-.touch-controls {
-  display: none;
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-  grid-template-areas:
-    ". up ."
-    "left . right"
-    ". down .";
-  grid-template-columns: repeat(3, 50px);
-  grid-template-rows: repeat(3, 50px);
-  gap: var(--gap-small);
-}
-.touch-controls button {
-  font-size: 24px;
-  width: 50px;
-  height: 50px;
-}
-.touch-controls .btn-up { grid-area: up; }
-.touch-controls .btn-down { grid-area: down; }
-.touch-controls .btn-left { grid-area: left; }
-.touch-controls .btn-right { grid-area: right; }
-#play-link {
-  display: none;
-}
-@media (max-width: 600px) {
-  .touch-controls.active {
-    display: grid;
-    background: rgba(255, 255, 255, 0.6);
-    border-radius: var(--border-radius);
-  }
-  #play-link { display: inline; }
-}
 /* Remove unused or commented-out code for clarity */

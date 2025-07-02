@@ -241,21 +241,6 @@ class GameController {
     c.addEventListener('mousemove', e => this._handleMouseMove(e));
     window.addEventListener('keydown', e => this._handleKey(e));
 
-    const bindBtn = (selector, key) => {
-      const btn = document.querySelector(selector);
-      if (!btn) return;
-      ['touchstart', 'mousedown'].forEach(evt => {
-        btn.addEventListener(evt, ev => {
-          ev.preventDefault();
-          this._handleKey({ key });
-        }, { passive: false });
-      });
-    };
-    bindBtn('.btn-up', 'ArrowUp');
-    bindBtn('.btn-down', 'ArrowDown');
-    bindBtn('.btn-left', 'ArrowLeft');
-    bindBtn('.btn-right', 'ArrowRight');
-
     // basic swipe detection on the canvas
     let startX, startY;
     c.addEventListener('touchstart', e => {
@@ -495,8 +480,6 @@ window.addEventListener('DOMContentLoaded', () => {
   const launchLink = document.getElementById('spotify-launch');
   const embed      = document.getElementById('spotify-embed');
   const container  = document.getElementById('spotify-embed-container');
-  const playLink   = document.getElementById('play-link');
-  const controls   = document.querySelector('.touch-controls');
 
   if (launchLink) {
     launchLink.addEventListener('click', function(e) {
@@ -520,10 +503,4 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  if (playLink && controls) {
-    playLink.addEventListener('click', e => {
-      e.preventDefault();
-      controls.classList.toggle('active');
-    });
-  }
 });
