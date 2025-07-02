@@ -129,3 +129,27 @@ footer {
 }
 
 /* Remove unused or commented-out code for clarity */
+
+/* Styles for the More page */
+.songs-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--gap-large);
+  width: var(--container-width);
+  max-width: var(--container-max-width);
+  margin: var(--gap-large) auto;
+}
+
+.song-item img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--border-radius);
+  display: block;
+}
+
+.back-button {
+  margin: var(--gap-large) 0;
+  text-decoration: none;
+  color: var(--font-color-dark);
+  font-weight: bold;
+}
