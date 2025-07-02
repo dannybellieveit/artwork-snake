@@ -162,6 +162,29 @@ footer {
   display: block;
 }
 
+.song-item {
+  position: relative;
+}
+
+.song-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: var(--font-size-sm);
+  padding: 4px;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+}
+
+.song-item:hover .song-info {
+  opacity: 1;
+}
+
 .back-button {
   margin: var(--gap-large) 0;
   text-decoration: none;
