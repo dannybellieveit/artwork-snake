@@ -142,10 +142,9 @@ class GameController {
     this.scoreElem.style.display = 'none';
     this.highScoreElem.style.display = 'none';
 
-    this.score      = 0;
-    this.highScore  = parseInt(localStorage.getItem('highScore')) || 0;
-    this.highScorer = localStorage.getItem('highScorer') || '';
-    this.playerName = localStorage.getItem('playerName') || '';
+    this.score          = 0;
+    this.highScore      = parseInt(localStorage.getItem('highScore')) || 0;
+    this.highScoreDate  = localStorage.getItem('highScoreDate') || '';
     this._updateScores();
 
     this.imagesData = [
@@ -216,8 +215,8 @@ class GameController {
     if (this.scoreElem)
       this.scoreElem.textContent = `Score: ${this.score}`;
     if (this.highScoreElem) {
-      const by = this.highScorer ? ` (${this.highScorer})` : '';
-      this.highScoreElem.textContent = `High Score: ${this.highScore}${by}`;
+      const when = this.highScoreDate ? ` (${this.highScoreDate})` : '';
+      this.highScoreElem.textContent = `High Score: ${this.highScore}${when}`;
     }
   }
 
@@ -289,11 +288,6 @@ _handleMouseMove(e) {
       if (!this.isManual) {
         this.isManual = true;
         this.score = 0;
-        if (!this.playerName) {
-          const name = prompt('Enter your name:', '') || 'Player';
-          this.playerName = name.trim();
-          localStorage.setItem('playerName', this.playerName);
-        }
         this.scoreElem.style.display = 'block';
         this.highScoreElem.style.display = 'block';
         this._updateScores();
@@ -379,10 +373,10 @@ _handleMouseMove(e) {
       if (this.isManual) {
         this.score++;
         if (this.score > this.highScore) {
-          this.highScore  = this.score;
-          this.highScorer = this.playerName;
+          this.highScore     = this.score;
+          this.highScoreDate = new Date().toLocaleDateString();
           localStorage.setItem('highScore', this.highScore);
-          localStorage.setItem('highScorer', this.highScorer);
+          localStorage.setItem('highScoreDate', this.highScoreDate);
         }
       }
       this._spawnTarget();
@@ -394,10 +388,10 @@ _handleMouseMove(e) {
   _die() {
     cancelAnimationFrame(this.rafId);
     if (this.isManual && this.score > this.highScore) {
-      this.highScore  = this.score;
-      this.highScorer = this.playerName;
+      this.highScore     = this.score;
+      this.highScoreDate = new Date().toLocaleDateString();
       localStorage.setItem('highScore', this.highScore);
-      localStorage.setItem('highScorer', this.highScorer);
+      localStorage.setItem('highScoreDate', this.highScoreDate);
     }
     if (this.isManual) this._updateScores();
     let flashes = 0;
