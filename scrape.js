@@ -3,6 +3,7 @@ const puppeteer = require('puppeteer');
 
 (async () => {
   const url = 'https://artists.spotify.com/songwriter/1TelBtQMaDF8z4egR19IzG';
+  console.log('Scraping songs from Spotify...');
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
   await page.goto(url, { waitUntil: 'networkidle2' });
@@ -20,6 +21,7 @@ const puppeteer = require('puppeteer');
 
   await fs.promises.mkdir('public/data', { recursive: true });
   await fs.promises.writeFile('public/data/songs.json', JSON.stringify(songs, null, 2));
+  console.log(`Saved ${songs.length} songs to public/data/songs.json`);
 
   await browser.close();
 })();

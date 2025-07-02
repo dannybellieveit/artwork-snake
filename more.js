@@ -29,6 +29,7 @@ async function loadSongs() {
 
       container.appendChild(card);
     });
+    console.log(`Loaded ${songs.length} songs`);
   } catch (err) {
     console.error('Failed to load songs', err);
   }
