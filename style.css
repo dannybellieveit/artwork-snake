@@ -14,6 +14,9 @@
   --container-max-width: 800px;
   --spotify-height: 80px;
   --border-radius: 4px;
+    display: grid;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: var(--border-radius);
 }
 
 body {
@@ -65,6 +68,9 @@ canvas {
   background: transparent;
   padding: 6px 12px;
   border-radius: var(--border-radius);
+    display: grid;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: var(--border-radius);
   font-size: var(--font-size-lg);
   pointer-events: none;
   white-space: nowrap;
@@ -85,6 +91,9 @@ canvas {
   height: var(--spotify-height);
   border: none;
   border-radius: var(--border-radius);
+    display: grid;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: var(--border-radius);
 }
 
 footer {
@@ -112,9 +121,15 @@ footer {
 }
 
 @media (max-width: 600px) {
-  .info-box {
-    font-size: var(--font-size-sm);
+  .touch-controls.active {
+    display: grid;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: var(--border-radius);
   }
+  #play-link { display: inline; }
+}
+  #play-link { display: inline; }
+}
   .contacts {
     gap: var(--gap-small);
     font-size: var(--font-size-sm);
@@ -153,7 +168,9 @@ footer {
 .touch-controls .btn-down { grid-area: down; }
 .touch-controls .btn-left { grid-area: left; }
 .touch-controls .btn-right { grid-area: right; }
-
+#play-link {
+  display: none;
+}
 @media (max-width: 600px) {
   .touch-controls.active {
     display: grid;
@@ -162,9 +179,4 @@ footer {
   }
   #play-link { display: inline; }
 }
-
-#play-link {
-  display: none;
-}
-
 /* Remove unused or commented-out code for clarity */
