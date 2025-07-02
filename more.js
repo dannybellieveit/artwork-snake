@@ -17,9 +17,14 @@ function loadSongs() {
 
     const img = document.createElement('img');
     img.src = song.src;
-    img.alt = '';
+    img.alt = `${song.title} by ${song.artist}`;
+
+    const info = document.createElement('div');
+    info.className = 'song-info';
+    info.textContent = `${song.artist} - ${song.title}`;
 
     link.appendChild(img);
+    link.appendChild(info);
     container.appendChild(link);
   });
   console.log(`Loaded ${songs.length} songs`);

@@ -156,6 +156,38 @@ footer {
   display: block;
 }
 
+.song-item {
+  position: relative;
+  overflow: hidden;
+}
+
+
+.song-info {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+  border-radius: var(--border-radius);
+}
+
+.song-item:hover img {
+  filter: grayscale(100%) brightness(60%);
+}
+
+.song-item:hover .song-info {
+  opacity: 1;
+}
+
 .back-button {
   margin: var(--gap-large) 0;
   text-decoration: none;
