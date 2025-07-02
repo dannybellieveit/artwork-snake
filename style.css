@@ -164,21 +164,30 @@ footer {
 
 .song-item {
   position: relative;
+  overflow: hidden;
 }
+
 
 .song-info {
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 0;
   right: 0;
-  background: rgba(0, 0, 0, 0.7);
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
   color: #fff;
   font-size: var(--font-size-sm);
-  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   opacity: 0;
   transition: opacity 0.3s;
-  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  border-radius: var(--border-radius);
+}
+
+.song-item:hover img {
+  filter: grayscale(100%) brightness(60%);
 }
 
 .song-item:hover .song-info {
