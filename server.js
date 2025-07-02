@@ -5,6 +5,9 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Node 18+ includes a global fetch API. If you're on an older Node version,
+// install `node-fetch` and import it here instead.
+
 // Middleware to parse form data and JSON
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -17,8 +20,14 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve static files from the public folder
+// Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Explicitly serve the home page to avoid issues if index.html is not
+// automatically resolved by express.static
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 /**
  * Simple slugify helper to create filesystem friendly names
@@ -59,8 +68,9 @@ app.post('/add-track', async (req, res) => {
     }
 
     const artworkDir = path.join(__dirname, 'artwork');
+    // Ensure the artwork directory exists
     if (!fs.existsSync(artworkDir)) {
-      fs.mkdirSync(artworkDir);
+      fs.mkdirSync(artworkDir, { recursive: true });
     }
 
     let artworkPath = null;
@@ -81,13 +91,18 @@ app.post('/add-track', async (req, res) => {
     const playlistFile = path.join(__dirname, 'playlist.json');
     let playlist = [];
     if (fs.existsSync(playlistFile)) {
-      playlist = JSON.parse(fs.readFileSync(playlistFile));
+      try {
+        playlist = JSON.parse(fs.readFileSync(playlistFile, 'utf8'));
+      } catch (_) {
+        // If the file exists but can't be parsed, start fresh
+        playlist = [];
+      }
     }
     const track = { title, artist, artwork: artworkPath };
     playlist.push(track);
     fs.writeFileSync(playlistFile, JSON.stringify(playlist, null, 2));
 
-    res.json({ message: 'Track added', track });
+    res.status(201).json({ message: 'Track added', track });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Failed to add track' });
