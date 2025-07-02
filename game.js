@@ -241,6 +241,46 @@ class GameController {
     c.addEventListener('click',     e => this._handleClick(e));
     c.addEventListener('mousemove', e => this._handleMouseMove(e));
     window.addEventListener('keydown', e => this._handleKey(e));
+
+    const bindBtn = (selector, key) => {
+      const btn = document.querySelector(selector);
+      if (!btn) return;
+      ['touchstart', 'mousedown'].forEach(evt => {
+        btn.addEventListener(evt, ev => {
+          ev.preventDefault();
+          this._handleKey({ key });
+        });
+      });
+    };
+    bindBtn('.btn-up', 'ArrowUp');
+    bindBtn('.btn-down', 'ArrowDown');
+    bindBtn('.btn-left', 'ArrowLeft');
+    bindBtn('.btn-right', 'ArrowRight');
+
+    // basic swipe detection on the canvas
+    let startX, startY;
+    c.addEventListener('touchstart', e => {
+      const t = e.touches[0];
+      startX = t.clientX;
+      startY = t.clientY;
+    }, { passive: false });
+    c.addEventListener('touchend', e => {
+      if (startX == null || startY == null) return;
+      e.preventDefault();
+      const t = e.changedTouches[0];
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
+      if (Math.max(absX, absY) > 30) {
+        if (absX > absY) {
+          this._handleKey({ key: dx > 0 ? 'ArrowRight' : 'ArrowLeft' });
+        } else {
+          this._handleKey({ key: dy > 0 ? 'ArrowDown' : 'ArrowUp' });
+        }
+      }
+      startX = startY = null;
+    });
   }
 
   _handleClick(e) {
