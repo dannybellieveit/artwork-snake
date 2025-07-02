@@ -140,23 +140,15 @@ footer {
   margin: var(--gap-large) auto;
 }
 
-.song-card {
-  background: white;
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  padding: var(--gap-small);
-  text-align: center;
-}
-
-.song-card img {
+.song-item img {
   width: 100%;
   height: auto;
   border-radius: var(--border-radius);
+  display: block;
 }
 
-.song-card a {
-  display: inline-block;
-  margin-top: var(--gap-small);
+.back-button {
+  margin: var(--gap-large) 0;
   text-decoration: none;
   color: var(--font-color-dark);
   font-weight: bold;
