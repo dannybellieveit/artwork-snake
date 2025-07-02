@@ -360,6 +360,9 @@ _handleMouseMove(e) {
     this._spawnTarget();
     this.cursorActive = true;
 
+    // Round initialization complete
+
+
     this.lastTime = performance.now();
     this.isManual = false;
     this.rafId    = requestAnimationFrame(ts => this._loop(ts));
