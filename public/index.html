@@ -8,12 +8,31 @@
   <meta name="keywords" content="Danny Casio, games, music, Spotify, Instagram, website, the six, discography, genius, wikipedia, biography, about, age, producer, songwriter, chorley, manchester, london, the dairy, brixton, juno, junos, nemahsis, jordan adetunji, boyle">
   <title>Danny Casio</title>
   <link rel="stylesheet" href="style.css">
+  <!-- Tailwind CSS for quick styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
 
   <!-- Game Container -->
   <div class="game-container">
     <canvas id="game-canvas" width="800" height="450"></canvas>
+  </div>
+
+  <!-- Track Submission Form -->
+  <div class="max-w-md mx-auto my-8 p-4 bg-white rounded shadow">
+    <form action="/add-track" method="POST" class="space-y-4">
+      <div>
+        <label for="title" class="block text-sm font-medium">Track Title</label>
+        <input type="text" id="title" name="title" required
+               class="mt-1 block w-full border rounded p-2" />
+      </div>
+      <div>
+        <label for="artist" class="block text-sm font-medium">Artist</label>
+        <input type="text" id="artist" name="artist" required
+               class="mt-1 block w-full border rounded p-2" />
+      </div>
+      <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Submit</button>
+    </form>
   </div>
 
   <!-- Spotify Embed Container -->
