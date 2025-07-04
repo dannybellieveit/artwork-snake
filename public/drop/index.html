@@ -61,7 +61,7 @@
     /* ---------- 2. Fetch XML listing via Worker ---------- */
     let xmlStr;
     try {
-      const res = await fetch(`/list-proxy/${token}`);
+      const res = await fetch(`/api/list-proxy/${token}`);
       if (!res.ok) throw new Error(res.status);
       xmlStr = await res.text();
     } catch (e) {
