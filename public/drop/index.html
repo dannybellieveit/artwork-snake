@@ -7,13 +7,10 @@
   <base href="/" />
   <link rel="stylesheet" href="style.css">
   <style>
-   /* --------  DannyCasio transfer portal  ----------------------- */
+ /* Danny Casio – minimal transfer page */
 :root{
-  --blue: #0070f3;
-  --blue-dark: #005bb5;
-  --bg:   #87CEEB;       /* same sky-blue as your site */
-  --card: #ffffff;
-  --shadow: 0 4px 18px rgba(0,0,0,.12);
+  --blue: #0070f3;            /* the same bright-blue you use for links */
+  --bg  : #87CEEB;            /* sky-blue site background */
 }
 
 html,body{
@@ -23,70 +20,67 @@ html,body{
   color:#000;
 }
 
-/* header strip stays slim & transparent so the blue shines through */
+/* slim header – transparent so the sky-blue shows through */
 header{
   position:relative;
   padding:1.2rem 1rem 0;
   text-align:center;
 }
-header h1{
-  margin:0;
-  font-size:clamp(1.6rem,4vw,2.3rem);
-  letter-spacing:.02em;
-  font-weight:700;
-}
 .back-btn{
   position:absolute;left:1rem;top:1rem;
   text-decoration:none;color:#000;font-size:1rem;
 }
+header h1{
+  margin:0;
+  font-size:clamp(1.6rem,4vw,2.2rem);
+  font-weight:700;
+  letter-spacing:.02em;
+}
 
-/* file grid */
+/* the list itself */
 #drop-content{
   max-width:900px;
   margin:3.5rem auto 2.5rem;
   padding:0 1rem;
   display:grid;
-  gap:2rem;
+  gap:2.2rem;
 }
 
-/* card */
+/* each file = simple line-item (no white box) */
 .file-item{
-  background:var(--card);
-  border-radius:18px;
-  box-shadow:var(--shadow);
-  padding:1.75rem 2rem;
+  padding-bottom:.5rem;
+  border-bottom:2px solid rgba(0,0,0,.15);  /* subtle divider */
 }
 .file-item h2{
-  margin:0 0 .9rem;
-  font-size:1.2rem;
+  margin:0;
+  font-size:1.15rem;
+  font-weight:600;
   word-break:break-all;
 }
 .file-item audio{
   width:100%;
-  margin:.4rem 0 1.2rem;
+  margin:.6rem 0 1.1rem;
   outline:none;
   border-radius:8px;
 }
 
-/* download button */
+/* blue download button */
 .download{
   display:inline-block;
   background:var(--blue);
   color:#fff;
   text-decoration:none;
-  padding:.6rem 1.4rem;
+  padding:.55rem 1.3rem;
   border-radius:10px;
   font-weight:600;
   transition:background .15s ease;
 }
-.download:hover{ background:var(--blue-dark); }
+.download:hover{ background:#005bb5; }
 
-/* responsive tweaks */
+/* phone tweaks */
 @media(max-width:600px){
-  #drop-content{ gap:1.3rem; }
-  .file-item{ padding:1.4rem 1.5rem; }
+  #drop-content{ gap:1.4rem; }
 }
-
 
   </style>
 </head>
