@@ -49,71 +49,74 @@
 </main>
 
 <script>
-  (async () => {
-    /* ---------- 1. Get the share token ---------- */
-    const qs  = new URLSearchParams(location.search);
-    let token = qs.get('token') ||
-                (location.pathname.match(/^\/drop\/([^/]+)$/) || [])[1];
+(async () => {
+  /* ---------- 1. Get the share token ---------- */
+  const qs  = new URLSearchParams(location.search);
+  let token = qs.get('token') ||
+              (location.pathname.match(/^\/drop\/([^/]+)$/) || [])[1];
 
-    const box = document.getElementById('drop-content');
-    if (!token) { box.textContent = 'No share token provided.'; return; }
+  const box = document.getElementById('drop-content');
+  if (!token) { box.textContent = 'No share token provided.'; return; }
 
-    /* ---------- 2. Fetch XML listing via Worker ---------- */
-    let xmlStr;
-    try {
-        const res = await fetch(`/list-proxy/${token}`);
-      if (!res.ok) throw new Error(res.status);
-      xmlStr = await res.text();
-    } catch (e) {
-      box.textContent = 'Error loading files.';  console.error(e);  return;
-    }
+  /* ---------- 2. Fetch XML listing via Worker ---------- */
+  let xmlStr = '';
+  try {
+    const res = await fetch(`/list-proxy/${token}`);
+    if (!res.ok) throw new Error(res.status);
+    xmlStr = await res.text();
+  } catch (e) {
+    box.textContent = 'Error loading files.'; console.error(e); return;
+  }
 
-    /* ---------- 3. Parse XML, find every <response> ---------- */
-    const xml = new DOMParser().parseFromString(xmlStr, 'application/xml');
+  /* ---------- 3. Parse XML ---------- */
+  const xml = new DOMParser().parseFromString(xmlStr, 'application/xml');
+  const all = [...xml.getElementsByTagName('*')]
+              .filter(el => el.localName === 'response');
 
-    // Grab all elements, then filter by localName === 'response'
-    const responses = Array.from(xml.getElementsByTagName('*'))
-                           .filter(el => el.localName === 'response');
+  /* helper: render one card */
+  const renderCard = (name, url) => {
+    const sec = document.createElement('section');
+    sec.className = 'file-item';
+    sec.innerHTML =
+      `<h2>${name}</h2>` +
+      (/\.(mp3|wav|ogg)$/i.test(name)
+        ? `<audio controls src="${url}"></audio>` : '') +
+      `<a class="download" href="${url}" download>Download</a>`;
+    box.appendChild(sec);
+  };
 
-    if (!responses.length) { box.textContent = 'No files found.'; return; }
+  box.innerHTML = '';   // clear “Loading…”
 
-    box.innerHTML = '';   // clear the “Loading…” text
+  /* ---------- 4A. Folder share ---------- */
+  const files = all.filter(r => {
+    const href = r.getElementsByTagNameNS('*','href')[0]?.textContent || '';
+    return !href.endsWith('/webdav/') && !href.endsWith('/');   // skip root folder
+  });
 
-    /* ---------- 4. Render each file ---------- */
-    responses.forEach(r => {
-         const hrefEl = r.firstElementChild;     // <d:href> even with namespaces
-if (!hrefEl) return;
-      const href = hrefEl.textContent;
+  if (files.length) {
+    files.forEach(r => {
+      const href = r.getElementsByTagNameNS('*','href')[0].textContent;
       const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
-      if (!name) return;   // skip empty
-
       const url  = `https://transfer.dannycasio.com/s/${token}/download?path=/${encodeURIComponent(name)}`;
-
-      const sec  = document.createElement('section');
-      sec.className = 'file-item';
-
-      const title = document.createElement('h2');
-      title.textContent = name;
-      sec.appendChild(title);
-
-      if (/\.(mp3|wav|ogg)$/i.test(name)) {
-        const audio = document.createElement('audio');
-        audio.controls = true;
-        audio.src = url;
-        sec.appendChild(audio);
-      }
-
-      const link = document.createElement('a');
-      link.className = 'download';
-      link.href = url;
-      link.download = '';
-      link.textContent = 'Download';
-      sec.appendChild(link);
-
-      box.appendChild(sec);
+      renderCard(name, url);
     });
-  })();
+    return;  // done
+  }
+
+  /* ---------- 4B. Single-file share (only /webdav/) ---------- */
+  if (all.length) {
+    const root = all[0];
+    const name = root.getElementsByTagNameNS('*','displayname')[0]?.textContent || 'file';
+    const url  = `https://transfer.dannycasio.com/s/${token}/download`;
+    renderCard(name, url);
+    return;
+  }
+
+  /* ---------- 5. Nothing found ---------- */
+  box.textContent = 'No files found.';
+})();
 </script>
+
 
 </body>
 </html>
