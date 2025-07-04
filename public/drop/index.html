@@ -16,16 +16,37 @@
     .file-item audio { width:100%; margin:.5rem 0; }
     .file-item a.download { display:inline-block; margin-top:.5rem; background:#0070f3; color:#fff; padding:.5rem 1rem; border-radius:4px; text-decoration:none; }
     .file-item a.download:hover { background:#005bb5; }
+    /* layout tweaks */
+.top-links   { text-align:center; margin-top:1rem; }
+.home-link   { font-weight:600; text-decoration:none; color:#000; }
+.portal      { max-width:900px; margin:3rem auto; display:grid; gap:2rem; }
+.file-item   { background:#fff; padding:1.5rem 2rem; border-radius:16px;
+               box-shadow:0 4px 10px rgba(0,0,0,.05); }
+.file-item h2{ margin:0 0 1rem; font-size:1.35rem; }
+.file-item audio{ width:100%; margin:.5rem 0 1rem; }
+.download    { background:#0070f3; padding:.6rem 1.4rem; border-radius:8px;
+               color:#fff; text-decoration:none; font-weight:600;
+               display:inline-block; }
+.download:hover{ background:#005bb5; }
+
+/* make everything sit nicely on narrow screens */
+@media (max-width:600px){
+  .portal{ margin:2rem 1rem; }
+}
+
   </style>
 </head>
 <body>
   <header>
     <a class="back-btn" href="https://dannycasio.com">← Back to Home</a>
-    <h1>DannyCasio File Portal</h1>
   </header>
-  <main id="drop-content">
-    <p>Loading files…</p>
-  </main>
+  <nav class="top-links">
+    <a href="https://dannycasio.com" class="home-link">Home</a>
+  </nav>
+<main id="drop-content" class="portal">
+  <!-- JS will fill this -->
+</main>
+
 <script>
   (async () => {
     /* ---------- 1. Get the share token ---------- */
