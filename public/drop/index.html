@@ -26,80 +26,66 @@
   <main id="drop-content">
     <p>Loading files…</p>
   </main>
-  <script>
-    (async () => {
-      // 1) get token
-      const params = new URLSearchParams(location.search);
-      let token = params.get('token');
-      if (!token) {
-        const m = location.pathname.match(/^\/drop\/([^/]+)$/);
-        token = m && m[1];
+<script>
+  (async () => {
+    // 1. Extract share token
+    const params = new URLSearchParams(location.search);
+    let token = params.get('token');
+    if (!token) {
+      const m = location.pathname.match(/^\/drop\/([^/]+)$/);
+      token = m && m[1];
+    }
+    const container = document.getElementById('drop-content');
+    if (!token) {
+      container.innerHTML = '<p>No share token provided.</p>';
+      return;
+    }
+
+    // 2. Fetch file list JSON from Worker
+    let files;
+    try {
+      const res = await fetch(`/list-proxy/${token}`);
+      if (!res.ok) throw new Error(res.status);
+      files = await res.json();
+    } catch (err) {
+      container.innerHTML = '<p>Error loading files.</p>';
+      console.error(err);
+      return;
+    }
+
+    // 3. Render the list
+    if (files.length === 0) {
+      container.innerHTML = '<p>No files found.</p>';
+      return;
+    }
+    container.innerHTML = ''; // clear “Loading…”
+
+    files.forEach(f => {
+      const section = document.createElement('section');
+      section.className = 'file-item';
+
+      const h2 = document.createElement('h2');
+      h2.textContent = f.name;
+      section.appendChild(h2);
+
+      if (f.name.match(/\.(mp3|wav|ogg)$/i)) {
+        const audio = document.createElement('audio');
+        audio.controls = true;
+        audio.src = f.url;
+        section.appendChild(audio);
       }
-      const container = document.getElementById('drop-content');
-      if (!token) {
-        container.innerHTML = '<p>No share token provided.</p>';
-        return;
-      }
 
-      // 2) fetch the share page HTML via your Worker proxy
-      let html;
-      try {
-        const res = await fetch(`/share-proxy/${token}`);
-        html = await res.text();
-      } catch (e) {
-        container.innerHTML = '<p>Error loading share page.</p>';
-        return;
-      }
+      const a = document.createElement('a');
+      a.className = 'download';
+      a.href = f.url;
+      a.textContent = 'Download';
+      a.setAttribute('download', f.name);
+      section.appendChild(a);
 
-      // 3) parse out file entries
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
+      container.appendChild(section);
+    });
+  })();
+</script>
 
-      // Nextcloud public-share uses list items under .files-list__tbody
-      const rows = doc.querySelectorAll('.files-list__tbody .files-list__row');
-      if (!rows.length) {
-        container.innerHTML = '<p>No files found.</p>';
-        return;
-      }
-      container.innerHTML = '';
-
-      rows.forEach(row => {
-        const nameBtn = row.querySelector('.files-list__row-name-link');
-        const name = nameBtn.textContent.trim();
-        const downloadAction = row.querySelector('#download--link') ||
-                               row.querySelector('.public-page-menu__entry--download a');
-        let url = downloadAction && downloadAction.href;
-        if (!url) {
-          // fallback to direct link
-          const direct = row.querySelector('#directLink--link');
-          url = direct && direct.href;
-        }
-        if (!url) return; // skip if no link
-
-        const section = document.createElement('section');
-        section.className = 'file-item';
-        const h2 = document.createElement('h2');
-        h2.textContent = name;
-        section.appendChild(h2);
-
-        // if audio
-        if (name.match(/\.(mp3|wav|ogg)$/i)) {
-          const audio = document.createElement('audio');
-          audio.controls = true;
-          audio.src = url;
-          section.appendChild(audio);
-        }
-
-        const a = document.createElement('a');
-        a.className = 'download';
-        a.href = url;
-        a.textContent = 'Download';
-        a.setAttribute('download', name);
-        section.appendChild(a);
-
-        container.appendChild(section);
-      });
-    })();
-  </script>
 </body>
 </html>
