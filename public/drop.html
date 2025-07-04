@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Drop</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <div id="spotify-embed-container" style="display:none;">
+    <iframe
+      id="spotify-embed"
+      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+      loading="lazy"
+      src=""
+    >
+    </iframe>
+  </div>
+  <div id="error" style="color:red;"></div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const match = window.location.pathname.match(/^\/drop\/([^\/]+)$/);
+      const iframe = document.getElementById('spotify-embed');
+      const container = document.getElementById('spotify-embed-container');
+      if (match) {
+        const token = match[1];
+        iframe.src = `https://open.spotify.com/embed/track/${token}`;
+        container.style.display = 'block';
+      } else {
+        document.getElementById('error').textContent = 'Invalid drop link';
+      }
+    });
+  </script>
+</body>
+</html>
