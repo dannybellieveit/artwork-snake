@@ -85,14 +85,13 @@
       }
 
       // 2. PROPFIND folder list via WebDAV
-      const davUrl = `https://transfer.dannycasio.com/public.php/dav/files/${token}/`;
-      let xmlText;
-      try {
-        const resp = await fetch(davUrl, {
-          method: 'PROPFIND',
-          headers: { 'Depth': '1' }
-        });
-        xmlText = await resp.text();
+     const davUrl = `/dav-proxy/${token}/`;
+let xmlText;
+try {
+  const resp = await fetch(davUrl, {
+    method: 'PROPFIND'
+  });
+  xmlText = await resp.text();
       } catch (err) {
         container.innerHTML = '<p>Error loading files.</p>';
         console.error(err);
