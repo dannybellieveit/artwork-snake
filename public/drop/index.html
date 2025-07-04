@@ -162,19 +162,32 @@ if (files.length) {
   let totalBytes = 0;               // accumulate here
 
   files.forEach(r => {
-    /* filename */
-    const href = r.getElementsByTagNameNS('*','href')[0].textContent;
-    const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
+  /* filename + direct download URL */
+  const href = r.getElementsByTagNameNS('*','href')[0].textContent;
+  const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
+  const fileURL = `https://transfer.dannycasio.com/s/${token}/download?path=/${encodeURIComponent(name)}`;
 
-    /* <li> • filename */
-    const li   = document.createElement('li');
-    li.textContent = name;
-    ul.appendChild(li);
+  /* <li> item */
+  const li = document.createElement('li');
+  li.textContent = name;
 
-    /* file size from <d:getcontentlength> */
-    const lenNode = r.getElementsByTagNameNS('*','getcontentlength')[0];
-    if (lenNode) totalBytes += Number(lenNode.textContent || 0);
-  });
+  /* if it’s audio, add inline player */
+  if (/\.(mp3|wav|ogg|flac)$/i.test(name)) {
+    const player = document.createElement('audio');
+    player.controls = true;
+    player.src = fileURL;
+    player.style.display = 'block';
+    player.style.marginTop = '.4rem';
+    li.appendChild(player);
+  }
+
+  ul.appendChild(li);
+
+  /* size accumulator */
+  const lenNode = r.getElementsByTagNameNS('*','getcontentlength')[0];
+  if (lenNode) totalBytes += Number(lenNode.textContent || 0);
+});
+
 
   listWrap.appendChild(ul);
 
