@@ -7,58 +7,15 @@
   <base href="/" />
   <link rel="stylesheet" href="style.css">
   <style>
-    body {
-      margin: 0;
-      background: #87CEEB;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      color: #000;
-    }
-    header {
-      background: #fff;
-      padding: 1rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      text-align: center;
-    }
-    .back-btn {
-      position: absolute;
-      left: 1rem;
-      top: 1rem;
-      text-decoration: none;
-      color: #000;
-      font-size: 1rem;
-    }
-    main {
-      max-width: 800px;
-      margin: 4rem auto 2rem;
-      background: #fff;
-      padding: 2rem;
-      border-radius: 8px;
-    }
-    .file-item {
-      margin-bottom: 1.5rem;
-      border-bottom: 1px solid #ececec;
-      padding-bottom: 1rem;
-    }
-    .file-item h2 {
-      margin: 0 0 0.5rem;
-      font-size: 1.25rem;
-    }
-    .file-item audio {
-      width: 100%;
-      margin: 0.5rem 0;
-    }
-    .file-item a.download {
-      display: inline-block;
-      margin-top: 0.5rem;
-      background: #0070f3;
-      color: #fff;
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-      text-decoration: none;
-    }
-    .file-item a.download:hover {
-      background: #005bb5;
-    }
+    body { margin:0; background:#87CEEB; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; color:#000; }
+    header { position:relative; background:#fff; padding:1rem; box-shadow:0 2px 4px rgba(0,0,0,0.1); text-align:center; }
+    .back-btn { position:absolute; left:1rem; top:1rem; text-decoration:none; color:#000; font-size:1rem; }
+    main { max-width:800px; margin:4rem auto 2rem; background:#fff; padding:2rem; border-radius:8px; }
+    .file-item { margin-bottom:1.5rem; border-bottom:1px solid #ececec; padding-bottom:1rem; }
+    .file-item h2 { margin:0 0 .5rem; font-size:1.25rem; }
+    .file-item audio { width:100%; margin:.5rem 0; }
+    .file-item a.download { display:inline-block; margin-top:.5rem; background:#0070f3; color:#fff; padding:.5rem 1rem; border-radius:4px; text-decoration:none; }
+    .file-item a.download:hover { background:#005bb5; }
   </style>
 </head>
 <body>
@@ -71,72 +28,74 @@
   </main>
   <script>
     (async () => {
-      // 1. Extract token
+      // 1) get token
       const params = new URLSearchParams(location.search);
       let token = params.get('token');
       if (!token) {
         const m = location.pathname.match(/^\/drop\/([^/]+)$/);
-        token = m ? m[1] : null;
+        token = m && m[1];
       }
       const container = document.getElementById('drop-content');
       if (!token) {
-        container.innerHTML = '<p style="padding:1rem">No share token provided.</p>';
+        container.innerHTML = '<p>No share token provided.</p>';
         return;
       }
 
-      // 2. PROPFIND folder list via WebDAV
-     const davUrl = `/dav-proxy/${token}/`;
-let xmlText;
-try {
-  const resp = await fetch(davUrl, {
-    method: 'PROPFIND'
-  });
-  xmlText = await resp.text();
-      } catch (err) {
-        container.innerHTML = '<p>Error loading files.</p>';
-        console.error(err);
+      // 2) fetch the share page HTML via your Worker proxy
+      let html;
+      try {
+        const res = await fetch(`/share-proxy/${token}`);
+        html = await res.text();
+      } catch (e) {
+        container.innerHTML = '<p>Error loading share page.</p>';
         return;
       }
 
-      // 3. Parse XML
+      // 3) parse out file entries
       const parser = new DOMParser();
-      const xml = parser.parseFromString(xmlText, 'application/xml');
-      const responses = Array.from(xml.getElementsByTagNameNS('*', 'response'))
-                             .slice(1); // skip the folder itself
+      const doc = parser.parseFromString(html, 'text/html');
 
-      // 4. Build list items
-      if (responses.length === 0) {
+      // Nextcloud public-share uses list items under .files-list__tbody
+      const rows = doc.querySelectorAll('.files-list__tbody .files-list__row');
+      if (!rows.length) {
         container.innerHTML = '<p>No files found.</p>';
         return;
       }
-      container.innerHTML = ''; 
+      container.innerHTML = '';
 
-      responses.forEach(r => {
-        const href = r.getElementsByTagNameNS('*','href')[0].textContent;
-        const parts = decodeURIComponent(href).split('/');
-        const name = parts.pop() || parts.pop(); // handle trailing slash
-        const downloadUrl = `https://transfer.dannycasio.com/s/${token}/download?path=/${encodeURIComponent(name)}`;
+      rows.forEach(row => {
+        const nameBtn = row.querySelector('.files-list__row-name-link');
+        const name = nameBtn.textContent.trim();
+        const downloadAction = row.querySelector('#download--link') ||
+                               row.querySelector('.public-page-menu__entry--download a');
+        let url = downloadAction && downloadAction.href;
+        if (!url) {
+          // fallback to direct link
+          const direct = row.querySelector('#directLink--link');
+          url = direct && direct.href;
+        }
+        if (!url) return; // skip if no link
 
         const section = document.createElement('section');
         section.className = 'file-item';
+        const h2 = document.createElement('h2');
+        h2.textContent = name;
+        section.appendChild(h2);
 
-        const title = document.createElement('h2');
-        title.textContent = name;
-        section.appendChild(title);
-
-        if (/\.(mp3|wav|ogg)$/i.test(name)) {
+        // if audio
+        if (name.match(/\.(mp3|wav|ogg)$/i)) {
           const audio = document.createElement('audio');
           audio.controls = true;
-          audio.src = downloadUrl;
+          audio.src = url;
           section.appendChild(audio);
         }
 
-        const link = document.createElement('a');
-        link.className = 'download';
-        link.href = downloadUrl;
-        link.textContent = 'Download';
-        link.setAttribute('download', name);
-        section.appendChild(link);
+        const a = document.createElement('a');
+        a.className = 'download';
+        a.href = url;
+        a.textContent = 'Download';
+        a.setAttribute('download', name);
+        section.appendChild(a);
 
         container.appendChild(section);
       });
