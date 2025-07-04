@@ -92,27 +92,9 @@
   @media(max-width:600px){
     #drop-content{ gap:1.4rem; }
   }
-
-  /* snake game container on drop page */
-  .drop-game.game-container{
-    border:none;
-    width:100vw;
-    max-width:none;
-    margin:0 auto 2rem;
-  }
-  .drop-game.game-container.playing{
-    border:5px solid var(--border-color);
-  }
-</style>
+  </style>
 </head>
 <body>
-
-  <div class="game-container drop-game">
-    <div id="score" class="score-label">Score: 0</div>
-    <div id="high-score" class="score-label">High Score: 0</div>
-    <canvas id="game-canvas" width="800" height="450"></canvas>
-    <div id="pause-overlay" class="pause-overlay"></div>
-  </div>
 
   <div id="drop-content">Loading…</div>
 
@@ -123,8 +105,6 @@
     <a href="mailto:dannycasio@me.com">Email</a>
     <a href="https://instagram.com/dannycasio" target="_blank" rel="noopener">Instagram</a>
   </footer>
-  <script src="/images-data.js"></script>
-  <script src="/game.js" defer></script>
 </body>
 </html>
 
