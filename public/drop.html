@@ -1,1 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>DannyCasio File Share</title>
+  <base href="/" />
+  <link rel="stylesheet" href="style.css"> <!-- your site’s CSS -->
+  <style>
+    /* Override/additional styling just for this page */
+    body { margin:0; background:#87CEEB; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; color:#000; }
+    header { background:#fff; padding:1rem; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
+    .back-btn { display:inline-block; margin-bottom:1rem; text-decoration:none; color:#000; font-size:1rem; }
+    main { max-width:800px; margin:2rem auto; background:#fff; padding:1rem; border-radius:8px; }
+    iframe { width:100%; height:70vh; border:none; }
+  </style>
+</head>
+<body>
+  <header>
+    <!-- Your site header here -->
+    <a class="back-btn" href="https://dannycasio.com">← Back to Home</a>
+    <h1>DannyCasio File Portal</h1>
+  </header>
+  <main>
+    <iframe id="shareFrame"></iframe>
+  </main>
+  <script>
+    const m = location.pathname.match(/^\/drop\/([^/]+)$/);
+    const frame = document.getElementById('shareFrame');
+    if (!m) {
+      frame.srcdoc = '<p style="padding:1rem">No share token provided.</p>';
+    } else {
+      const token = m[1];
+      frame.src = `https://transfer.dannycasio.com/s/${token}`;
+    }
+  </script>
+</body>
+</html>
 
