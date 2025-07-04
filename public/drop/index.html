@@ -103,14 +103,19 @@
     return;  // done
   }
 
-  /* ---------- 4B. Single-file share (only /webdav/) ---------- */
-  if (all.length) {
-    const root = all[0];
-    const name = root.getElementsByTagNameNS('*','displayname')[0]?.textContent || 'file';
-    const url  = `https://transfer.dannycasio.com/s/${token}/download`;
-    renderCard(name, url);
-    return;
+/* ---------- 4B. Single-file share ---------- */
+if (all.length) {
+  const root = all[0];
+  let name   = root.getElementsByTagNameNS('*','displayname')[0]?.textContent || '';
+  if (!name) {
+    const rootHref = root.getElementsByTagNameNS('*','href')[0]?.textContent || '';
+    name = decodeURIComponent(rootHref.split('/').filter(Boolean).pop()) || 'file';
   }
+  const url  = `https://transfer.dannycasio.com/s/${token}/download`;
+  renderCard(name, url);
+  return;
+}
+
 
   /* ---------- 5. Nothing found ---------- */
   box.textContent = 'No files found.';
