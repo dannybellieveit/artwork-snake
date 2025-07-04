@@ -24,16 +24,17 @@
   <main>
     <iframe id="shareFrame"></iframe>
   </main>
-  <script>
-    const m = location.pathname.match(/^\/drop\/([^/]+)$/);
-    const frame = document.getElementById('shareFrame');
-    if (!m) {
-      frame.srcdoc = '<p style="padding:1rem">No share token provided.</p>';
-    } else {
-      const token = m[1];
-      frame.src = `https://transfer.dannycasio.com/s/${token}`;
-    }
-  </script>
+<script>
+  const params = new URLSearchParams(location.search);
+  const token  = params.get('token');
+  const frame  = document.getElementById('shareFrame');
+  if (!token) {
+    frame.srcdoc = '<p style="padding:1rem">No share token provided.</p>';
+  } else {
+    frame.src = `https://transfer.dannycasio.com/s/${token}`;
+  }
+</script>
+
 </body>
 </html>
 
