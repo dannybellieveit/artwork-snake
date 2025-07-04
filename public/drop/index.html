@@ -5,45 +5,143 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>DannyCasio File Share</title>
   <base href="/" />
-  <link rel="stylesheet" href="style.css"> <!-- your site’s CSS -->
+  <link rel="stylesheet" href="style.css">
   <style>
-    /* Override/additional styling just for this page */
-    body { margin:0; background:#87CEEB; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; color:#000; }
-    header { background:#fff; padding:1rem; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
-    .back-btn { display:inline-block; margin-bottom:1rem; text-decoration:none; color:#000; font-size:1rem; }
-    main { max-width:800px; margin:2rem auto; background:#fff; padding:1rem; border-radius:8px; }
-    iframe { width:100%; height:70vh; border:none; }
+    body {
+      margin: 0;
+      background: #87CEEB;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #000;
+    }
+    header {
+      background: #fff;
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .back-btn {
+      position: absolute;
+      left: 1rem;
+      top: 1rem;
+      text-decoration: none;
+      color: #000;
+      font-size: 1rem;
+    }
+    main {
+      max-width: 800px;
+      margin: 4rem auto 2rem;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 8px;
+    }
+    .file-item {
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid #ececec;
+      padding-bottom: 1rem;
+    }
+    .file-item h2 {
+      margin: 0 0 0.5rem;
+      font-size: 1.25rem;
+    }
+    .file-item audio {
+      width: 100%;
+      margin: 0.5rem 0;
+    }
+    .file-item a.download {
+      display: inline-block;
+      margin-top: 0.5rem;
+      background: #0070f3;
+      color: #fff;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      text-decoration: none;
+    }
+    .file-item a.download:hover {
+      background: #005bb5;
+    }
   </style>
 </head>
 <body>
   <header>
-    <!-- Your site header here -->
     <a class="back-btn" href="https://dannycasio.com">← Back to Home</a>
     <h1>DannyCasio File Portal</h1>
   </header>
-  <main>
-    <iframe id="shareFrame"></iframe>
+  <main id="drop-content">
+    <p>Loading files…</p>
   </main>
-<script>
-  // Extract token from query or path
-  const params = new URLSearchParams(location.search);
-  let token = params.get('token');
-  if (!token) {
-    const m = location.pathname.match(/^\/drop\/([^/]+)$/);
-    token = m ? m[1] : null;
-  }
+  <script>
+    (async () => {
+      // 1. Extract token
+      const params = new URLSearchParams(location.search);
+      let token = params.get('token');
+      if (!token) {
+        const m = location.pathname.match(/^\/drop\/([^/]+)$/);
+        token = m ? m[1] : null;
+      }
+      const container = document.getElementById('drop-content');
+      if (!token) {
+        container.innerHTML = '<p style="padding:1rem">No share token provided.</p>';
+        return;
+      }
 
-  const frame = document.getElementById('shareFrame');
-  if (!token) {
-    frame.srcdoc = '<p style="padding:1rem">No share token provided.</p>';
-  } else {
-    // Point at your Cloudflare Worker proxy
-    frame.src = `https://dannycasio.com/share-proxy/${token}`;
-  }
-</script>
+      // 2. PROPFIND folder list via WebDAV
+      const davUrl = `https://transfer.dannycasio.com/public.php/dav/files/${token}/`;
+      let xmlText;
+      try {
+        const resp = await fetch(davUrl, {
+          method: 'PROPFIND',
+          headers: { 'Depth': '1' }
+        });
+        xmlText = await resp.text();
+      } catch (err) {
+        container.innerHTML = '<p>Error loading files.</p>';
+        console.error(err);
+        return;
+      }
 
+      // 3. Parse XML
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(xmlText, 'application/xml');
+      const responses = Array.from(xml.getElementsByTagNameNS('*', 'response'))
+                             .slice(1); // skip the folder itself
 
+      // 4. Build list items
+      if (responses.length === 0) {
+        container.innerHTML = '<p>No files found.</p>';
+        return;
+      }
+      container.innerHTML = ''; 
 
+      responses.forEach(r => {
+        const href = r.getElementsByTagNameNS('*','href')[0].textContent;
+        const parts = decodeURIComponent(href).split('/');
+        const name = parts.pop() || parts.pop(); // handle trailing slash
+        const downloadUrl = `https://transfer.dannycasio.com/s/${token}/download?path=/${encodeURIComponent(name)}`;
+
+        const section = document.createElement('section');
+        section.className = 'file-item';
+
+        const title = document.createElement('h2');
+        title.textContent = name;
+        section.appendChild(title);
+
+        if (/\.(mp3|wav|ogg)$/i.test(name)) {
+          const audio = document.createElement('audio');
+          audio.controls = true;
+          audio.src = downloadUrl;
+          section.appendChild(audio);
+        }
+
+        const link = document.createElement('a');
+        link.className = 'download';
+        link.href = downloadUrl;
+        link.textContent = 'Download';
+        link.setAttribute('download', name);
+        section.appendChild(link);
+
+        container.appendChild(section);
+      });
+    })();
+  </script>
 </body>
 </html>
-
