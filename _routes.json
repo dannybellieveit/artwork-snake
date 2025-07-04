@@ -1,0 +1,3 @@
+[
+  { "source": "/drop/:token", "destination": "/drop.html", "status": 200 }
+]
