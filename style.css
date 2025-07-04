@@ -194,3 +194,28 @@ footer {
   color: var(--font-color-dark);
   font-weight: bold;
 }
+
+/* Styles for the uploader page */
+.uploader-container {
+  width: var(--container-width);
+  max-width: var(--container-max-width);
+  margin: var(--gap-large) auto;
+  text-align: center;
+}
+
+.drop-zone {
+  border: 2px dashed var(--border-color);
+  padding: 40px;
+  border-radius: var(--border-radius);
+  background: #fff;
+  color: var(--font-color-dark);
+}
+
+.upload-link {
+  margin-top: var(--gap-large);
+}
+
+.error {
+  margin-top: var(--gap-small);
+  color: red;
+}
