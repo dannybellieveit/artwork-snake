@@ -176,6 +176,7 @@ const fileURL = `/share-proxy/${token}?file=${encodeURIComponent(name)}`;
     const player = document.createElement('audio');
     player.controls = true;
     player.src = fileURL;
+    player.onerror = () => player.style.display = 'none';
     player.style.display = 'block';
     player.style.marginTop = '.4rem';
     li.appendChild(player);
