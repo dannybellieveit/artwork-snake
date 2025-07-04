@@ -131,6 +131,7 @@ class GameController {
     this.speedup        = 1;  // bumped only in _die()
 
     this.board          = new Board('game-canvas', this.CELL);
+    this.container      = this.board.canvas.parentElement;
     this.spotifyEmbed   = document.getElementById('spotify-embed');
     this.embedContainer = document.getElementById('spotify-embed-container');
 
@@ -153,6 +154,7 @@ class GameController {
     this.target      = null;
     this.manualDir   = null;
     this.isManual    = false;
+    this.showBoundaries = false;
     this.cursorActive = true; // disable cursor updates when playing
     this.rafId       = null;
     this.lastTime    = 0;
@@ -289,6 +291,8 @@ _handleMouseMove(e) {
         this.scoreElem.style.display = 'block';
         this.highScoreElem.style.display = 'block';
         this._updateScores();
+        if (this.container) this.container.classList.add('playing');
+        this.showBoundaries = true;
       }
       this.manualDir = map[e.key];
     }
@@ -348,6 +352,9 @@ _handleMouseMove(e) {
     this.snake.init();
     this._spawnTarget();
     this.cursorActive = true;
+
+    if (this.container) this.container.classList.remove('playing');
+    this.showBoundaries = false;
 
     // Round initialization complete
 
@@ -470,6 +477,16 @@ _handleMouseMove(e) {
         else ctx.fillRect(x, y, s, s);
       });
     });
+
+    if (this.showBoundaries) {
+      const w = this.board.cols * this.CELL;
+      const h = this.board.rows * this.CELL;
+      this.board.ctx.save();
+      this.board.ctx.strokeStyle = 'black';
+      this.board.ctx.lineWidth = 2;
+      this.board.ctx.strokeRect(0, 0, w, h);
+      this.board.ctx.restore();
+    }
   }
 }
 
