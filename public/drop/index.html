@@ -117,16 +117,18 @@
   if (!token){ box.textContent = 'No share token provided.'; return; }
 
   /* helper: build one card */
-  function render(name, url, mime=''){
-    const wrap = document.createElement('section');
-    wrap.className = 'file-item';
-    wrap.innerHTML =
-      `<h2>${name}</h2>` +
-      (/^audio\//.test(mime) || /\.(mp3|wav|ogg)$/i.test(name)
-         ? `<audio controls src="${url}"></audio>` : '') +
-      `<a class="download" href="${url}" download>Download</a>`;
-    box.appendChild(wrap);
-  }
+function render(name, url, mime='', bytes=0){
+  const wrap = document.createElement('section');
+  wrap.className = 'file-item';
+  wrap.innerHTML =
+    `<h2>${name}</h2>` +
+    (/^audio\//.test(mime) || /\.(mp3|wav|ogg)$/i.test(name)
+       ? `<audio controls src="${url}"></audio>` : '') +
+    `<a class="download" href="${url}" download>Download</a>` +
+    (bytes ? `<div style="font-size:.9rem;margin-top:.4rem">Size: ${(bytes/(1024*1024)).toFixed(1)} MB</div>` : '');
+  box.appendChild(wrap);
+}
+
 
   /* 2. fetch XML list */
   let xmlText = '';
@@ -164,6 +166,41 @@ if (files.length) {
   });
   listWrap.appendChild(ul);
 
+  /* 1. Build a bullet list and total size */
+const ul = document.createElement('ul');
+ul.style.margin = '0 0 1.2rem 1.2rem';
+ul.style.padding = '0';
+
+let totalBytes = 0;   /* ← NEW */
+
+files.forEach(r => {
+  const href = r.getElementsByTagNameNS('*','href')[0].textContent;
+  const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
+  const li = document.createElement('li');
+  li.textContent = name;
+  ul.appendChild(li);
+
+  /* pull <d:getcontentlength> */
+  const lenNode = r.getElementsByTagNameNS('*','getcontentlength')[0];
+  if (lenNode) totalBytes += Number(lenNode.textContent || 0);   /* ← NEW */
+});
+listWrap.appendChild(ul);
+
+/* 2. Download-all button */
+...
+listWrap.appendChild(btn);
+
+/* 3. Size footnote */            /* ← NEW */
+if (totalBytes) {
+  const sizeMB = (totalBytes / (1024*1024)).toFixed(1);
+  const note = document.createElement('div');
+  note.style.fontSize = '.9rem';
+  note.style.marginTop = '.4rem';
+  note.textContent = `Total size: ${sizeMB} MB`;
+  listWrap.appendChild(note);
+}
+
+
   /* 2. Single “Download all as ZIP” button */
   const zipURL = `https://transfer.dannycasio.com/s/${token}/download?accept=zip`;
   const btn = document.createElement('a');
@@ -181,7 +218,7 @@ if (files.length) {
   try{
     const meta = await fetch(`/head-proxy/${token}`).then(r=>r.json());
     const url  = `https://transfer.dannycasio.com/s/${token}/download`;
-    render(meta.filename || 'file', url, meta.mime);
+   render(meta.filename || 'file', url, meta.mime, meta.size || 0);
   }catch(err){
     /* fallback: still show a basic link */
     const url = `https://transfer.dannycasio.com/s/${token}/download`;
