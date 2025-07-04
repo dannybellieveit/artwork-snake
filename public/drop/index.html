@@ -28,64 +28,51 @@
   </main>
 <script>
   (async () => {
-    // 1. Extract share token
-    const params = new URLSearchParams(location.search);
-    let token = params.get('token');
-    if (!token) {
-      const m = location.pathname.match(/^\/drop\/([^/]+)$/);
-      token = m && m[1];
-    }
-    const container = document.getElementById('drop-content');
-    if (!token) {
-      container.innerHTML = '<p>No share token provided.</p>';
-      return;
-    }
+    /* ---- 1. Get token from query or path ---- */
+    const qs  = new URLSearchParams(location.search);
+    let token = qs.get('token') ||
+                (location.pathname.match(/^\/drop\/([^/]+)$/) || [])[1];
 
-    // 2. Fetch file list JSON from Worker
-    let files;
+    const box = document.getElementById('drop-content');
+    if (!token) { box.textContent = 'No share token provided.'; return; }
+
+    /* ---- 2. Fetch XML list via Worker (same-origin, CORS OK) ---- */
+    let xmlStr;
     try {
       const res = await fetch(`/list-proxy/${token}`);
       if (!res.ok) throw new Error(res.status);
-      files = await res.json();
-    } catch (err) {
-      container.innerHTML = '<p>Error loading files.</p>';
-      console.error(err);
+      xmlStr = await res.text();
+    } catch (e) {
+      box.textContent = 'Error loading files.';
+      console.error(e);
       return;
     }
 
-    // 3. Render the list
-    if (files.length === 0) {
-      container.innerHTML = '<p>No files found.</p>';
-      return;
-    }
-    container.innerHTML = ''; // clear “Loading…”
+    /* ---- 3. Parse XML & build file list ---- */
+    const xml  = new DOMParser().parseFromString(xmlStr, 'application/xml');
+    const nodes = Array.from(xml.getElementsByTagNameNS('*','response')).slice(1); // skip folder
 
-    files.forEach(f => {
-      const section = document.createElement('section');
-      section.className = 'file-item';
+    if (!nodes.length) { box.textContent = 'No files found.'; return; }
+    box.innerHTML = '';
 
-      const h2 = document.createElement('h2');
-      h2.textContent = f.name;
-      section.appendChild(h2);
+    nodes.forEach(r => {
+      const href = r.getElementsByTagNameNS('*','href')[0].textContent;
+      const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
+      const url  = `https://transfer.dannycasio.com/s/${token}/download?path=/${encodeURIComponent(name)}`;
 
-      if (f.name.match(/\.(mp3|wav|ogg)$/i)) {
-        const audio = document.createElement('audio');
-        audio.controls = true;
-        audio.src = f.url;
-        section.appendChild(audio);
-      }
+      const sec  = document.createElement('section');
+      sec.className = 'file-item';
 
-      const a = document.createElement('a');
-      a.className = 'download';
-      a.href = f.url;
-      a.textContent = 'Download';
-      a.setAttribute('download', f.name);
-      section.appendChild(a);
-
-      container.appendChild(section);
+      sec.innerHTML = `<h2>${name}</h2>` +
+        (/.(mp3|wav|ogg)$/i.test(name)
+          ? `<audio controls src="${url}"></audio>`
+          : '') +
+        `<a class="download" href="${url}" download>Download</a>`;
+      box.appendChild(sec);
     });
   })();
 </script>
+
 
 </body>
 </html>
