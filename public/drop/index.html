@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -149,68 +149,56 @@ function render(name, url, mime='', bytes=0){
 
   box.innerHTML = '';
 
-  /* ---------- 4A. Folder share ---------- */
+/* ---------- 4A. Folder share ---------- */
 if (files.length) {
-  /* 1. Build a bullet list of filenames */
+  /* 1. Build a bullet list of filenames and total size */
   const listWrap = document.createElement('section');
   listWrap.className = 'file-item';
+
   const ul = document.createElement('ul');
-  ul.style.margin = '0 0 1.2rem 1.2rem';
+  ul.style.margin  = '0 0 1.2rem 1.2rem';
   ul.style.padding = '0';
+
+  let totalBytes = 0;               // accumulate here
+
   files.forEach(r => {
+    /* filename */
     const href = r.getElementsByTagNameNS('*','href')[0].textContent;
     const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
-    const li = document.createElement('li');
+
+    /* <li> • filename */
+    const li   = document.createElement('li');
     li.textContent = name;
     ul.appendChild(li);
+
+    /* file size from <d:getcontentlength> */
+    const lenNode = r.getElementsByTagNameNS('*','getcontentlength')[0];
+    if (lenNode) totalBytes += Number(lenNode.textContent || 0);
   });
+
   listWrap.appendChild(ul);
 
-  /* 1. Build a bullet list and total size */
-const ul = document.createElement('ul');
-ul.style.margin = '0 0 1.2rem 1.2rem';
-ul.style.padding = '0';
-
-let totalBytes = 0;   /* ← NEW */
-
-files.forEach(r => {
-  const href = r.getElementsByTagNameNS('*','href')[0].textContent;
-  const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
-  const li = document.createElement('li');
-  li.textContent = name;
-  ul.appendChild(li);
-
-  /* pull <d:getcontentlength> */
-  const lenNode = r.getElementsByTagNameNS('*','getcontentlength')[0];
-  if (lenNode) totalBytes += Number(lenNode.textContent || 0);   /* ← NEW */
-});
-listWrap.appendChild(ul);
-
-/* 2. Download-all button */
-...
-listWrap.appendChild(btn);
-
-/* 3. Size footnote */            /* ← NEW */
-if (totalBytes) {
-  const sizeMB = (totalBytes / (1024*1024)).toFixed(1);
-  const note = document.createElement('div');
-  note.style.fontSize = '.9rem';
-  note.style.marginTop = '.4rem';
-  note.textContent = `Total size: ${sizeMB} MB`;
-  listWrap.appendChild(note);
-}
-
-
-  /* 2. Single “Download all as ZIP” button */
+  /* 2. Single “Download all (ZIP)” button */
   const zipURL = `https://transfer.dannycasio.com/s/${token}/download?accept=zip`;
   const btn = document.createElement('a');
   btn.className = 'download';
-  btn.href = zipURL;
+  btn.href      = zipURL;
   btn.textContent = 'Download all (ZIP)';
   listWrap.appendChild(btn);
 
+  /* 3. Size footnote */
+  if (totalBytes) {
+    const sizeMB = (totalBytes / (1024 * 1024)).toFixed(1);
+    const note   = document.createElement('div');
+    note.style.fontSize  = '.9rem';
+    note.style.marginTop = '.4rem';
+    note.textContent     = `Total size: ${sizeMB} MB`;
+    listWrap.appendChild(note);
+  }
+
+  /* add the assembled section to the page & stop */
   box.appendChild(listWrap);
-  return;  // done with folder case
+  return;
 }
 
 
