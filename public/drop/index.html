@@ -1,3 +1,5 @@
+some issues, the file name doesnt appear, the file i'm testing is a .wav and there's no option to stream it, there's still ugly white boxes. maybe take away the home button. I have big design plans but not until the basics are there.
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,76 +7,110 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Danny Casio File Share</title>
   <base href="/" />
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="style.css">
   <style>
-    :root { --blue:#0070f3; }
-    body   { margin:0; background:#87CEEB; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; color:#000; }
-    /* simple header strip */
-    header { padding:1.2rem 1rem 0; text-align:center; }
-    header h1 { margin:0; font-size:clamp(1.6rem,4vw,2.4rem); }
-    .back-btn { position:absolute; left:1rem; top:1rem; text-decoration:none; color:#000; font-size:1rem; }
-    /* file list grid */
-    #drop-content { max-width:900px; margin:2.5rem auto; display:grid; gap:2rem; padding:0 1rem; }
-    .file-card   { background:#fff; padding:1.5rem 2rem; border-radius:14px; box-shadow:0 4px 10px rgba(0,0,0,.06); }
-    .file-card h2{ margin:0 0 .75rem; font-size:1.25rem; word-break:break-all; }
-    .file-card audio{ width:100%; margin:.5rem 0 1rem; }
-    .download    { display:inline-block; background:var(--blue); color:#fff; text-decoration:none; padding:.6rem 1.3rem; border-radius:8px; font-weight:600; }
-    .download:hover{ background:#005bb5; }
-    /* mobile spacing */
-    @media (max-width:600px){ #drop-content{ gap:1.25rem; } }
+/* ---- page look ------------------------------------------------ */
+:root { --blue:#0070f3; }
+body  { margin:0; background:#87CEEB;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+        color:#000; }
+
+/* top header bar */
+header { position:relative; padding:1rem 1rem 0; text-align:center; }
+.back-btn { position:absolute; left:1rem; top:1rem; text-decoration:none; color:#000; font-size:1rem; }
+header h1 { margin:0; font-size:clamp(1.6rem,4vw,2.4rem); }
+
+/* file list */
+#drop-content   { max-width:900px; margin:3rem auto 2rem; display:grid; gap:2rem; padding:0 1rem; }
+.file-item      { background:#fff; padding:1.5rem 2rem; border-radius:14px;
+                  box-shadow:0 4px 10px rgba(0,0,0,.05); }
+.file-item h2   { margin:0 0 .75rem; font-size:1.25rem; word-break:break-all; }
+.file-item audio{ width:100%; margin:.5rem 0 1rem; }
+
+.download       { display:inline-block; background:var(--blue); color:#fff; text-decoration:none;
+                  padding:.55rem 1.25rem; border-radius:8px; font-weight:600; }
+.download:hover { background:#005bb5; }
+
+/* phone spacing */
+@media (max-width:600px){ #drop-content{ gap:1.25rem; } }
+
   </style>
 </head>
 <body>
-  <header>
-    <a class="back-btn" href="https://dannycasio.com">← Back to Home</a>
-    <h1>DannyCasio File Portal</h1>
-  </header>
+  <nav class="top-links">
+    <a href="https://dannycasio.com" class="home-link">Home</a>
+  </nav>
+<main id="drop-content" class="portal">
+  <!-- JS will fill this -->
+</main>
 
-  <div id="drop-content">Loading…</div>
+<script>
+(async () => {
+  /* 1. grab token from ?token= or /drop/<token> */
+  const qs  = new URLSearchParams(location.search);
+  let token = qs.get('token') || (location.pathname.match(/^\/drop\/([^/]+)$/)||[])[1];
+  const box = document.getElementById('drop-content');
+  if (!token){ box.textContent='No share token provided.'; return; }
 
-  <script>
-  (async () => {
-    /* -------- 1. grab token -------- */
-    const qs  = new URLSearchParams(location.search);
-    let token = qs.get('token') || (location.pathname.match(/^\/drop\/([^/]+)$/)||[])[1];
-    const box = document.getElementById('drop-content');
-    if (!token){ box.textContent='No share token provided.'; return; }
+  /* 2. fetch XML from the Worker */
+  let xmlText = '';
+  try{
+    const res = await fetch(`/list-proxy/${token}`);
+    if (!res.ok) throw new Error(res.status);
+    xmlText = await res.text();
+  }catch(err){
+    box.textContent='Error loading files.'; console.error(err); return;
+  }
 
-    /* -------- 2. fetch XML list via Worker -------- */
-    let xmlText;
-    try{
-      const res = await fetch(`/list-proxy/${token}`);
-      if(!res.ok) throw new Error(res.status);
-      xmlText = await res.text();
-    }catch(e){ box.textContent='Error loading files.'; console.error(e); return; }
+  /* 3. parse every <response>, skip the root "webdav" folder */
+  const xml = new DOMParser().parseFromString(xmlText,'application/xml');
+  const responses = [...xml.getElementsByTagName('*')]
+                    .filter(n => n.localName === 'response')
+                    .filter(r => {
+                       const href = r.querySelector('href')?.textContent || '';
+                       return !href.endsWith('/webdav/') && !href.endsWith('/'); // skip root
+                     });
 
-    /* -------- 3. parse responses, skip folder itself -------- */
-    const xml = new DOMParser().parseFromString(xmlText,'application/xml');
-    const all = [...xml.getElementsByTagName('*')].filter(n=>n.localName==='response');
+  if (!responses.length){ box.textContent='No files found.'; return; }
+  box.innerHTML='';
 
-    const files = all.filter(r => {
-      const href = r.getElementsByTagName('*')[0].textContent;
-      return !href.endsWith('/webdav/') && !href.endsWith('/');   // ignore root folder
-    });
+  /* 4. render cards */
+  responses.forEach(r=>{
+    const href = r.querySelector('href').textContent;
+    const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
 
-    if(!files.length){ box.textContent='No files found.'; return; }
-    box.innerHTML='';
+    /* public-share direct download URL */
+    const fileURL = `https://transfer.dannycasio.com/s/${token}/download?path=/${encodeURIComponent(name)}`;
 
-    /* -------- 4. render each card -------- */
-    files.forEach(r=>{
-      const href = r.getElementsByTagName('*')[0].textContent;
-      const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
-      const url  = `https://transfer.dannycasio.com/s/${token}/download?path=/${encodeURIComponent(name)}`;
-      const card = document.createElement('div');
-      card.className='file-card';
-      card.innerHTML = `
-        <h2>${name}</h2>
-        ${/\.(mp3|wav|ogg|flac)$/i.test(name)?`<audio controls src="${url}"></audio>`:''}
-        <a class="download" href="${url}" download>Download</a>
-      `;
-      box.appendChild(card);
-    });
-  })();
-  </script>
+    const card   = document.createElement('div');
+    card.className = 'file-item';
+
+    /* filename */
+    const h2 = document.createElement('h2');
+    h2.textContent = name;
+    card.appendChild(h2);
+
+    /* audio preview */
+    if (/\.(wav|mp3|ogg)$/i.test(name)){
+      const audio = document.createElement('audio');
+      audio.controls = true;
+      audio.src = fileURL;
+      card.appendChild(audio);
+    }
+
+    /* download button */
+    const dl = document.createElement('a');
+    dl.className = 'download';
+    dl.href      = fileURL;
+    dl.textContent = 'Download';
+    dl.setAttribute('download', name);
+    card.appendChild(dl);
+
+    box.appendChild(card);
+  });
+})();
+</script>
+
+
 </body>
 </html>
