@@ -81,7 +81,9 @@
 
     /* ---------- 4. Render each file ---------- */
     responses.forEach(r => {
-      const href = r.getElementsByTagName('*')[0].textContent;   // first <href>
+      const hrefEl = r.querySelector('href');
+      if (!hrefEl) return;
+      const href = hrefEl.textContent;
       const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
       if (!name) return;   // skip empty
 
