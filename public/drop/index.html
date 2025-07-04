@@ -7,9 +7,13 @@
   <base href="/" />
   <link rel="stylesheet" href="style.css">
   <style>
-    body { margin:0; background:#87CEEB; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; color:#000; }
-    header { position:relative; background:#fff; padding:1rem; box-shadow:0 2px 4px rgba(0,0,0,0.1); text-align:center; }
-    .back-btn { position:absolute; left:1rem; top:1rem; text-decoration:none; color:#000; font-size:1rem; }
+    body {
+      margin: 0;
+      background: var(--primary-bg-color);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
+      color: #000;
+    }
     main { max-width:800px; margin:4rem auto 2rem; background:#fff; padding:2rem; border-radius:8px; }
     .file-item { margin-bottom:1.5rem; border-bottom:1px solid #ececec; padding-bottom:1rem; }
     .file-item h2 { margin:0 0 .5rem; font-size:1.25rem; }
@@ -57,7 +61,7 @@
     /* ---------- 2. Fetch XML listing via Worker ---------- */
     let xmlStr;
     try {
-      const res = await fetch(/list-proxy/${token});
+      const res = await fetch(`/list-proxy/${token}`);
       if (!res.ok) throw new Error(res.status);
       xmlStr = await res.text();
     } catch (e) {
@@ -81,16 +85,28 @@
       const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
       if (!name) return;   // skip empty
 
-      const url  = https://transfer.dannycasio.com/s/${token}/download?path=/${encodeURIComponent(name)};
+      const url  = `https://transfer.dannycasio.com/s/${token}/download?path=/${encodeURIComponent(name)}`;
 
       const sec  = document.createElement('section');
       sec.className = 'file-item';
 
-      sec.innerHTML =
-        <h2>${name}</h2> +
-        (/\.(mp3|wav|ogg)$/i.test(name)
-           ? <audio controls src="${url}"></audio> : '') +
-        <a class="download" href="${url}" download>Download</a>;
+      const title = document.createElement('h2');
+      title.textContent = name;
+      sec.appendChild(title);
+
+      if (/\.(mp3|wav|ogg)$/i.test(name)) {
+        const audio = document.createElement('audio');
+        audio.controls = true;
+        audio.src = url;
+        sec.appendChild(audio);
+      }
+
+      const link = document.createElement('a');
+      link.className = 'download';
+      link.href = url;
+      link.download = '';
+      link.textContent = 'Download';
+      sec.appendChild(link);
 
       box.appendChild(sec);
     });
