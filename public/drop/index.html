@@ -7,36 +7,86 @@
   <base href="/" />
   <link rel="stylesheet" href="style.css">
   <style>
-    body {
-      margin: 0;
-      background: var(--primary-bg-color);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-        "Helvetica Neue", Arial, sans-serif;
-      color: #000;
-    }
-    main { max-width:800px; margin:4rem auto 2rem; padding:2rem; }
-    .file-item { margin-bottom:1.5rem; border-bottom:1px solid #ececec; padding-bottom:1rem; }
-    .file-item h2 { margin:0 0 .5rem; font-size:1.25rem; }
-    .file-item audio { width:100%; margin:.5rem 0; }
-    .file-item a.download { display:inline-block; margin-top:.5rem; background:#0070f3; color:#fff; padding:.5rem 1rem; border-radius:4px; text-decoration:none; }
-    .file-item a.download:hover { background:#005bb5; }
-    /* layout tweaks */
-.top-links   { text-align:center; margin-top:1rem; }
-.home-link   { font-weight:600; text-decoration:none; color:#000; }
-.portal      { max-width:900px; margin:3rem auto; display:grid; gap:2rem; }
-.file-item   { background:#fff; padding:1.5rem 2rem; border-radius:16px;
-               box-shadow:0 4px 10px rgba(0,0,0,.05); }
-.file-item h2{ margin:0 0 1rem; font-size:1.35rem; }
-.file-item audio{ width:100%; margin:.5rem 0 1rem; }
-.download    { background:#0070f3; padding:.6rem 1.4rem; border-radius:8px;
-               color:#fff; text-decoration:none; font-weight:600;
-               display:inline-block; }
-.download:hover{ background:#005bb5; }
-
-/* make everything sit nicely on narrow screens */
-@media (max-width:600px){
-  .portal{ margin:2rem 1rem; }
+   /* --------  DannyCasio transfer portal  ----------------------- */
+:root{
+  --blue: #0070f3;
+  --blue-dark: #005bb5;
+  --bg:   #87CEEB;       /* same sky-blue as your site */
+  --card: #ffffff;
+  --shadow: 0 4px 18px rgba(0,0,0,.12);
 }
+
+html,body{
+  margin:0;
+  background:var(--bg);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  color:#000;
+}
+
+/* header strip stays slim & transparent so the blue shines through */
+header{
+  position:relative;
+  padding:1.2rem 1rem 0;
+  text-align:center;
+}
+header h1{
+  margin:0;
+  font-size:clamp(1.6rem,4vw,2.3rem);
+  letter-spacing:.02em;
+  font-weight:700;
+}
+.back-btn{
+  position:absolute;left:1rem;top:1rem;
+  text-decoration:none;color:#000;font-size:1rem;
+}
+
+/* file grid */
+#drop-content{
+  max-width:900px;
+  margin:3.5rem auto 2.5rem;
+  padding:0 1rem;
+  display:grid;
+  gap:2rem;
+}
+
+/* card */
+.file-item{
+  background:var(--card);
+  border-radius:18px;
+  box-shadow:var(--shadow);
+  padding:1.75rem 2rem;
+}
+.file-item h2{
+  margin:0 0 .9rem;
+  font-size:1.2rem;
+  word-break:break-all;
+}
+.file-item audio{
+  width:100%;
+  margin:.4rem 0 1.2rem;
+  outline:none;
+  border-radius:8px;
+}
+
+/* download button */
+.download{
+  display:inline-block;
+  background:var(--blue);
+  color:#fff;
+  text-decoration:none;
+  padding:.6rem 1.4rem;
+  border-radius:10px;
+  font-weight:600;
+  transition:background .15s ease;
+}
+.download:hover{ background:var(--blue-dark); }
+
+/* responsive tweaks */
+@media(max-width:600px){
+  #drop-content{ gap:1.3rem; }
+  .file-item{ padding:1.4rem 1.5rem; }
+}
+
 
   </style>
 </head>
