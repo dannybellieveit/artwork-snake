@@ -147,15 +147,35 @@
 
   box.innerHTML = '';
 
-  if (files.length){
-    files.forEach(r=>{
-      const href = r.getElementsByTagNameNS('*','href')[0].textContent;
-      const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
-      const url  = `https://transfer.dannycasio.com/s/${token}/download?path=/${encodeURIComponent(name)}`;
-      render(name, url);
-    });
-    return;
-  }
+  /* ---------- 4A. Folder share ---------- */
+if (files.length) {
+  /* 1. Build a bullet list of filenames */
+  const listWrap = document.createElement('section');
+  listWrap.className = 'file-item';
+  const ul = document.createElement('ul');
+  ul.style.margin = '0 0 1.2rem 1.2rem';
+  ul.style.padding = '0';
+  files.forEach(r => {
+    const href = r.getElementsByTagNameNS('*','href')[0].textContent;
+    const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
+    const li = document.createElement('li');
+    li.textContent = name;
+    ul.appendChild(li);
+  });
+  listWrap.appendChild(ul);
+
+  /* 2. Single “Download all as ZIP” button */
+  const zipURL = `https://transfer.dannycasio.com/s/${token}/download?accept=zip`;
+  const btn = document.createElement('a');
+  btn.className = 'download';
+  btn.href = zipURL;
+  btn.textContent = 'Download all (ZIP)';
+  listWrap.appendChild(btn);
+
+  box.appendChild(listWrap);
+  return;  // done with folder case
+}
+
 
   /* 4. single-file share -> ask head-proxy for filename + mime */
   try{
