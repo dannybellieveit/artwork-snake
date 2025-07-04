@@ -25,15 +25,24 @@
     <iframe id="shareFrame"></iframe>
   </main>
 <script>
+  // 1) Try query param
   const params = new URLSearchParams(location.search);
-  const token  = params.get('token');
-  const frame  = document.getElementById('shareFrame');
+  let token = params.get('token');
+
+  // 2) If no query-token, try path-based: /drop/<token>
+  if (!token) {
+    const m = location.pathname.match(/^\/drop\/([^/]+)$/);
+    token = m ? m[1] : null;
+  }
+
+  const frame = document.getElementById('shareFrame');
   if (!token) {
     frame.srcdoc = '<p style="padding:1rem">No share token provided.</p>';
   } else {
     frame.src = `https://transfer.dannycasio.com/s/${token}`;
   }
 </script>
+
 
 </body>
 </html>
