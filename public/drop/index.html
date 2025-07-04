@@ -28,7 +28,7 @@
   </main>
 <script>
   (async () => {
-    /* ---- 1. Get token from query or path ---- */
+    /* ---------- 1. Get the share token ---------- */
     const qs  = new URLSearchParams(location.search);
     let token = qs.get('token') ||
                 (location.pathname.match(/^\/drop\/([^/]+)$/) || [])[1];
@@ -36,43 +36,48 @@
     const box = document.getElementById('drop-content');
     if (!token) { box.textContent = 'No share token provided.'; return; }
 
-    /* ---- 2. Fetch XML list via Worker (same-origin, CORS OK) ---- */
+    /* ---------- 2. Fetch XML listing via Worker ---------- */
     let xmlStr;
     try {
       const res = await fetch(`/list-proxy/${token}`);
       if (!res.ok) throw new Error(res.status);
       xmlStr = await res.text();
     } catch (e) {
-      box.textContent = 'Error loading files.';
-      console.error(e);
-      return;
+      box.textContent = 'Error loading files.';  console.error(e);  return;
     }
 
-    /* ---- 3. Parse XML & build file list ---- */
-    const xml  = new DOMParser().parseFromString(xmlStr, 'application/xml');
-    const nodes = Array.from(xml.getElementsByTagNameNS('*','response')).slice(1); // skip folder
+    /* ---------- 3. Parse XML, find every <response> ---------- */
+    const xml = new DOMParser().parseFromString(xmlStr, 'application/xml');
 
-    if (!nodes.length) { box.textContent = 'No files found.'; return; }
-    box.innerHTML = '';
+    // Grab all elements, then filter by localName === 'response'
+    const responses = Array.from(xml.getElementsByTagName('*'))
+                           .filter(el => el.localName === 'response');
 
-    nodes.forEach(r => {
-      const href = r.getElementsByTagNameNS('*','href')[0].textContent;
+    if (!responses.length) { box.textContent = 'No files found.'; return; }
+
+    box.innerHTML = '';   // clear the “Loading…” text
+
+    /* ---------- 4. Render each file ---------- */
+    responses.forEach(r => {
+      const href = r.getElementsByTagName('*')[0].textContent;   // first <href>
       const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
+      if (!name) return;   // skip empty
+
       const url  = `https://transfer.dannycasio.com/s/${token}/download?path=/${encodeURIComponent(name)}`;
 
       const sec  = document.createElement('section');
       sec.className = 'file-item';
 
-      sec.innerHTML = `<h2>${name}</h2>` +
-        (/.(mp3|wav|ogg)$/i.test(name)
-          ? `<audio controls src="${url}"></audio>`
-          : '') +
+      sec.innerHTML =
+        `<h2>${name}</h2>` +
+        (/\.(mp3|wav|ogg)$/i.test(name)
+           ? `<audio controls src="${url}"></audio>` : '') +
         `<a class="download" href="${url}" download>Download</a>`;
+
       box.appendChild(sec);
     });
   })();
 </script>
-
 
 </body>
 </html>
