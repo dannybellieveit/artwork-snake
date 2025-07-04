@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Drop - Danny Casio</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <a href="/index.html" class="back-button" aria-label="Back to home">Back</a>
+  <div class="drop-frame-container">
+    <iframe id="drop-frame" loading="lazy" allowfullscreen></iframe>
+  </div>
+  <footer>
+    <ul class="contacts">
+      <li><a href="mailto:info@dannycasio.com" aria-label="Email Danny Casio">Email</a></li>
+      <li><a href="https://instagram.com/dannycasio_/" target="_blank" aria-label="Visit Danny Casio's Instagram">Instagram</a></li>
+      <li><a href="/more.html" aria-label="View more info">More</a></li>
+    </ul>
+  </footer>
+  <script>
+    const segments = window.location.pathname.split('/').filter(Boolean);
+    const token = segments.pop();
+    const frame = document.getElementById('drop-frame');
+    frame.src = `https://transfer.dannycasio.com/s/${encodeURIComponent(token)}`;
+  </script>
+</body>
+</html>
