@@ -44,70 +44,56 @@ header h1 { margin:0; font-size:clamp(1.6rem,4vw,2.4rem); }
 </main>
 
 <script>
-(async () => {
-  /* 1. grab token from ?token= or /drop/<token> */
-  const qs  = new URLSearchParams(location.search);
-  let token = qs.get('token') || (location.pathname.match(/^\/drop\/([^/]+)$/)||[])[1];
-  const box = document.getElementById('drop-content');
-  if (!token){ box.textContent='No share token provided.'; return; }
+  (async () => {
+    /* ---------- 1. Get the share token ---------- */
+    const qs  = new URLSearchParams(location.search);
+    let token = qs.get('token') ||
+                (location.pathname.match(/^\/drop\/([^/]+)$/) || [])[1];
 
-  /* 2. fetch XML from the Worker */
-  let xmlText = '';
-  try{
-    const res = await fetch(`/list-proxy/${token}`);
-    if (!res.ok) throw new Error(res.status);
-    xmlText = await res.text();
-  }catch(err){
-    box.textContent='Error loading files.'; console.error(err); return;
-  }
+    const box = document.getElementById('drop-content');
+    if (!token) { box.textContent = 'No share token provided.'; return; }
 
-  /* 3. parse every <response>, skip the root "webdav" folder */
-  const xml = new DOMParser().parseFromString(xmlText,'application/xml');
-  const responses = [...xml.getElementsByTagName('*')]
-                    .filter(n => n.localName === 'response')
-                    .filter(r => {
-                       const href = r.querySelector('href')?.textContent || '';
-                       return !href.endsWith('/webdav/') && !href.endsWith('/'); // skip root
-                     });
-
-  if (!responses.length){ box.textContent='No files found.'; return; }
-  box.innerHTML='';
-
-  /* 4. render cards */
-  responses.forEach(r=>{
-    const href = r.querySelector('href').textContent;
-    const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
-
-    /* public-share direct download URL */
-    const fileURL = `https://transfer.dannycasio.com/s/${token}/download?path=/${encodeURIComponent(name)}`;
-
-    const card   = document.createElement('div');
-    card.className = 'file-item';
-
-    /* filename */
-    const h2 = document.createElement('h2');
-    h2.textContent = name;
-    card.appendChild(h2);
-
-    /* audio preview */
-    if (/\.(wav|mp3|ogg)$/i.test(name)){
-      const audio = document.createElement('audio');
-      audio.controls = true;
-      audio.src = fileURL;
-      card.appendChild(audio);
+    /* ---------- 2. Fetch XML listing via Worker ---------- */
+    let xmlStr;
+    try {
+      const res = await fetch(/list-proxy/${token});
+      if (!res.ok) throw new Error(res.status);
+      xmlStr = await res.text();
+    } catch (e) {
+      box.textContent = 'Error loading files.';  console.error(e);  return;
     }
 
-    /* download button */
-    const dl = document.createElement('a');
-    dl.className = 'download';
-    dl.href      = fileURL;
-    dl.textContent = 'Download';
-    dl.setAttribute('download', name);
-    card.appendChild(dl);
+    /* ---------- 3. Parse XML, find every <response> ---------- */
+    const xml = new DOMParser().parseFromString(xmlStr, 'application/xml');
 
-    box.appendChild(card);
-  });
-})();
+    // Grab all elements, then filter by localName === 'response'
+    const responses = Array.from(xml.getElementsByTagName('*'))
+                           .filter(el => el.localName === 'response');
+
+    if (!responses.length) { box.textContent = 'No files found.'; return; }
+
+    box.innerHTML = '';   // clear the “Loading…” text
+
+    /* ---------- 4. Render each file ---------- */
+    responses.forEach(r => {
+      const href = r.getElementsByTagName('*')[0].textContent;   // first <href>
+      const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
+      if (!name) return;   // skip empty
+
+      const url  = https://transfer.dannycasio.com/s/${token}/download?path=/${encodeURIComponent(name)};
+
+      const sec  = document.createElement('section');
+      sec.className = 'file-item';
+
+      sec.innerHTML =
+        <h2>${name}</h2> +
+        (/\.(mp3|wav|ogg)$/i.test(name)
+           ? <audio controls src="${url}"></audio> : '') +
+        <a class="download" href="${url}" download>Download</a>;
+
+      box.appendChild(sec);
+    });
+  })();
 </script>
 
 
