@@ -165,7 +165,7 @@ if (files.length) {
   /* filename + direct download URL */
   const href = r.getElementsByTagNameNS('*','href')[0].textContent;
   const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
-  const fileURL = `https://transfer.dannycasio.com/s/${token}/download?path=/${encodeURIComponent(name)}`;
+const fileURL = `/share-proxy/${token}?file=${encodeURIComponent(name)}`;
 
   /* <li> item */
   const li = document.createElement('li');
