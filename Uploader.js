@@ -5,14 +5,19 @@
     const [link, setLink] = useState('');
     const [error, setError] = useState('');
     const [uploading, setUploading] = useState(false);
+    const [uploadedFile, setUploadedFile] = useState(null);
 
-    const user = window.REACT_APP_NC_USER || (typeof process !== 'undefined' ? process.env.REACT_APP_NC_USER : '');
-    const pass = window.REACT_APP_NC_PASS || (typeof process !== 'undefined' ? process.env.REACT_APP_NC_PASS : '');
+    // Credentials should be provided via a local config.js file that defines
+    // REACT_APP_NC_USER and REACT_APP_NC_PASS on the window object. This file
+    // is ignored in version control to avoid leaking private data.
+    const user = window.REACT_APP_NC_USER || '';
+    const pass = window.REACT_APP_NC_PASS || '';
 
     const handleDrop = async (e) => {
       e.preventDefault();
       const file = e.dataTransfer.files[0];
       if (!file) return;
+      setUploadedFile(file);
       if (!user || !pass) {
         setError('Missing credentials');
         return;
@@ -66,7 +71,9 @@
         uploading ? 'Uploading...' : 'Drag and drop a file here'
       ),
       link && React.createElement('div', { className: 'upload-link' },
-        React.createElement('a', { href: link, target: '_blank', rel: 'noopener noreferrer' }, link)
+        React.createElement('a', { href: link, target: '_blank', rel: 'noopener noreferrer' }, link),
+        uploadedFile && uploadedFile.type.startsWith('audio/') &&
+          React.createElement('audio', { controls: true, src: link })
       ),
       error && React.createElement('div', { className: 'error' }, error)
     );

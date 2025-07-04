@@ -219,3 +219,19 @@ footer {
   margin-top: var(--gap-small);
   color: red;
 }
+
+/* Styles for transfer page */
+.transfer-container {
+  width: var(--container-width);
+  max-width: var(--container-max-width);
+  margin: var(--gap-large) auto;
+  text-align: center;
+}
+
+.share-list {
+  margin-top: var(--gap-large);
+}
+
+.share-item {
+  margin-bottom: var(--gap-small);
+}
