@@ -475,6 +475,10 @@ _handleMouseMove(e) {
 
 // Initialize when DOM is ready
 
-window.addEventListener('DOMContentLoaded', () => new GameController());
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', () => new GameController());
+} else {
+  new GameController();
+}
 
 
