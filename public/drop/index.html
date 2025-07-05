@@ -17,7 +17,6 @@
   html,body{
     margin:0;
     background:var(--bg);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
     color:#000;
   }
 
@@ -95,13 +94,7 @@
 </head>
 <body>
 
-  <!-- Game Container -->
-  <div class="game-container no-border">
-    <div id="score" class="score-label">Score: 0</div>
-    <div id="high-score" class="score-label">High Score: 0</div>
-    <canvas id="game-canvas" width="800" height="450"></canvas>
-    <div id="pause-overlay" class="pause-overlay"></div>
-  </div>
+
 
   <div id="drop-content">Loading…</div>
 
@@ -116,8 +109,7 @@
     </ul>
   </footer>
 
-<script src="/images-data.js"></script>
-<script src="/game.js" defer></script>
+
 
 <script>
 (async () => {
@@ -134,7 +126,7 @@ function render(name, url, mime='', bytes=0){
   wrap.innerHTML =
     `<h2>${name}</h2>` +
     (/^audio\//.test(mime) || /\.(mp3|wav|ogg)$/i.test(name)
-       ? `<audio controls src="${url}"></audio>` : '') +
+       ? `<audio controls style="width:100%" src="${url}"></audio>` : '') +
     `<a class="download" href="${url}" download>Download</a>` +
     (bytes ? `<div style="font-size:.9rem;margin-top:.4rem">Size: ${(bytes/(1024*1024)).toFixed(1)} MB</div>` : '');
   box.appendChild(wrap);
@@ -186,9 +178,11 @@ const fileURL = `/share-proxy/${token}?file=${encodeURIComponent(name)}`;
   if (/\.(mp3|wav|ogg|flac)$/i.test(name)) {
     const player = document.createElement('audio');
     player.controls = true;
+    player.setAttribute('controls', '');
     player.src = fileURL;
     player.onerror = () => player.style.display = 'none';
     player.style.display = 'block';
+    player.style.width = '100%';
     player.style.marginTop = '.4rem';
     li.appendChild(player);
   }
