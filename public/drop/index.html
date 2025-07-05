@@ -87,12 +87,6 @@
     margin:3rem 0 2rem;
     font-size:.95rem;
   }
-  footer a{
-    color:#000;
-    text-decoration:none;
-    margin:0 .8rem;
-  }
-  footer a:hover{ text-decoration:underline; }
 
   @media(max-width:600px){
     #drop-content{ gap:1.4rem; }
@@ -115,11 +109,12 @@
 
   <!-- footer with email & Instagram -->
   <footer>
-    <a href="mailto:dannycasio@me.com">Email</a>
-    <a href="https://instagram.com/dannycasio_" target="_blank" rel="noopener">Instagram</a>
+    <ul class="contacts">
+      <li><a href="mailto:dannycasio@me.com">Email</a></li>
+      <li><a href="https://instagram.com/dannycasio_" target="_blank" rel="noopener">Instagram</a></li>
+      <li><a id="more-btn" href="#">More</a></li>
+    </ul>
   </footer>
-</body>
-</html>
 
 <script src="/images-data.js"></script>
 <script src="/game.js" defer></script>
@@ -240,9 +235,40 @@ const fileURL = `/share-proxy/${token}?file=${encodeURIComponent(name)}`;
   }catch(err){
     /* fallback: still show a basic link */
     const url = `https://transfer.dannycasio.com/s/${token}/download`;
-    render('file', url);
+  render('file', url);
   }
 })();
+</script>
+
+<script>
+function loadScript(src){
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = res;
+    s.onerror = rej;
+    document.body.appendChild(s);
+  });
+}
+
+document.getElementById('more-btn').addEventListener('click', async e => {
+  const btn = e.currentTarget;
+  if (btn.dataset.loaded) return;
+  e.preventDefault();
+  const container = document.createElement('div');
+  container.className = 'game-container no-border';
+  container.innerHTML = `\
+    <div id="score" class="score-label">Score: 0</div>\
+    <div id="high-score" class="score-label">High Score: 0</div>\
+    <canvas id="game-canvas" width="800" height="450"></canvas>\
+    <div id="pause-overlay" class="pause-overlay"></div>`;
+  document.body.insertBefore(container, document.getElementById('drop-content'));
+  await loadScript('/images-data.js');
+  await loadScript('/game.js');
+  btn.textContent = 'Even more';
+  btn.href = '/more.html';
+  btn.dataset.loaded = '1';
+});
 </script>
 
 
