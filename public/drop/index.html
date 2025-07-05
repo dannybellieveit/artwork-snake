@@ -257,6 +257,7 @@ document.getElementById('more-btn').addEventListener('click', async e => {
     <canvas id="game-canvas" width="800" height="450"></canvas>\
     <div id="pause-overlay" class="pause-overlay"></div>`;
   document.body.insertBefore(container, document.getElementById('drop-content'));
+  container.scrollIntoView({ behavior: 'smooth' });
   await loadScript('/images-data.js');
   await loadScript('/game.js');
   btn.textContent = 'Even more';
