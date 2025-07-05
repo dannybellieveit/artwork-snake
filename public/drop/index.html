@@ -118,6 +118,7 @@
   let token = qs.get('token') || (location.pathname.match(/^\/drop\/([^/]+)$/)||[])[1];
   const box = document.getElementById('drop-content');
   if (!token){ box.textContent = 'No share token provided.'; return; }
+  document.title = 'File Share';
 
   /* helper: build one card */
 function render(name, url, mime='', bytes=0){
@@ -149,6 +150,12 @@ function render(name, url, mime='', bytes=0){
     const href = r.getElementsByTagNameNS('*','href')[0]?.textContent || '';
     return !href.endsWith('/webdav/') && !href.endsWith('/');
   });
+
+  if (files.length === 1) {
+    const href = files[0].getElementsByTagNameNS('*','href')[0].textContent;
+    const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
+    document.title = name;
+  }
 
   box.innerHTML = '';
 
@@ -225,6 +232,7 @@ const fileURL = `/share-proxy/${token}?file=${encodeURIComponent(name)}`;
   try{
     const meta = await fetch(`/head-proxy/${token}`).then(r=>r.json());
     const url  = `https://transfer.dannycasio.com/s/${token}/download`;
+    if (meta.filename) document.title = meta.filename;
    render(meta.filename || 'file', url, meta.mime, meta.size || 0);
   }catch(err){
     /* fallback: still show a basic link */
