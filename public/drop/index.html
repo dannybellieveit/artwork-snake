@@ -113,6 +113,7 @@
 
 <script>
 (async () => {
+  console.time('total-load');
   /* 1. token */
   const qs  = new URLSearchParams(location.search);
   let token = qs.get('token') || (location.pathname.match(/^\/drop\/([^/]+)$/)||[])[1];
@@ -137,13 +138,17 @@ function render(name, url, mime='', bytes=0){
   /* 2. fetch XML list */
   let xmlText = '';
   try{
+    console.time('fetch-list');
     const res = await fetch(`/list-proxy/${token}`);
     if(!res.ok) throw new Error(res.status);
     xmlText = await res.text();
-  }catch(e){ box.textContent='Error loading files.'; console.error(e); return; }
+    console.timeEnd('fetch-list');
+  }catch(e){ box.textContent='Error loading files.'; console.error(e); console.timeEnd('total-load'); return; }
 
+  console.time('parse-xml');
   const doc  = new DOMParser().parseFromString(xmlText,'application/xml');
   const all  = [...doc.getElementsByTagName('*')].filter(n=>n.localName==='response');
+  console.timeEnd('parse-xml');
 
   /* 3. normal multi-file share */
   const files = all.filter(r=>{
@@ -224,13 +229,16 @@ const fileURL = `/share-proxy/${token}?file=${encodeURIComponent(name)}`;
 
   /* add the assembled section to the page & stop */
   box.appendChild(listWrap);
+  console.timeEnd('total-load');
   return;
 }
 
 
   /* 4. single-file share -> ask head-proxy for filename + mime */
   try{
+    console.time('fetch-head');
     const meta = await fetch(`/head-proxy/${token}`).then(r=>r.json());
+    console.timeEnd('fetch-head');
     const url  = `https://transfer.dannycasio.com/s/${token}/download`;
     if (meta.filename) document.title = meta.filename;
    render(meta.filename || 'file', url, meta.mime, meta.size || 0);
@@ -239,6 +247,7 @@ const fileURL = `/share-proxy/${token}?file=${encodeURIComponent(name)}`;
     const url = `https://transfer.dannycasio.com/s/${token}/download`;
   render('file', url);
   }
+  console.timeEnd('total-load');
 })();
 </script>
 
