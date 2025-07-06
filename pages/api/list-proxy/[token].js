@@ -8,8 +8,10 @@ export default async function handler(req, res) {
   const url = `https://transfer.dannycasio.com/s/${encodeURIComponent(token)}/files?format=xml`;
 
   try {
+    console.time('api-fetch');
     const upstream = await fetch(url);
     const body = await upstream.text();
+    console.timeEnd('api-fetch');
     res.status(upstream.status)
        .setHeader('Content-Type', 'application/xml')
        .send(body);
