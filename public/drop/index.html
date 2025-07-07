@@ -311,7 +311,7 @@ if (files.length) {
         wave.className='ws-wave';
         const controls=document.createElement('div');
         controls.className='ws-controls';
-        controls.innerHTML=`<button class="ws-btn" aria-label="Pause" type="button">❚❚</button><span class="ws-time">0:00</span>`;
+        controls.innerHTML=`<button class="ws-btn" aria-label="Play" type="button">▶</button><span class="ws-time">0:00</span>`;
 
         audio.parentNode.insertBefore(wrap,audio);
         wrap.appendChild(wave);
