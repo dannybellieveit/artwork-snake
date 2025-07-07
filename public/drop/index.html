@@ -299,7 +299,7 @@ document.getElementById('more-btn').addEventListener('click', async e => {
 (() => {
   /* --- demo flag guard --- */
   const isDemo = new URLSearchParams(location.search).get('demo') === '1';
-  const demoSrc = '/assets/sample.mp3';
+  const demoSrc = '/public/sample.wav';
 
   document.addEventListener('DOMContentLoaded', () => {
     const players = document.querySelectorAll('#drop-content audio');
