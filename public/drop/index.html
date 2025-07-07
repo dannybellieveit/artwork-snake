@@ -288,14 +288,12 @@ document.getElementById('more-btn').addEventListener('click', async e => {
 
 <script src="https://unpkg.com/wavesurfer.js@7.9.9/dist/wavesurfer.js"></script>
 <style id="ws-style">
-  .ws-player{position:relative;max-width:560px;width:100%;font-family:system-ui,sans-serif;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.1);padding:.5rem;margin:.5rem 0}
+  .ws-player{position:relative;left:50%;transform:translateX(-50%);max-width:1120px;width:200%;font-family:system-ui,sans-serif;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.1);padding:.5rem;margin:.5rem 0}
   .ws-wave{height:64px;border-radius:8px;background:#dff2ff}
   .ws-controls{display:flex;align-items:center;gap:.5rem;margin-top:.25rem}
   .ws-btn{background:var(--btn);color:#fff;border:none;padding:.3rem .6rem;border-radius:4px;cursor:pointer}
   .ws-btn:hover{background:var(--btn-dk)}
   .ws-time{margin-left:auto;font-variant-numeric:tabular-nums}
-  .ws-vol{width:90px}
-  @media(max-width:600px){.ws-vol{display:none}}
 </style>
 <script id="ws-init">
 (() => {
@@ -327,7 +325,7 @@ document.getElementById('more-btn').addEventListener('click', async e => {
         wave.className='ws-wave';
         const controls=document.createElement('div');
         controls.className='ws-controls';
-        controls.innerHTML=`<button class="ws-btn" aria-label="Pause" type="button">❚❚</button><span class="ws-time">0:00</span><input class="ws-vol" type="range" min="0" max="1" step="0.01" value="1">`;
+        controls.innerHTML=`<button class="ws-btn" aria-label="Pause" type="button">❚❚</button><span class="ws-time">0:00</span>`;
 
         audio.parentNode.insertBefore(wrap,audio);
         wrap.appendChild(wave);
@@ -336,7 +334,6 @@ document.getElementById('more-btn').addEventListener('click', async e => {
 
         const btn=controls.querySelector('.ws-btn');
         const time=controls.querySelector('.ws-time');
-        const vol=controls.querySelector('.ws-vol');
 
         const btnPlayIcon='▶';
         const btnPauseIcon='❚❚';
@@ -363,7 +360,6 @@ document.getElementById('more-btn').addEventListener('click', async e => {
         ws.on('timeupdate',update);
 
         btn.addEventListener('click',()=>{ws.isPlaying()?ws.pause():ws.play()});
-        vol.addEventListener('input',()=>ws.setVolume(Number(vol.value)));
 
         wrap.tabIndex=0;
         wrap.addEventListener('keydown',e=>{
