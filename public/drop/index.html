@@ -107,6 +107,20 @@
   <script>
   let activePlayer = null;
   function initWaveSurfer(container, source){
+    if (!window.WaveSurfer) {
+      const audio = document.createElement('audio');
+      audio.controls = true;
+      audio.style.display = 'block';
+      audio.style.width = '100%';
+      if (typeof source === 'string') {
+        audio.src = source;
+      } else if (source instanceof AudioBuffer) {
+        audio.src = URL.createObjectURL(bufferToWaveBlob(source));
+      }
+      container.appendChild(audio);
+      return;
+    }
+
     const waveEl = document.createElement('div');
     container.appendChild(waveEl);
     const btn = document.createElement('button');
@@ -168,6 +182,40 @@
     }
     ctx.close();
     return buf;
+  }
+
+  function bufferToWaveBlob(buf){
+    const num = buf.numberOfChannels;
+    const len = buf.length * num * 2 + 44;
+    const ab  = new ArrayBuffer(len);
+    const view = new DataView(ab);
+    let offset = 0;
+    function writeString(s){ for(let i=0;i<s.length;i++) view.setUint8(offset++, s.charCodeAt(i)); }
+    function write16(v){ view.setUint16(offset, v, true); offset += 2; }
+    function write32(v){ view.setUint32(offset, v, true); offset += 4; }
+    writeString('RIFF');
+    write32(len - 8);
+    writeString('WAVE');
+    writeString('fmt ');
+    write32(16);           // PCM chunk size
+    write16(1);            // format: PCM
+    write16(num);
+    write32(buf.sampleRate);
+    write32(buf.sampleRate * num * 2);
+    write16(num * 2);
+    write16(16);
+    writeString('data');
+    write32(buf.length * num * 2);
+    for(let i=0;i<buf.length;i++){
+      for(let ch=0; ch<num; ch++){
+        let sample = buf.getChannelData(ch)[i];
+        sample = Math.max(-1, Math.min(1, sample));
+        sample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+        view.setInt16(offset, sample, true);
+        offset += 2;
+      }
+    }
+    return new Blob([ab], {type:'audio/wav'});
   }
   </script>
 </head>
