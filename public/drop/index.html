@@ -311,7 +311,7 @@ if (files.length) {
         wave.className='ws-wave';
         const controls=document.createElement('div');
         controls.className='ws-controls';
-        controls.innerHTML=`<button class="ws-btn" aria-label="Pause" type="button">❚❚</button><span class="ws-time">0:00</span>`;
+        controls.innerHTML=`<button class="ws-btn" aria-label="Play" type="button">▶</button><span class="ws-time">0:00</span>`;
 
         audio.parentNode.insertBefore(wrap,audio);
         wrap.appendChild(wave);
@@ -344,9 +344,9 @@ if (files.length) {
 
         const fmt=t=>{const m=Math.floor(t/60);const s=Math.floor(t%60).toString().padStart(2,'0');return `${m}:${s}`};
 
-        const update=()=>{time.textContent=fmt(ws.getCurrentTime())};
+        const update=()=>{time.textContent=`${fmt(ws.getCurrentTime())} / ${fmt(ws.getDuration())}`};
 
-        ws.once('ready',()=>{ws.play();});
+        ws.once('ready',()=>{update();});
         ws.on('play',()=>{btn.textContent=btnPauseIcon;btn.setAttribute('aria-label','Pause')});
         ws.on('pause',()=>{btn.textContent=btnPlayIcon;btn.setAttribute('aria-label','Play')});
         ws.on('timeupdate',update);
