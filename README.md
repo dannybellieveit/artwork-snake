@@ -5,5 +5,6 @@ A small snake game that uses images for the snake body. Open `index.html` in you
 ## Drop Page Demo
 
 The `/drop/` page normally requires a share token. For local testing you can
-append `?demo=1` to the URL. In demo mode a tiny built‑in audio sample is
-used, so you don’t need to add your own file.
+append `?demo=1` to the URL. When `demo=1` is present a short demo sound is
+generated in JavaScript and displayed in a waveform player. No sample file is
+bundled with the repository.

@@ -156,17 +156,19 @@
     });
   }
 
-  const DEMO_WAV_BASE64 =
-    'UklGRoBnAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YVxnAAAA' +
-    'AEcCxAMxBvcHZQqADpgXPxN+GnYe9iHQhNZC3wfLCDcsNxw3HCYd9B/LI9Ah' +
-    'yyUjMh3tHg8eAhzNKdARrRW0FiUXah/1H0ofuh62HWofMhYxF+0ZMBnsGjIb' +
-    'MR6gH38fYBzhHf0e2xHdHbwc6B4yGXoYrhfuH44dUB0MGmUaEBSLE98SZhZv' +
-    'FzMX6hNyEooSPhEEEBMUEOcQLxJ9EFkP3xN8FqkYEhl4GJ4ZaBiiGVMacxyn' +
-    'HLUfEx2bHU8fZh8vH6Qfoh88HcoecxysGK0YeRb6EJYSCBDkD9UTqhGAFYYb' +
-    'vBsAFnYOCgxvC1QLQAe8E1EWUhbJFyYVDCRIBZkIJQnnC4wNLBFTHxoXGBxr' +
-    'HAcfsx/DHlUeAB+hHkUfuh+iH28fth+hH10fpR+NG74aARYXrBWHElUTYhH3' +
-    'D6kNxQ3VDbANcA92DfIOBg1dDCYKkAjkBqYFwQQDBscLfhYRFNUYpRkdGTsU' +
-    'dhSOFbYW5BR3EesNbg2lDWEOowwFCeoMHw4VBJ0GC3oH/w==';
+  function makeDemoBuffer(){
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const dur = 1.2;
+    const len = Math.floor(ctx.sampleRate * dur);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for(let i=0;i<len;i++){
+      const t=i/ctx.sampleRate;
+      data[i]=Math.sin(2*Math.PI*220*t)*Math.pow(1-t/dur,2)*0.5;
+    }
+    ctx.close();
+    return buf;
+  }
   </script>
 </head>
 <body>
@@ -237,8 +239,7 @@ function render(name, source, mime='', bytes=0){
   const demoMode = qs.get('demo') === '1';
   if (!token) {
     if (demoMode) {
-      const demoURI = 'data:audio/wav;base64,' + DEMO_WAV_BASE64;
-      render('Demo Audio', demoURI, 'audio/wav');
+      render('Demo Audio', makeDemoBuffer(), 'audio/wav');
     } else {
       box.textContent = 'No share token provided.';
     }
