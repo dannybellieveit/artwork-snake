@@ -249,7 +249,10 @@ const fileURL = `/share-proxy/${token}?file=${encodeURIComponent(name)}`;
   }
   console.timeEnd('total-load');
 })();
-</script>
+  </script>
+
+
+
 
 <script>
 function loadScript(src){
@@ -281,6 +284,98 @@ document.getElementById('more-btn').addEventListener('click', async e => {
   btn.href = '/more.html';
   btn.dataset.loaded = '1';
 });
+</script>
+
+<script src="https://unpkg.com/wavesurfer.js@7.9.9/dist/wavesurfer.js"></script>
+<style id="ws-style">
+  .ws-player{display:flex;flex-direction:column;gap:.5rem;margin:.5rem 0}
+  .ws-wave{width:100%;height:64px;background:#fff;border-radius:4px;overflow:hidden}
+  .ws-controls{display:flex;align-items:center;gap:.5rem;font-size:.9rem}
+  .ws-btn{background:var(--btn);color:#fff;border:none;padding:.3rem .6rem;border-radius:4px;cursor:pointer}
+  .ws-time{margin-left:auto;font-variant-numeric:tabular-nums}
+  .ws-vol{width:90px}
+</style>
+<script id="ws-init">
+(() => {
+  /* --- demo flag guard --- */
+  const isDemo = new URLSearchParams(location.search).get('demo') === '1';
+  const demoSrc = '/assets/sample.mp3';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const box = document.getElementById('drop-content');
+    let players = box.querySelectorAll('audio');
+    if (isDemo && players.length === 0) {
+      const audio = document.createElement('audio');
+      audio.controls = true;
+      box.textContent = '';
+      box.appendChild(audio);
+      players = box.querySelectorAll('audio');
+    }
+    if (isDemo) players.forEach(a => a.src = demoSrc);
+
+    players.forEach(audio => {
+      try {
+        audio.controls = false;
+
+        /* wrapper & controls */
+        const wrap = document.createElement('div');
+        wrap.className = 'ws-player';
+        const wave = document.createElement('div');
+        wave.className = 'ws-wave';
+        const controls = document.createElement('div');
+        controls.className = 'ws-controls';
+        controls.innerHTML = `
+          <button class="ws-btn" type="button">▶</button>
+          <span class="ws-time">0:00</span>
+          <input class="ws-vol" type="range" min="0" max="1" step="0.01" value="1">
+        `;
+
+        audio.parentNode.insertBefore(wrap, audio);
+        wrap.appendChild(wave);
+        wrap.appendChild(controls);
+        wrap.appendChild(audio);
+
+        const btn  = controls.querySelector('.ws-btn');
+        const time = controls.querySelector('.ws-time');
+        const vol  = controls.querySelector('.ws-vol');
+
+        const ws = WaveSurfer.create({
+          container: wave,
+          url: audio.src,
+          height: 48,
+          waveColor: '#ccc',
+          progressColor: 'var(--btn)'
+        });
+
+        function fmt(t){
+          const m = Math.floor(t/60);
+          const s = Math.floor(t%60).toString().padStart(2,'0');
+          return `${m}:${s}`;
+        }
+        function update(){
+          time.textContent = fmt(ws.getCurrentTime());
+          btn.textContent = ws.isPlaying() ? '❚❚' : '▶';
+        }
+
+        ws.once('ready', () => { ws.play(); update(); });
+        ws.on('timeupdate', update);
+        ws.on('finish', update);
+
+        btn.addEventListener('click', () => {
+          ws.isPlaying() ? ws.pause() : ws.play();
+          update();
+        });
+        vol.addEventListener('input', () => ws.setVolume(Number(vol.value)));
+        wrap.addEventListener('keydown', e => {
+          if(e.code==='Space'){ e.preventDefault(); btn.click(); }
+        });
+        ws.on('error', () => { audio.controls = true; wrap.replaceWith(audio); });
+      } catch(e){
+        audio.controls = true;
+      }
+    });
+  });
+})();
 </script>
 
 
