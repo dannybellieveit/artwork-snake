@@ -53,6 +53,7 @@
     font-size:1.15rem;
     font-weight:600;
     word-break:break-all;
+    text-align:center;
   }
   .file-item audio{
     width:100%;
@@ -289,7 +290,7 @@ document.getElementById('more-btn').addEventListener('click', async e => {
 
 <script src="https://unpkg.com/wavesurfer.js@7.9.9/dist/wavesurfer.min.js"></script>
 <style id="ws-style">
-  .ws-player{position:relative;width:min(90vw,1400px);margin:.5rem auto;padding:.5rem;font-family:system-ui,sans-serif;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+  .ws-player{position:relative;width:min(80vw,1000px);margin:.5rem auto;padding:.5rem;font-family:system-ui,sans-serif;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
   .ws-wave{height:64px;border-radius:8px;background:#dff2ff}
   .ws-controls{display:flex;align-items:center;gap:.5rem;margin-top:.25rem}
   .ws-btn{background:var(--btn);color:#fff;border:none;padding:.3rem .6rem;border-radius:4px;cursor:pointer}
@@ -309,22 +310,22 @@ document.getElementById('more-btn').addEventListener('click', async e => {
     const box=document.getElementById('drop-content');
     if(box && !box.querySelector('audio')){
       box.innerHTML='';
-      box.insertAdjacentHTML('beforeend',`<section class="file-item"><h2>Demo track</h2><audio controls src="${demoSrc}" style="width:100%"></audio><a class="download" href="${demoSrc}" download>Download</a></section>`);
+      box.insertAdjacentHTML('beforeend',`<section class="file-item"><h2>Demo track</h2><audio controls crossOrigin="anonymous" src="${demoSrc}" style="width:100%"></audio><a class="download" href="${demoSrc}" download>Download</a></section>`);
     }
   }
 
   document.addEventListener('DOMContentLoaded', () => {
     const box = document.getElementById('drop-content');
     const players = box ? [...box.querySelectorAll('audio')] : [];
-    if(isDemo) players.forEach(a => {a.src = demoSrc; a.crossOrigin = 'anonymous';});
+    if(isDemo) players.forEach(a => {a.crossOrigin='anonymous'; a.src=demoSrc;});
 
     const handled = new WeakSet();
 
     const init = audio => {
       if (handled.has(audio)) return;
       handled.add(audio);
-      if(isDemo && token) audio.src = demoSrc;
       audio.crossOrigin = 'anonymous';
+      if(isDemo && token) audio.src = demoSrc;
       try {
         audio.controls=false;
         audio.hidden=true;
