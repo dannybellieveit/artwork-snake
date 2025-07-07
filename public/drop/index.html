@@ -288,40 +288,47 @@ document.getElementById('more-btn').addEventListener('click', async e => {
 
 <script src="https://unpkg.com/wavesurfer.js@7.9.9/dist/wavesurfer.js"></script>
 <style id="ws-style">
-  .ws-player{position:relative;left:50%;transform:translateX(-50%);max-width:1400px;width:250%;font-family:system-ui,sans-serif;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.1);padding:.5rem;margin:.5rem 0}
+  .ws-player{position:relative;max-width:560px;width:100%;margin:.5rem auto;padding:.5rem;font-family:system-ui,sans-serif;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
   .ws-wave{height:64px;border-radius:8px;background:#dff2ff}
   .ws-controls{display:flex;align-items:center;gap:.5rem;margin-top:.25rem}
   .ws-btn{background:var(--btn);color:#fff;border:none;padding:.3rem .6rem;border-radius:4px;cursor:pointer}
   .ws-btn:hover{background:var(--btn-dk)}
   .ws-time{margin-left:auto;font-variant-numeric:tabular-nums}
+  .ws-vol{accent-color:var(--btn);width:80px}
+  @media(max-width:600px){.ws-vol{display:none}}
 </style>
 <script id="ws-init">
 (() => {
   /* --- demo flag guard --- */
   const urlParams = new URLSearchParams(location.search);
-  const isDemo = urlParams.has('demo') && urlParams.get('demo') !== '0';
-  const demoSrc = 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3';
+  const isDemo = urlParams.get('demo') === '1';
+  const demoSrc = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
 
   const token = urlParams.get('token') || (location.pathname.match(/^\/drop\/([^/]+)/)||[])[1];
 
   if(isDemo && !token){
     const box=document.getElementById('drop-content');
-    box.innerHTML='';
-    box.insertAdjacentHTML('beforeend',`<section class="file-item"><h2>Demo track</h2><audio controls src="${demoSrc}" style="width:100%"></audio><a class="download" href="${demoSrc}" download>Download</a></section>`);
+    if(box && !box.querySelector('audio')){
+      box.innerHTML='';
+      box.insertAdjacentHTML('beforeend',`<section class="file-item"><h2>Demo track</h2><audio controls src="${demoSrc}" style="width:100%"></audio><a class="download" href="${demoSrc}" download>Download</a></section>`);
+    }
   }
 
   document.addEventListener('DOMContentLoaded', () => {
     const box = document.getElementById('drop-content');
+    const players = box ? [...box.querySelectorAll('audio')] : [];
+    if(isDemo) players.forEach(a => {a.src = demoSrc; a.crossOrigin = 'anonymous';});
+
     const handled = new WeakSet();
 
     const init = audio => {
       if (handled.has(audio)) return;
       handled.add(audio);
       if(isDemo && token) audio.src = demoSrc;
+      audio.crossOrigin = 'anonymous';
       try {
         audio.controls=false;
         audio.hidden=true;
-        audio.crossOrigin='anonymous';
 
         const wrap=document.createElement('div');
         wrap.className='ws-player';
@@ -329,7 +336,7 @@ document.getElementById('more-btn').addEventListener('click', async e => {
         wave.className='ws-wave';
         const controls=document.createElement('div');
         controls.className='ws-controls';
-        controls.innerHTML=`<button class="ws-btn" aria-label="Pause" type="button">❚❚</button><span class="ws-time">0:00</span>`;
+        controls.innerHTML=`<button class="ws-btn" aria-label="Pause" type="button">❚❚</button><span class="ws-time">0:00</span><input class="ws-vol" type="range" min="0" max="1" step="0.01" value="1">`;
 
         audio.parentNode.insertBefore(wrap,audio);
         wrap.appendChild(wave);
@@ -350,8 +357,7 @@ document.getElementById('more-btn').addEventListener('click', async e => {
           barGap:2,
           waveColor:getComputedStyle(document.documentElement).getPropertyValue('--btn')||'#5AB4E5',
           progressColor:getComputedStyle(document.documentElement).getPropertyValue('--btn-dk')||'#3F93C8',
-          backend:'MediaElement',
-          mediaControls:false
+          backend:'MediaElement'
         });
 
         const fmt=t=>{const m=Math.floor(t/60);const s=Math.floor(t%60).toString().padStart(2,'0');return `${m}:${s}`};
@@ -363,7 +369,9 @@ document.getElementById('more-btn').addEventListener('click', async e => {
         ws.on('pause',()=>{btn.textContent=btnPlayIcon;btn.setAttribute('aria-label','Play')});
         ws.on('timeupdate',update);
 
+        const vol=controls.querySelector('.ws-vol');
         btn.addEventListener('click',()=>{ws.isPlaying()?ws.pause():ws.play()});
+        vol.addEventListener('input',()=>ws.setVolume(vol.value));
 
         wrap.tabIndex=0;
         wrap.addEventListener('keydown',e=>{
