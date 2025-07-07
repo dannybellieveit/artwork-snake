@@ -53,12 +53,24 @@
     font-weight:600;
     word-break:break-all;
   }
-  .file-item audio{
+  .wave-player{
     width:100%;
     margin:.6rem 0 1.1rem;
-    outline:none;
-    border-radius:8px;
   }
+  .wave-player .play-btn{
+    display:block;
+    width:100%;
+    text-align:center;
+    background:var(--btn);
+    color:#fff;
+    border:none;
+    padding:.55rem 0;
+    border-radius:8px;
+    font-weight:600;
+    margin-top:.4rem;
+    cursor:pointer;
+  }
+  .wave-player .play-btn:hover{ background:var(--btn-dk); }
 
   /* full-width download button */
   .download{
@@ -91,6 +103,71 @@
     #drop-content{ gap:1.4rem; }
   }
   </style>
+  <script src="https://unpkg.com/wavesurfer.js"></script>
+  <script>
+  let activePlayer = null;
+  function initWaveSurfer(container, source){
+    const waveEl = document.createElement('div');
+    container.appendChild(waveEl);
+    const btn = document.createElement('button');
+    btn.className = 'play-btn';
+    btn.textContent = 'Play';
+    container.appendChild(btn);
+
+    const styles = getComputedStyle(document.documentElement);
+    const dark  = styles.getPropertyValue('--btn-dk').trim() || '#000';
+
+    const ws = WaveSurfer.create({
+      container: waveEl,
+      waveColor: '#000',
+      progressColor: dark,
+      height: 64,
+      responsive: true
+    });
+
+    if (typeof source === 'string') {
+      ws.load(source);
+    } else if (source instanceof AudioBuffer) {
+      ws.loadDecodedBuffer(source);
+    }
+
+    ws.on('finish', () => {
+      if (activePlayer && activePlayer.wave === ws) {
+        activePlayer.btn.textContent = 'Play';
+        activePlayer = null;
+      }
+    });
+
+    btn.addEventListener('click', () => {
+      if (activePlayer && activePlayer.wave !== ws) {
+        activePlayer.wave.pause();
+        activePlayer.btn.textContent = 'Play';
+      }
+
+      if (ws.isPlaying()) {
+        ws.pause();
+        btn.textContent = 'Play';
+        activePlayer = null;
+      } else {
+        ws.play();
+        btn.textContent = 'Pause';
+        activePlayer = { wave: ws, btn };
+      }
+    });
+  }
+
+  function makeDemoBuffer(){
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const len = ctx.sampleRate; // 1 second
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for(let i=0;i<len;i++){
+      data[i] = Math.sin(2*Math.PI*440*(i/ctx.sampleRate)) * 0.3;
+    }
+    ctx.close();
+    return buf;
+  }
+  </script>
 </head>
 <body>
 
@@ -117,22 +194,57 @@
   const qs  = new URLSearchParams(location.search);
   let token = qs.get('token') || (location.pathname.match(/^\/drop\/([^/]+)$/)||[])[1];
   const box = document.getElementById('drop-content');
-  if (!token){ box.textContent = 'No share token provided.'; return; }
-  document.title = 'File Share';
 
   /* helper: build one card */
-function render(name, url, mime='', bytes=0){
+function render(name, source, mime='', bytes=0){
   const wrap = document.createElement('section');
   wrap.className = 'file-item';
-  wrap.innerHTML =
-    `<h2>${name}</h2>` +
-    (/^audio\//.test(mime) || /\.(mp3|wav|ogg)$/i.test(name)
-       ? `<audio controls style="width:100%" src="${url}"></audio>` : '') +
-    `<a class="download" href="${url}" download>Download</a>` +
-    (bytes ? `<div style="font-size:.9rem;margin-top:.4rem">Size: ${(bytes/(1024*1024)).toFixed(1)} MB</div>` : '');
+
+  const h2 = document.createElement('h2');
+  h2.textContent = name;
+  wrap.appendChild(h2);
+
+  const isAudio = /^audio\//.test(mime) || /\.(mp3|wav|ogg)$/i.test(name);
+  let waveTarget = null;
+  if (isAudio) {
+    const player = document.createElement('div');
+    player.className = 'wave-player';
+    wrap.appendChild(player);
+    waveTarget = player;
+  }
+
+  if (typeof source === 'string' && source) {
+    const dl = document.createElement('a');
+    dl.className = 'download';
+    dl.href = source;
+    dl.download = '';
+    dl.textContent = 'Download';
+    wrap.appendChild(dl);
+  }
+
+  if (bytes) {
+    const size = document.createElement('div');
+    size.style.fontSize = '.9rem';
+    size.style.marginTop = '.4rem';
+    size.textContent = `Size: ${(bytes/(1024*1024)).toFixed(1)} MB`;
+    wrap.appendChild(size);
+  }
+
   box.appendChild(wrap);
+  if (waveTarget) initWaveSurfer(waveTarget, source);
 }
 
+  const demoMode = qs.get('demo') === '1';
+  if (!token) {
+    if (demoMode) {
+      const demoBuffer = makeDemoBuffer();
+      render('Demo Audio', demoBuffer, 'audio/wav');
+    } else {
+      box.textContent = 'No share token provided.';
+    }
+    return;
+  }
+  document.title = 'File Share';
 
   /* 2. fetch XML list */
   let xmlText = '';
@@ -179,22 +291,19 @@ const fileURL = `/share-proxy/${token}?file=${encodeURIComponent(name)}`;
 
   /* <li> item */
   const li = document.createElement('li');
-  li.textContent = name;
+  li.appendChild(document.createTextNode(name));
 
   /* if it’s audio, add inline player */
+  let liWaveTarget = null;
   if (/\.(mp3|wav|ogg|flac)$/i.test(name)) {
-    const player = document.createElement('audio');
-    player.controls = true;
-    player.setAttribute('controls', '');
-    player.src = fileURL;
-    player.onerror = () => player.style.display = 'none';
-    player.style.display = 'block';
-    player.style.width = '100%';
-    player.style.marginTop = '.4rem';
+    const player = document.createElement('div');
+    player.className = 'wave-player';
     li.appendChild(player);
+    liWaveTarget = player;
   }
 
   ul.appendChild(li);
+  if (liWaveTarget) initWaveSurfer(liWaveTarget, fileURL);
 
   /* size accumulator */
   const lenNode = r.getElementsByTagNameNS('*','getcontentlength')[0];
