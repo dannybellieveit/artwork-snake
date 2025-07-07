@@ -121,13 +121,13 @@
   document.title = 'File Share';
 
   /* helper: build one card */
-function render(name, url, mime='', bytes=0){
+  function render(name, url, mime='', bytes=0){
   const wrap = document.createElement('section');
   wrap.className = 'file-item';
   wrap.innerHTML =
     `<h2>${name}</h2>` +
     (/^audio\//.test(mime) || /\.(mp3|wav|ogg)$/i.test(name)
-       ? `<audio controls style="width:100%" src="${url}"></audio>` : '') +
+       ? `<audio controls crossorigin="anonymous" style="width:100%" src="${url}"></audio>` : '') +
     `<a class="download" href="${url}" download>Download</a>` +
     (bytes ? `<div style="font-size:.9rem;margin-top:.4rem">Size: ${(bytes/(1024*1024)).toFixed(1)} MB</div>` : '');
   box.appendChild(wrap);
@@ -185,7 +185,7 @@ if (files.length) {
   /* filename + direct download URL */
   const href = r.getElementsByTagNameNS('*','href')[0].textContent;
   const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
-const fileURL = `https://transfer.dannycasio.com/s/${token}/download?path=/${encodeURIComponent(name)}`;
+  const fileURL = `/share-proxy/${token}?file=${encodeURIComponent(name)}`;
 
   /* <li> item */
   const li = document.createElement('li');
@@ -196,6 +196,7 @@ const fileURL = `https://transfer.dannycasio.com/s/${token}/download?path=/${enc
     const player = document.createElement('audio');
     player.controls = true;
     player.setAttribute('controls', '');
+    player.crossOrigin = 'anonymous';
     player.src = fileURL;
     player.onerror = () => player.style.display = 'none';
     player.style.display = 'block';
@@ -244,12 +245,13 @@ const fileURL = `https://transfer.dannycasio.com/s/${token}/download?path=/${enc
     console.time('fetch-head');
     const meta = await fetch(`/head-proxy/${token}`).then(r=>r.json());
     console.timeEnd('fetch-head');
-    const url  = `https://transfer.dannycasio.com/s/${token}/download`;
+    const name = meta.filename || 'file';
+    const url  = `/share-proxy/${token}?file=${encodeURIComponent(name)}`;
     if (meta.filename) document.title = meta.filename;
-   render(meta.filename || 'file', url, meta.mime, meta.size || 0);
+   render(name, url, meta.mime, meta.size || 0);
   }catch(err){
     /* fallback: still show a basic link */
-    const url = `https://transfer.dannycasio.com/s/${token}/download`;
+    const url = `/share-proxy/${token}?file=file`;
   render('file', url);
   }
   console.timeEnd('total-load');
@@ -332,7 +334,8 @@ const fileURL = `https://transfer.dannycasio.com/s/${token}/download?path=/${enc
             .getPropertyValue('--btn') || '#5AB4E5',
           progressColor: getComputedStyle(document.documentElement)
             .getPropertyValue('--btn-dk') || '#3F93C8',
-          backend: 'MediaElement'
+          backend: 'MediaElement',
+          xhr: { mode: 'cors' }
         };
         if (WaveSurfer.cursor) {
           opts.plugins = [WaveSurfer.cursor.create({ showTime: true })];
