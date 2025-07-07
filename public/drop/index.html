@@ -358,17 +358,22 @@ document.getElementById('more-btn').addEventListener('click', async e => {
         const btnPlayIcon='▶';
         const btnPauseIcon='❚❚';
 
-        const ws=WaveSurfer.create({
-          container:wave,
+        const opts = {
+          container: wave,
           media: audio,
-          height:64,
-          barHeight:2,
-          barGap:2,
-          waveColor:getComputedStyle(document.documentElement).getPropertyValue('--btn')||'#5AB4E5',
-          progressColor:getComputedStyle(document.documentElement).getPropertyValue('--btn-dk')||'#3F93C8',
-          backend:'MediaElement',
-          plugins:[WaveSurfer.cursor.create({showTime:true})]
-        });
+          height: 64,
+          barHeight: 2,
+          barGap: 2,
+          waveColor: getComputedStyle(document.documentElement)
+            .getPropertyValue('--btn') || '#5AB4E5',
+          progressColor: getComputedStyle(document.documentElement)
+            .getPropertyValue('--btn-dk') || '#3F93C8',
+          backend: 'MediaElement'
+        };
+        if (WaveSurfer.cursor) {
+          opts.plugins = [WaveSurfer.cursor.create({ showTime: true })];
+        }
+        const ws = WaveSurfer.create(opts);
 
         const fmt=t=>{const m=Math.floor(t/60);const s=Math.floor(t%60).toString().padStart(2,'0');return `${m}:${s}`};
 
@@ -393,6 +398,7 @@ document.getElementById('more-btn').addEventListener('click', async e => {
         audio.addEventListener('error',fallback);
       } catch(e){
         audio.controls = true;
+        audio.hidden = false;
       }
     };
 
