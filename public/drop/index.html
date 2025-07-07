@@ -249,7 +249,10 @@ const fileURL = `/share-proxy/${token}?file=${encodeURIComponent(name)}`;
   }
   console.timeEnd('total-load');
 })();
-</script>
+  </script>
+
+
+
 
 <script>
 function loadScript(src){
@@ -281,6 +284,97 @@ document.getElementById('more-btn').addEventListener('click', async e => {
   btn.href = '/more.html';
   btn.dataset.loaded = '1';
 });
+</script>
+
+<script src="https://unpkg.com/wavesurfer.js@7.9.9/dist/wavesurfer.js"></script>
+<style id="ws-style">
+  .ws-player{position:relative;left:50%;transform:translateX(-50%);max-width:1120px;width:200%;font-family:system-ui,sans-serif;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.1);padding:.5rem;margin:.5rem 0}
+  .ws-wave{height:64px;border-radius:8px;background:#dff2ff}
+  .ws-controls{display:flex;align-items:center;gap:.5rem;margin-top:.25rem}
+  .ws-btn{background:var(--btn);color:#fff;border:none;padding:.3rem .6rem;border-radius:4px;cursor:pointer}
+  .ws-btn:hover{background:var(--btn-dk)}
+  .ws-time{margin-left:auto;font-variant-numeric:tabular-nums}
+</style>
+<script id="ws-init">
+(() => {
+  /* --- demo flag guard --- */
+  const urlParams = new URLSearchParams(location.search);
+  const isDemo = urlParams.get('demo') === '1';
+  const demoSrc = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+
+  const token = urlParams.get('token') || (location.pathname.match(/^\/drop\/([^/]+)/)||[])[1];
+
+  if(isDemo && !token){
+    const box=document.getElementById('drop-content');
+    box.innerHTML='';
+    box.insertAdjacentHTML('beforeend',`<section class="file-item"><h2>Demo track</h2><audio controls src="${demoSrc}" style="width:100%"></audio><a class="download" href="${demoSrc}" download>Download</a></section>`);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const players = document.querySelectorAll('#drop-content audio');
+    if(isDemo && token) players.forEach(a=>{a.src=demoSrc});
+
+    players.forEach(audio => {
+      try {
+        audio.controls=false;
+        audio.hidden=true;
+
+        const wrap=document.createElement('div');
+        wrap.className='ws-player';
+        const wave=document.createElement('div');
+        wave.className='ws-wave';
+        const controls=document.createElement('div');
+        controls.className='ws-controls';
+        controls.innerHTML=`<button class="ws-btn" aria-label="Pause" type="button">❚❚</button><span class="ws-time">0:00</span>`;
+
+        audio.parentNode.insertBefore(wrap,audio);
+        wrap.appendChild(wave);
+        wrap.appendChild(controls);
+        wrap.appendChild(audio);
+
+        const btn=controls.querySelector('.ws-btn');
+        const time=controls.querySelector('.ws-time');
+
+        const btnPlayIcon='▶';
+        const btnPauseIcon='❚❚';
+
+        const ws=WaveSurfer.create({
+          container:wave,
+          url:audio.src,
+          height:64,
+          barHeight:2,
+          barGap:2,
+          waveColor:getComputedStyle(document.documentElement).getPropertyValue('--btn')||'#5AB4E5',
+          progressColor:getComputedStyle(document.documentElement).getPropertyValue('--btn-dk')||'#3F93C8',
+          backend:'MediaElement',
+          mediaControls:false
+        });
+
+        const fmt=t=>{const m=Math.floor(t/60);const s=Math.floor(t%60).toString().padStart(2,'0');return `${m}:${s}`};
+
+        const update=()=>{time.textContent=fmt(ws.getCurrentTime())};
+
+        ws.once('ready',()=>{ws.play();});
+        ws.on('play',()=>{btn.textContent=btnPauseIcon;btn.setAttribute('aria-label','Pause')});
+        ws.on('pause',()=>{btn.textContent=btnPlayIcon;btn.setAttribute('aria-label','Play')});
+        ws.on('timeupdate',update);
+
+        btn.addEventListener('click',()=>{ws.isPlaying()?ws.pause():ws.play()});
+
+        wrap.tabIndex=0;
+        wrap.addEventListener('keydown',e=>{
+          if(e.code==='Space'){e.preventDefault();btn.click();}
+          else if(e.code==='ArrowRight'){ws.seekTo(Math.min(1,(ws.getCurrentTime()+5)/ws.getDuration()));}
+          else if(e.code==='ArrowLeft'){ws.seekTo(Math.max(0,(ws.getCurrentTime()-5)/ws.getDuration()));}
+        });
+
+        ws.on('error',()=>{audio.controls=true;audio.hidden=false;wrap.replaceWith(audio)});
+      } catch(e){
+        audio.controls = true;
+      }
+    });
+  });
+})();
 </script>
 
 
