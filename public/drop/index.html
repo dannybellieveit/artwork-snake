@@ -66,7 +66,8 @@
   /* full-width download button */
   .download{
     display:block;
-    width:100%;
+    width:calc(100% + 2rem); /* match footer width */
+    margin:0 -1rem;
     text-align:center;
     background:var(--btn);
     color:#fff;
@@ -324,7 +325,7 @@ document.getElementById('more-btn').addEventListener('click', async e => {
   document.addEventListener('DOMContentLoaded', () => {
     const box = document.getElementById('drop-content');
     const players = box ? [...box.querySelectorAll('audio')] : [];
-    if(isDemo) players.forEach(a => {a.crossOrigin='anonymous'; a.src=demoSrc;});
+    if(isDemo) players.forEach(a => {a.crossOrigin='anonymous'; a.src=demoSrc; a.load();});
 
     const handled = new WeakSet();
 
@@ -333,6 +334,7 @@ document.getElementById('more-btn').addEventListener('click', async e => {
       handled.add(audio);
       audio.crossOrigin = 'anonymous';
       if(isDemo && token) audio.src = demoSrc;
+      audio.load();
       try {
         audio.controls=false;
         audio.hidden=true;
@@ -386,7 +388,9 @@ document.getElementById('more-btn').addEventListener('click', async e => {
           else if(e.code==='ArrowLeft'){ws.seekTo(Math.max(0,(ws.getCurrentTime()-5)/ws.getDuration()));}
         });
 
-        ws.on('error',()=>{audio.controls=true;audio.hidden=false;wrap.replaceWith(audio)});
+        const fallback=()=>{audio.controls=true;audio.hidden=false;if(wrap.parentNode)wrap.replaceWith(audio)};
+        ws.on('error',fallback);
+        audio.addEventListener('error',fallback);
       } catch(e){
         audio.controls = true;
       }
