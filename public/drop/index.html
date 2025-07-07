@@ -185,7 +185,7 @@ if (files.length) {
   /* filename + direct download URL */
   const href = r.getElementsByTagNameNS('*','href')[0].textContent;
   const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
-const fileURL = `/share-proxy/${token}?file=${encodeURIComponent(name)}`;
+const fileURL = `https://transfer.dannycasio.com/s/${token}/download?path=/${encodeURIComponent(name)}`;
 
   /* <li> item */
   const li = document.createElement('li');
@@ -357,7 +357,7 @@ const fileURL = `/share-proxy/${token}?file=${encodeURIComponent(name)}`;
           else if(e.code==='ArrowLeft'){ws.seekTo(Math.max(0,(ws.getCurrentTime()-5)/ws.getDuration()));}
         });
 
-        const fallback=()=>{audio.controls=true;audio.hidden=false;if(wrap.parentNode)wrap.replaceWith(audio)};
+        const fallback=()=>{if(wrap.parentNode)wrap.remove();audio.remove();};
         ws.on('error',fallback);
         audio.addEventListener('error',fallback);
       } catch(e){
