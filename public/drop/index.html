@@ -45,6 +45,7 @@
     padding:0 1rem;
     display:grid;
     gap:2rem;
+    text-align:center;
   }
 
   /* each item – no white box, just spacing */
@@ -120,7 +121,7 @@
   const qs  = new URLSearchParams(location.search);
   let token = qs.get('token') || (location.pathname.match(/^\/drop\/([^/]+)$/)||[])[1];
   const box = document.getElementById('drop-content');
-  if (!token){ box.textContent = 'No share token provided.'; return; }
+  if (!token){ box.textContent = 'No share token provided.'; box.style.textAlign='center'; return; }
   document.title = 'File Share';
 
   /* helper: build one card */
@@ -145,7 +146,13 @@ function render(name, url, mime='', bytes=0){
     if(!res.ok) throw new Error(res.status);
     xmlText = await res.text();
     console.timeEnd('fetch-list');
-  }catch(e){ box.textContent='Error loading files.'; console.error(e); console.timeEnd('total-load'); return; }
+  }catch(e){
+    box.textContent='Error loading files.';
+    box.style.textAlign='center';
+    console.error(e);
+    console.timeEnd('total-load');
+    return;
+  }
 
   console.time('parse-xml');
   const doc  = new DOMParser().parseFromString(xmlText,'application/xml');
