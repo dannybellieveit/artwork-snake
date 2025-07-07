@@ -63,26 +63,21 @@
     border-radius:8px;
   }
 
-  /* full-width download button */
+  /* centered download button similar width as footer links */
   .download{
     display:block;
-    width:calc(100% + 2rem); /* match footer width */
-    margin:0 -1rem;
+    width:max-content;
+    margin:0 auto;
     text-align:center;
     background:var(--btn);
     color:#fff;
     text-decoration:none;
-    padding:.65rem 0;
+    padding:.65rem 1.2rem;
     border-radius:10px;
     font-weight:600;
     transition:background .15s ease;
   }
   .download:hover{ background:var(--btn-dk); }
-
-  /* Snake container should blend into the page */
-  .game-container.no-border{
-    border:none;
-  }
 
   /* footer links */
   footer{
@@ -109,7 +104,7 @@
     <ul class="contacts">
       <li><a href="mailto:dannycasio@me.com">Email</a></li>
       <li><a href="https://instagram.com/dannycasio_" target="_blank" rel="noopener">Instagram</a></li>
-      <li><a id="more-btn" href="#">More</a></li>
+      <li><a href="/more.html">More</a></li>
     </ul>
   </footer>
 
@@ -264,37 +259,6 @@ const fileURL = `/share-proxy/${token}?file=${encodeURIComponent(name)}`;
 
 
 
-<script>
-function loadScript(src){
-  return new Promise((res, rej) => {
-    const s = document.createElement('script');
-    s.src = src;
-    s.onload = res;
-    s.onerror = rej;
-    document.body.appendChild(s);
-  });
-}
-
-document.getElementById('more-btn').addEventListener('click', async e => {
-  const btn = e.currentTarget;
-  if (btn.dataset.loaded) return;
-  e.preventDefault();
-  const container = document.createElement('div');
-  container.className = 'game-container no-border';
-  container.innerHTML = `\
-    <div id="score" class="score-label">Score: 0</div>\
-    <div id="high-score" class="score-label">High Score: 0</div>\
-    <canvas id="game-canvas" width="800" height="450"></canvas>\
-    <div id="pause-overlay" class="pause-overlay"></div>`;
-  document.body.insertBefore(container, document.getElementById('drop-content'));
-  container.scrollIntoView({ behavior: 'smooth' });
-  await loadScript('/images-data.js');
-  await loadScript('/game.js');
-  btn.textContent = 'Even more';
-  btn.href = '/more.html';
-  btn.dataset.loaded = '1';
-});
-</script>
 
 <script src="https://unpkg.com/wavesurfer.js@7.9.9/dist/wavesurfer.min.js"></script>
 <style id="ws-style">
