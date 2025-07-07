@@ -286,7 +286,7 @@ document.getElementById('more-btn').addEventListener('click', async e => {
 });
 </script>
 
-<script src="https://unpkg.com/wavesurfer.js@7.9.9/dist/wavesurfer.js"></script>
+<script src="https://unpkg.com/wavesurfer.js@7.9.9/dist/wavesurfer.min.js"></script>
 <style id="ws-style">
   .ws-player{position:relative;max-width:560px;width:100%;margin:.5rem auto;padding:.5rem;font-family:system-ui,sans-serif;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
   .ws-wave{height:64px;border-radius:8px;background:#dff2ff}
@@ -302,7 +302,7 @@ document.getElementById('more-btn').addEventListener('click', async e => {
   /* --- demo flag guard --- */
   const urlParams = new URLSearchParams(location.search);
   const isDemo = urlParams.get('demo') === '1';
-  const demoSrc = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+  const demoSrc = 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3';
 
   const token = urlParams.get('token') || (location.pathname.match(/^\/drop\/([^/]+)/)||[])[1];
 
