@@ -16,6 +16,6 @@ window.imagesData = [
   { src: 'assets/photo15.jpg', title: 'Stick Of Gum', artist: 'Nemahsis', spotifyUrl: 'https://open.spotify.com/track/7DvOMvKBZESff6Etf0v9MY?si=c31005880f374552' },
   { src: 'assets/photo16.jpg', title: 'congrats! u did it!', artist: 'flowerovlove', spotifyUrl: 'https://open.spotify.com/track/5bp8CvtJ8pbh2OK2HSfTwE?si=6895384a7d2343b5' },
   { src: 'assets/photo17.jpg', title: 'Appetite', artist: 'Arthur Hill', spotifyUrl: 'https://open.spotify.com/track/0q5zMDVszIVZb7kPi2XiOj?si=34033487b3344e8a' },
-  { src: 'assets/photo18.jpg', title: 'Body On Me', artist: 'Nxdia', spotifyUrl: 'https://open.spotify.com/track/6MglZeuPDQwHzZTxrRZfCW?si=11e2487a15304c89' }
+  { src: 'assets/photo18.jpg', title: 'Body On Me', artist: 'Nxdia', spotifyUrl: 'https://open.spotify.com/track/6MglZeuPDQwHzZTxrRZfCW?si=11e2487a15304c89' },
   { src: 'assets/photo19.jpg', title: 'Man In The Middle', artist: 'Arthur Hill', spotifyUrl: 'https://open.spotify.com/track/0JEsYciJ7ESWOckO7cSf4P?si=c8ee4129ed56416c' }
 ];
