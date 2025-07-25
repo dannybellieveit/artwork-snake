@@ -18,5 +18,6 @@ window.imagesData = [
   { src: 'assets/photo17.jpg', title: 'Appetite', artist: 'Arthur Hill', spotifyUrl: 'https://open.spotify.com/track/0q5zMDVszIVZb7kPi2XiOj?si=34033487b3344e8a' },
   { src: 'assets/photo18.jpg', title: 'Body On Me', artist: 'Nxdia', spotifyUrl: 'https://open.spotify.com/track/6MglZeuPDQwHzZTxrRZfCW?si=11e2487a15304c89' },
   { src: 'assets/photo19.jpg', title: 'Man In The Middle', artist: 'Arthur Hill', spotifyUrl: 'https://open.spotify.com/track/0JEsYciJ7ESWOckO7cSf4P?si=c8ee4129ed56416c' },
-  { src: 'assets/photo20.jpg', title: 'No Cameo', artist: 'Babymorocco', spotifyUrl: 'https://open.spotify.com/track/4H4w1qDifvKDRf9JIds8o9?si=dd09fee26fec450d' }
+  { src: 'assets/photo20.jpg', title: 'No Cameo', artist: 'Babymorocco', spotifyUrl: 'https://open.spotify.com/track/4H4w1qDifvKDRf9JIds8o9?si=dd09fee26fec450d' },
+   { src: 'assets/photo21.jpg', title: 'Drama', artist: 'Jordan Adetunji', spotifyUrl: 'https://open.spotify.com/track/40ROAtBj7soL5rbqXQjU4k?si=2add6b9543114f4f' }
 ];
