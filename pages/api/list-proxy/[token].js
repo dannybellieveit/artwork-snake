@@ -1,7 +1,14 @@
+import { isValidToken } from '../../../lib/validation';
+
 export default async function handler(req, res) {
   const { token } = req.query;
   if (!token) {
     res.status(400).send('Missing token');
+    return;
+  }
+
+  if (!isValidToken(token)) {
+    res.status(400).send('Invalid token');
     return;
   }
 
