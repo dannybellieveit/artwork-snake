@@ -17,10 +17,8 @@ export async function getServerSideProps({ params, res }) {
     const responses = Array.isArray(parsed.multistatus?.response)
       ? parsed.multistatus.response
       : [parsed.multistatus?.response].filter(Boolean);
-    const files = responses
-      .filter(r => !('collection' in (r.propstat?.prop?.resourcetype || {})))
-      .map(r => r.href)
-      .filter(Boolean);
+      const hrefs = responses.map(r => r.href).filter(Boolean);
+    const files = hrefs.filter(h => !h.endsWith('/webdav/') && !h.endsWith('/'));
     if (files.length === 1) {
       const name = decodeURIComponent(files[0].split('/').filter(Boolean).pop());
       title = name;
