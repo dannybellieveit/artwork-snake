@@ -116,7 +116,6 @@
   let token = qs.get('token') || (location.pathname.match(/^\/drop\/([^/]+)$/)||[])[1];
   const box = document.getElementById('drop-content');
   if (!token){ box.textContent = 'No share token provided.'; box.style.textAlign='center'; return; }
-  document.title = 'File Share';
 
   /* make a card */
   function render(name, url, mime='', bytes=0){
@@ -154,15 +153,16 @@
   console.timeEnd('parse-xml');
 
   /* filter files */
-  const files = all.filter(r=>{
-    const href = r.getElementsByTagNameNS('*','href')[0]?.textContent || '';
-    return !href.endsWith('/webdav/') && !href.endsWith('/');
-  });
+  const files = all.filter(r =>
+    !r.getElementsByTagNameNS('*', 'collection').length
+  );
 
   if (files.length === 1) {
     const href = files[0].getElementsByTagNameNS('*','href')[0].textContent;
     const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
     document.title = name;
+    const og = document.querySelector('meta[property="og:title"]');
+    if (og) og.setAttribute('content', name);
   }
 
   box.innerHTML = '';
@@ -245,8 +245,12 @@ if (files.length) {
     console.timeEnd('fetch-head');
     const name = meta.filename || 'file';
     const url  = `/share-proxy/${token}?file=${encodeURIComponent(name)}`;
-    if (meta.filename) document.title = meta.filename;
-   render(name, url, meta.mime, meta.size || 0);
+    if (meta.filename) {
+      document.title = meta.filename;
+      const og = document.querySelector('meta[property="og:title"]');
+      if (og) og.setAttribute('content', meta.filename);
+    }
+    render(name, url, meta.mime, meta.size || 0);
   }catch(err){
     /* basic link fallback */
     const url = `/share-proxy/${token}?file=file`;
