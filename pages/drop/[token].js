@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { parseStringPromise, processors } from 'xml2js';
 
 export async function getServerSideProps({ params, res }) {
   const token = params.token || '';
@@ -9,8 +10,15 @@ export async function getServerSideProps({ params, res }) {
     const url = `https://transfer.dannycasio.com/s/${encodeURIComponent(token)}/files?format=xml`;
     const upstream = await fetch(url);
     const xml = await upstream.text();
-    const matches = [...xml.matchAll(/<[^>]*href[^>]*>([^<]+)<\/[^>]*href>/g)].map(m => m[1]);
-    const files = matches.filter(h => !h.endsWith('/webdav/') && !h.endsWith('/'));
+    const parsed = await parseStringPromise(xml, {
+      explicitArray: false,
+      tagNameProcessors: [processors.stripPrefix]
+    });
+    const responses = Array.isArray(parsed.multistatus?.response)
+      ? parsed.multistatus.response
+      : [parsed.multistatus?.response].filter(Boolean);
+    const hrefs = responses.map(r => r.href).filter(Boolean);
+    const files = hrefs.filter(h => !h.endsWith('/webdav/') && !h.endsWith('/'));
     if (files.length === 1) {
       const name = decodeURIComponent(files[0].split('/').filter(Boolean).pop());
       title = name;
@@ -20,7 +28,12 @@ export async function getServerSideProps({ params, res }) {
   }
 
   const filePath = path.join(process.cwd(), 'public/drop/index.html');
-  let html = fs.readFileSync(filePath, 'utf8');
+  let html = '';
+  try {
+    html = await fs.promises.readFile(filePath, 'utf8');
+  } catch (err) {
+    console.error(err);
+  }
   html = html.replace('<title>File Share</title>', `<title>${title}</title>\n<meta property="og:title" content="${title}">`);
 
   res.setHeader('Content-Type', 'text/html');
