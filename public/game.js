@@ -1,4 +1,4 @@
-// game.js — Refactored Snake with resize‐clamp to avoid phantom self-traps
+// snake game with resize clamp
 
 class Board {
   constructor(canvasId, cellSize) {
@@ -144,7 +144,7 @@ class GameController {
     this.highScore      = parseInt(localStorage.getItem('highScore')) || 0;
     this._updateScores();
 
-    // Song metadata is defined in images-data.js so it can be reused on other pages
+    // song data
     this.imagesData = (window.imagesData || []).slice();
     this._shuffle(this.imagesData);
     this.loadedImages = [];

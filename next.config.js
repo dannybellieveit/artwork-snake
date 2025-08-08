@@ -1,7 +1,8 @@
-/** @type {import('next').NextConfig} */
+// Next.js config
 module.exports = {
   reactStrictMode: true,
   async rewrites() {
+    // proxy token routes
     return [
       {
         source: '/list-proxy/:token',

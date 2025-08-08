@@ -3,13 +3,13 @@
 <head><meta charset="utf-8"></head>
 <body>
 <script>
-  // Parse the access_token out of the hash fragment
+  // grab token from hash
   const hash = window.location.hash.substring(1).split('&')
     .reduce((res, kv) => { 
       const [k,v] = kv.split('='); res[k] = v; 
       return res;
     }, {});
-  // Save it and redirect back to the game
+  // store token then go home
   localStorage.setItem('spotify_token', hash.access_token);
   window.location = '/';
 </script>
