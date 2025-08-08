@@ -116,7 +116,7 @@
   let token = qs.get('token') || (location.pathname.match(/^\/drop\/([^/]+)$/)||[])[1];
   const box = document.getElementById('drop-content');
   if (!token){ box.textContent = 'No share token provided.'; box.style.textAlign='center'; return; }
-
+  document.title = 'File Share';
   /* make a card */
   function render(name, url, mime='', bytes=0){
   const wrap = document.createElement('section');
