@@ -1,6 +1,6 @@
-/* style.css */
+/* base styles */
 
-/* Define CSS Variables for Reusability and Consistency */
+/* variables */
 :root {
   --primary-bg-color: skyblue;
   --border-color: black;

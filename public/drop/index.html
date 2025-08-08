@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>File Share</title>
   <base href="/" />
-  <link rel="stylesheet" href="/style.css"><!-- keep any global styles -->
+  <link rel="stylesheet" href="/style.css"><!-- global styles -->
   <style>
-  /* ====== Danny Casio transfer page – minimal, on-brand ====== */
+  /* transfer page */
   :root{
-    --bg      : #87CEEB;   /* site sky-blue */
-    --btn     : #5AB4E5;   /* slightly darker than bg */
-    --btn-dk  : #3F93C8;   /* hover */
+    --bg      : #87CEEB;
+    --btn     : #5AB4E5;
+    --btn-dk  : #3F93C8;
   }
 
   html,body{
@@ -20,7 +20,7 @@
     color:#000;
   }
 
-  /* slim header */
+  /* header */
   header{
     position:relative;
     padding:1.2rem 1rem 0;
@@ -37,7 +37,7 @@
     letter-spacing:.02em;
   }
 
-  /* list container */
+  /* list area */
   #drop-content{
     max-width:1200px;
     width:min(100%,90vw);
@@ -48,7 +48,7 @@
     text-align:center;
   }
 
-  /* each item – no white box, just spacing */
+  /* items */
   .file-item h2{
     margin:0 0 .7rem;
     font-size:1.15rem;
@@ -63,7 +63,7 @@
     border-radius:8px;
   }
 
-  /* centered download button similar width as footer links */
+  /* download button */
   .download{
     display:block;
     width:max-content;
@@ -97,9 +97,7 @@
 
   <div id="drop-content">Loading…</div>
 
-  <!---- keep your existing <script> block exactly as-is here ---->
-
-  <!-- footer with email & Instagram -->
+  <!-- footer -->
   <footer>
     <ul class="contacts">
       <li><a href="mailto:dannycasio@me.com">Email</a></li>
@@ -113,14 +111,14 @@
 <script>
 (async () => {
   console.time('total-load');
-  /* 1. token */
+  /* token */
   const qs  = new URLSearchParams(location.search);
   let token = qs.get('token') || (location.pathname.match(/^\/drop\/([^/]+)$/)||[])[1];
   const box = document.getElementById('drop-content');
   if (!token){ box.textContent = 'No share token provided.'; box.style.textAlign='center'; return; }
   document.title = 'File Share';
 
-  /* helper: build one card */
+  /* make a card */
   function render(name, url, mime='', bytes=0){
   const wrap = document.createElement('section');
   wrap.className = 'file-item';
@@ -134,7 +132,7 @@
 }
 
 
-  /* 2. fetch XML list */
+  /* fetch list */
   let xmlText = '';
   try{
     console.time('fetch-list');
@@ -155,7 +153,7 @@
   const all  = [...doc.getElementsByTagName('*')].filter(n=>n.localName==='response');
   console.timeEnd('parse-xml');
 
-  /* 3. normal multi-file share */
+  /* filter files */
   const files = all.filter(r=>{
     const href = r.getElementsByTagNameNS('*','href')[0]?.textContent || '';
     return !href.endsWith('/webdav/') && !href.endsWith('/');
@@ -169,9 +167,9 @@
 
   box.innerHTML = '';
 
-/* ---------- 4A. Folder share ---------- */
+/* folder share */
 if (files.length) {
-  /* 1. Build a bullet list of filenames and total size */
+  /* list files and total */
   const listWrap = document.createElement('section');
   listWrap.className = 'file-item';
 
@@ -179,19 +177,19 @@ if (files.length) {
   ul.style.margin  = '0 0 1.2rem 1.2rem';
   ul.style.padding = '0';
 
-  let totalBytes = 0;               // accumulate here
+  let totalBytes = 0;               // total bytes
 
   files.forEach(r => {
-  /* filename + direct download URL */
+  /* name + download link */
   const href = r.getElementsByTagNameNS('*','href')[0].textContent;
   const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
   const fileURL = `/share-proxy/${token}?file=${encodeURIComponent(name)}`;
 
-  /* <li> item */
+  /* list item */
   const li = document.createElement('li');
   li.textContent = name;
 
-  /* if it’s audio, add inline player */
+  /* add audio player */
   if (/\.(mp3|wav|ogg|flac)$/i.test(name)) {
     const player = document.createElement('audio');
     player.controls = true;
@@ -207,7 +205,7 @@ if (files.length) {
 
   ul.appendChild(li);
 
-  /* size accumulator */
+  /* total size */
   const lenNode = r.getElementsByTagNameNS('*','getcontentlength')[0];
   if (lenNode) totalBytes += Number(lenNode.textContent || 0);
 });
@@ -215,7 +213,7 @@ if (files.length) {
 
   listWrap.appendChild(ul);
 
-  /* 2. Single “Download all (ZIP)” button */
+  /* zip button */
   const zipURL = `https://transfer.dannycasio.com/s/${token}/download?accept=zip`;
   const btn = document.createElement('a');
   btn.className = 'download';
@@ -223,7 +221,7 @@ if (files.length) {
   btn.textContent = 'Download all (ZIP)';
   listWrap.appendChild(btn);
 
-  /* 3. Size footnote */
+  /* size note */
   if (totalBytes) {
     const sizeMB = (totalBytes / (1024 * 1024)).toFixed(1);
     const note   = document.createElement('div');
@@ -233,14 +231,14 @@ if (files.length) {
     listWrap.appendChild(note);
   }
 
-  /* add the assembled section to the page & stop */
+  /* done */
   box.appendChild(listWrap);
   console.timeEnd('total-load');
   return;
 }
 
 
-  /* 4. single-file share -> ask head-proxy for filename + mime */
+  /* single file */
   try{
     console.time('fetch-head');
     const meta = await fetch(`/head-proxy/${token}`).then(r=>r.json());
@@ -250,9 +248,9 @@ if (files.length) {
     if (meta.filename) document.title = meta.filename;
    render(name, url, meta.mime, meta.size || 0);
   }catch(err){
-    /* fallback: still show a basic link */
+    /* basic link fallback */
     const url = `/share-proxy/${token}?file=file`;
-  render('file', url);
+    render('file', url);
   }
   console.timeEnd('total-load');
 })();
@@ -273,7 +271,7 @@ if (files.length) {
 </style>
 <script id="ws-init">
 (() => {
-  /* --- demo flag guard --- */
+  /* demo flag */
   const urlParams = new URLSearchParams(location.search);
   const isDemo = urlParams.get('demo') === '1';
   const demoSrc = 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3';
