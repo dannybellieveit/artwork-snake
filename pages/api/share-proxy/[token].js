@@ -1,12 +1,23 @@
 import { Readable } from 'stream';
 import { pipeline } from 'stream';
 import { promisify } from 'util';
+import { isValidToken, isValidFile } from '../../../lib/validation';
 
 export default async function handler(req, res) {
   const { token } = req.query;
   const file = req.query.file;
   if (!token || !file) {
     res.status(400).send('Missing token or file');
+    return;
+  }
+
+  if (!isValidToken(token)) {
+    res.status(400).send('Invalid token');
+    return;
+  }
+
+  if (!isValidFile(file)) {
+    res.status(400).send('Invalid file');
     return;
   }
 
