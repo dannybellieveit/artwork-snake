@@ -35,9 +35,43 @@ export async function getServerSideProps({ params, res }) {
     console.error(err);
   }
   
-  html = html
-  .replace('<title>File Share</title>', `<title>${title}</title>`)
-  .replace('property="og:title" content="File Share"', `property="og:title" content="${title}"`);
+ const esc = s => String(s)
+  .replace(/&/g,'&amp;')
+  .replace(/"/g,'&quot;')
+  .replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;');
+
+let out = html;
+
+// <title>
+out = out.replace(/<title>.*?<\/title>/i, `<title>${esc(title)}</title>`);
+
+// og:title (overwrite if present, otherwise inject before </head>)
+if (out.match(/<meta\s+property=["']og:title["'][^>]*>/i)) {
+  out = out.replace(
+    /<meta\s+property=["']og:title["']\s+content=["'][^"']*["']\s*\/?>/i,
+    `<meta property="og:title" content="${esc(title)}">`
+  );
+} else {
+  out = out.replace(/<\/head>/i,
+    `  <meta property="og:title" content="${esc(title)}">\n</head>`);
+}
+
+// (optional) twitter:title for broader compatibility
+if (out.match(/<meta\s+name=["']twitter:title["'][^>]*>/i)) {
+  out = out.replace(
+    /<meta\s+name=["']twitter:title["']\s+content=["'][^"']*["']\s*\/?>/i,
+    `<meta name="twitter:title" content="${esc(title)}">`
+  );
+} else {
+  out = out.replace(/<\/head>/i,
+    `  <meta name="twitter:title" content="${esc(title)}">\n</head>`);
+}
+
+// send `out` (not the original `html`)
+res.setHeader('Content-Type', 'text/html; charset=utf-8');
+res.end(out);
+
 
 
   res.setHeader('Content-Type', 'text/html');
