@@ -34,7 +34,11 @@ export async function getServerSideProps({ params, res }) {
   } catch (err) {
     console.error(err);
   }
-  html = html.replace('<title>File Share</title>', `<title>${title}</title>\n<meta property="og:title" content="${title}">`);
+  
+  html = html
+  .replace('<title>File Share</title>', `<title>${title}</title>`)
+  .replace('property="og:title" content="File Share"', `property="og:title" content="${title}"`);
+
 
   res.setHeader('Content-Type', 'text/html');
   res.write(html);
