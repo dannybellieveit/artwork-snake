@@ -95,6 +95,8 @@ export async function getServerSideProps({ params, req, res }) {
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
 res.setHeader('Pragma', 'no-cache');
+res.setHeader('x-ssr-drop', '1');
+res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
 
   res.end(out);
 
