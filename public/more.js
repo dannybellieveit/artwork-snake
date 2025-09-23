@@ -9,25 +9,45 @@ function shuffle(arr) {
 function loadSongs() {
   const songs = shuffle((window.imagesData || []).slice());
   const container = document.getElementById('songs');
+
+  if (!container) {
+    return;
+  }
+
   songs.forEach(song => {
     const link = document.createElement('a');
     link.href = song.spotifyUrl;
     link.target = '_blank';
-    link.className = 'song-item';
+    link.rel = 'noopener noreferrer';
+    link.className = 'credit-card';
+    link.setAttribute('role', 'listitem');
+    link.setAttribute('aria-label', `${song.title} by ${song.artist}`);
 
-    const img = document.createElement('img');
-    img.src = song.src;
-    img.alt = `${song.title} by ${song.artist}`;
+    const image = document.createElement('img');
+    image.className = 'credit-art';
+    image.src = song.src;
+    image.alt = `${song.title} by ${song.artist}`;
+    image.loading = 'lazy';
 
     const info = document.createElement('div');
-    info.className = 'song-info';
-    info.textContent = `${song.artist} - ${song.title}`;
+    info.className = 'credit-info';
 
-    link.appendChild(img);
+    const artist = document.createElement('p');
+    artist.className = 'credit-artist';
+    artist.textContent = song.artist;
+
+    const title = document.createElement('h3');
+    title.className = 'credit-title';
+    title.textContent = song.title;
+
+    info.appendChild(artist);
+    info.appendChild(title);
+
+    link.appendChild(image);
     link.appendChild(info);
+
     container.appendChild(link);
   });
-  console.log(`Loaded ${songs.length} songs`);
 }
 
 document.addEventListener('DOMContentLoaded', loadSongs);

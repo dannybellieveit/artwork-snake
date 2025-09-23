@@ -3,12 +3,44 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>More - Danny Casio</title>
+  <title>Credits – Danny Casio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <a href="index.html" class="back-button" aria-label="Back to home">Back</a>
-  <div id="songs" class="songs-container"></div>
+  <header class="site-header secondary" role="banner">
+    <div class="brand">
+      <a class="brand-name" href="index.html">Danny Casio</a>
+      <p class="brand-role">producer + songwriter</p>
+    </div>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="index.html">Home</a>
+      <a href="mailto:info@dannycasio.com">Email</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="archive" aria-labelledby="archive-title">
+      <div class="section-header">
+        <p class="section-label">Credits</p>
+        <h1 id="archive-title">Extended work archive</h1>
+        <p>Shuffled selection of sessions, cuts, and remixes.</p>
+      </div>
+      <div id="songs" class="credits-grid" role="list"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>© 2024 Danny Casio</p>
+    <div class="footer-links">
+      <a href="mailto:info@dannycasio.com">Email</a>
+      <a href="https://instagram.com/dannycasio_/" target="_blank" rel="noopener noreferrer">Instagram</a>
+      <a href="index.html">Home</a>
+    </div>
+  </footer>
+
   <script src="images-data.js"></script>
   <script src="more.js" defer></script>
 </body>

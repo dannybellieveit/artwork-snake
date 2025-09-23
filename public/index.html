@@ -3,44 +3,118 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="South London based songwriter/producer.">
-  <meta name="keywords" content="Danny Casio, games, music, Spotify, Instagram, website, the six, discography, genius, wikipedia, biography, about, age, producer, songwriter, chorley, manchester, london, the dairy, brixton, juno, junos, nemahsis, jordan adetunji, boyle">
+  <meta name="description" content="Producer and songwriter Danny Casio – selected work and contact information.">
   <title>Danny Casio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <header class="site-header" role="banner">
+    <div class="brand">
+      <a class="brand-name" href="index.html">Danny Casio</a>
+      <p class="brand-role">producer + songwriter</p>
+    </div>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="#work">Work</a>
+      <a href="more.html">Credits</a>
+      <a href="mailto:info@dannycasio.com">Email</a>
+    </nav>
+  </header>
 
-  <!-- game -->
-  <div class="game-container">
-    <div id="score" class="score-label">Score: 0</div>
-    <div id="high-score" class="score-label">High Score: 0</div>
-    <canvas id="game-canvas" width="800" height="450"></canvas>
-    <div id="pause-overlay" class="pause-overlay"></div>
-  </div>
+  <main id="main-content">
+    <section class="intro" aria-labelledby="intro-title">
+      <div class="intro-grid">
+        <div class="intro-title-block">
+          <p class="eyebrow">South London</p>
+          <h1 id="intro-title">Cinematic pop designed to feel close.</h1>
+        </div>
+        <div class="intro-summary">
+          <p>Writing and producing records that blend warm vocals, analog grit, and widescreen hooks.</p>
+          <div class="intro-actions">
+            <a class="listen-link" href="https://open.spotify.com/track/0hQZyBWcYejAzb9WYM96pr?si=866aa6756cb24293" target="_blank" rel="noopener noreferrer">Play “TV Show”</a>
+            <span class="latest">Latest: “TV Show” · Katie Gregson-MacLeod</span>
+          </div>
+        </div>
+        <div class="intro-meta">
+          <p class="meta-label">Recent collaborators</p>
+          <ul>
+            <li>Joy Crookes</li>
+            <li>Katie Gregson-MacLeod</li>
+            <li>Nemahsis</li>
+            <li>Jordan Adetunji</li>
+          </ul>
+        </div>
+      </div>
+    </section>
 
-  <!-- spotify embed -->
-  <div id="spotify-embed-container">
-    <iframe
-      id="spotify-embed"
-      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-      loading="lazy"
-      src=""
-    >
-      Your browser does not support iframes.
-    </iframe>
-  </div>
+    <section class="releases" id="work" aria-labelledby="releases-title">
+      <div class="section-header">
+        <p class="section-label">Selected work</p>
+        <h2 id="releases-title">Highlights</h2>
+      </div>
+      <div class="release-list">
+        <article class="release-card">
+          <div class="release-copy">
+            <p class="release-tag">Katie Gregson-MacLeod · 2024</p>
+            <h3 class="release-title">TV Show</h3>
+            <p class="release-detail">Writing, production, mix support.</p>
+          </div>
+          <div class="release-meta">
+            <img src="assets/photo2.jpg" alt="Katie Gregson-MacLeod in the studio with Danny Casio." loading="lazy">
+            <a class="listen-pill" href="https://open.spotify.com/track/0hQZyBWcYejAzb9WYM96pr?si=866aa6756cb24293" target="_blank" rel="noopener noreferrer">Listen</a>
+          </div>
+        </article>
+        <article class="release-card">
+          <div class="release-copy">
+            <p class="release-tag">Joy Crookes · 2021</p>
+            <h3 class="release-title">Skin</h3>
+            <p class="release-detail">Production and additional writing.</p>
+          </div>
+          <div class="release-meta">
+            <img src="assets/photo8.jpg" alt="Joy Crookes portrait." loading="lazy">
+            <a class="listen-pill" href="https://open.spotify.com/track/7k8b5u5fisGTDNahrJK6dw?si=2a87e548bd1c45ef" target="_blank" rel="noopener noreferrer">Listen</a>
+          </div>
+        </article>
+        <article class="release-card">
+          <div class="release-copy">
+            <p class="release-tag">Jordan Adetunji · 2023</p>
+            <h3 class="release-title">Drama</h3>
+            <p class="release-detail">Production and sound design.</p>
+          </div>
+          <div class="release-meta">
+            <img src="assets/photo21.jpg" alt="Jordan Adetunji performing." loading="lazy">
+            <a class="listen-pill" href="https://open.spotify.com/track/40ROAtBj7soL5rbqXQjU4k?si=2add6b9543114f4f" target="_blank" rel="noopener noreferrer">Listen</a>
+          </div>
+        </article>
+      </div>
+      <a class="archive-link" href="more.html">Browse full credits ↗</a>
+    </section>
 
-  <!-- footer -->
-  <footer>
-    <ul class="contacts">
-      <li><a href="mailto:info@dannycasio.com" aria-label="Email Danny Casio">Email</a></li>
-      <li><a href="https://instagram.com/dannycasio_/" target="_blank" aria-label="Visit Danny Casio's Instagram">Instagram</a></li>
-      <li><a href="more.html" aria-label="View more info">More</a></li>
-    </ul>
+    <section class="studio" aria-labelledby="studio-title">
+      <div class="section-header">
+        <p class="section-label">Studio notes</p>
+        <h2 id="studio-title">In the room</h2>
+      </div>
+      <div class="studio-grid">
+        <p>Analog synths, battered drum machines, and vocals recorded to feel human.</p>
+        <ul>
+          <li>Sessions in London, Belfast, and remote worldwide.</li>
+          <li>Obsessed with dynamics, warmth, and hooks that stick.</li>
+          <li>Always ready for new voices and collaborators.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>© 2024 Danny Casio</p>
+    <div class="footer-links">
+      <a href="mailto:info@dannycasio.com">Email</a>
+      <a href="https://instagram.com/dannycasio_/" target="_blank" rel="noopener noreferrer">Instagram</a>
+      <a href="more.html">Credits</a>
+    </div>
   </footer>
-
-  <!-- scripts -->
-  <script src="images-data.js"></script>
-  <script src="game.js" defer></script>
 </body>
 </html>
