@@ -3,44 +3,98 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="South London based songwriter/producer.">
-  <meta name="keywords" content="Danny Casio, games, music, Spotify, Instagram, website, the six, discography, genius, wikipedia, biography, about, age, producer, songwriter, chorley, manchester, london, the dairy, brixton, juno, junos, nemahsis, jordan adetunji, boyle">
+  <meta name="description" content="Producer and songwriter Danny Casio – selected collaborations and contact details.">
   <title>Danny Casio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <header class="site-header" role="banner">
+    <a class="logo" href="index.html">Danny Casio</a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="#listen">Listen</a>
+      <a href="more.html">Credits</a>
+      <a href="mailto:info@dannycasio.com">Contact</a>
+    </nav>
+  </header>
 
-  <!-- game -->
-  <div class="game-container">
-    <div id="score" class="score-label">Score: 0</div>
-    <div id="high-score" class="score-label">High Score: 0</div>
-    <canvas id="game-canvas" width="800" height="450"></canvas>
-    <div id="pause-overlay" class="pause-overlay"></div>
-  </div>
+  <main id="main-content">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-text">
+        <p class="eyebrow">Producer • Songwriter</p>
+        <h1 id="hero-title">South London pop with cinematic edges.</h1>
+        <p class="lead">Danny Casio builds textured worlds for bold voices—crafting hooks that cut through and production that feels close, human, and intentional.</p>
+        <div class="hero-actions">
+          <a class="primary-link" href="https://open.spotify.com/track/0hQZyBWcYejAzb9WYM96pr?si=866aa6756cb24293" target="_blank" rel="noopener noreferrer">Play “TV Show” on Spotify</a>
+          <a class="secondary-link" href="mailto:info@dannycasio.com">Booking &amp; collaborations</a>
+        </div>
+      </div>
+      <figure class="hero-media">
+        <img src="assets/photo2.jpg" alt="Katie Gregson-MacLeod recording vocals with Danny Casio at The Dairy studio." loading="lazy">
+        <figcaption>Latest release: “TV Show” with Katie Gregson-MacLeod.</figcaption>
+      </figure>
+    </section>
 
-  <!-- spotify embed -->
-  <div id="spotify-embed-container">
-    <iframe
-      id="spotify-embed"
-      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-      loading="lazy"
-      src=""
-    >
-      Your browser does not support iframes.
-    </iframe>
-  </div>
+    <section class="listen" id="listen" aria-labelledby="listen-title">
+      <div class="section-header">
+        <p class="eyebrow">Selected work</p>
+        <h2 id="listen-title">Three cuts to start with</h2>
+        <p class="section-intro">Preview a few recent collaborations. Each link opens directly in Spotify.</p>
+      </div>
+      <div class="listen-grid">
+        <article class="track-card">
+          <img src="assets/photo2.jpg" alt="Cover art for TV Show by Katie Gregson-MacLeod." loading="lazy">
+          <div class="card-body">
+            <p class="track-meta">Katie Gregson-MacLeod</p>
+            <h3 class="track-title">TV Show</h3>
+            <p class="track-notes">Lush pads and aching harmonies built for quiet catharsis. Written and produced with Danny in Brixton.</p>
+            <a class="text-link" href="https://open.spotify.com/track/0hQZyBWcYejAzb9WYM96pr?si=866aa6756cb24293" target="_blank" rel="noopener noreferrer">Listen on Spotify</a>
+          </div>
+        </article>
+        <article class="track-card">
+          <img src="assets/photo8.jpg" alt="Cover art for Skin by Joy Crookes." loading="lazy">
+          <div class="card-body">
+            <p class="track-meta">Joy Crookes</p>
+            <h3 class="track-title">Skin</h3>
+            <p class="track-notes">Strings, analog grit, and a vocal that sits right up front. Danny co-produced and shaped the cinematic low end.</p>
+            <a class="text-link" href="https://open.spotify.com/track/7k8b5u5fisGTDNahrJK6dw?si=2a87e548bd1c45ef" target="_blank" rel="noopener noreferrer">Listen on Spotify</a>
+          </div>
+        </article>
+        <article class="track-card">
+          <img src="assets/photo21.jpg" alt="Cover art for Drama by Jordan Adetunji." loading="lazy">
+          <div class="card-body">
+            <p class="track-meta">Jordan Adetunji</p>
+            <h3 class="track-title">Drama</h3>
+            <p class="track-notes">Hazy guitars and rapid-fire drums stitched with metallic FX. Produced alongside Danny for a razor-sharp chorus.</p>
+            <a class="text-link" href="https://open.spotify.com/track/40ROAtBj7soL5rbqXQjU4k?si=2add6b9543114f4f" target="_blank" rel="noopener noreferrer">Listen on Spotify</a>
+          </div>
+        </article>
+      </div>
+      <a class="archive-link" href="more.html">Browse the full credits ↗</a>
+    </section>
 
-  <!-- footer -->
-  <footer>
-    <ul class="contacts">
-      <li><a href="mailto:info@dannycasio.com" aria-label="Email Danny Casio">Email</a></li>
-      <li><a href="https://instagram.com/dannycasio_/" target="_blank" aria-label="Visit Danny Casio's Instagram">Instagram</a></li>
-      <li><a href="more.html" aria-label="View more info">More</a></li>
-    </ul>
+    <section class="notes" aria-labelledby="notes-title">
+      <div class="notes-content">
+        <h2 id="notes-title">In the room</h2>
+        <p>Sessions bounce between analog synths, battered drum machines, and field recordings from the road. The focus: make every lyric feel lived-in.</p>
+        <ul class="notes-list">
+          <li>Hands-on producer shaping records with Nemahsis, Griff, Duckwrth, and more.</li>
+          <li>Obsessed with vocal warmth, unexpected percussion, and mixing that still feels human.</li>
+          <li>Remote-friendly or in-person across London, Toronto, and Belfast.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p class="footer-tagline">© 2024 Danny Casio. Built for listening.</p>
+    <div class="footer-links">
+      <a href="mailto:info@dannycasio.com">Email</a>
+      <a href="https://instagram.com/dannycasio_/" target="_blank" rel="noopener noreferrer">Instagram</a>
+      <a href="more.html">Credits</a>
+    </div>
   </footer>
-
-  <!-- scripts -->
-  <script src="images-data.js"></script>
-  <script src="game.js" defer></script>
 </body>
 </html>

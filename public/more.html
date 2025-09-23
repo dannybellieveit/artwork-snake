@@ -3,12 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>More - Danny Casio</title>
+  <title>Credits – Danny Casio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <a href="index.html" class="back-button" aria-label="Back to home">Back</a>
-  <div id="songs" class="songs-container"></div>
+  <header class="secondary-header">
+    <a class="back-link" href="index.html">← Back to home</a>
+    <h1>Extended credits</h1>
+    <p>Every refresh shuffles a broader look at the records, remixes, and sessions Danny has helped bring to life.</p>
+  </header>
+
+  <main>
+    <section class="archive" aria-labelledby="archive-title">
+      <h2 id="archive-title" class="sr-only">Credits archive</h2>
+      <div id="songs" class="songs-container" role="list"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p class="footer-tagline">© 2024 Danny Casio. Built for listening.</p>
+    <div class="footer-links">
+      <a href="mailto:info@dannycasio.com">Email</a>
+      <a href="https://instagram.com/dannycasio_/" target="_blank" rel="noopener noreferrer">Instagram</a>
+      <a href="index.html">Home</a>
+    </div>
+  </footer>
+
   <script src="images-data.js"></script>
   <script src="more.js" defer></script>
 </body>
