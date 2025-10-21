@@ -21,6 +21,8 @@ window.imagesData = [
   { src: 'assets/photo20.jpg', title: 'No Cameo', artist: 'Babymorocco', spotifyUrl: 'https://open.spotify.com/track/4H4w1qDifvKDRf9JIds8o9?si=dd09fee26fec450d' },
    { src: 'assets/photo21.jpg', title: 'Drama', artist: 'Jordan Adetunji', spotifyUrl: 'https://open.spotify.com/track/40ROAtBj7soL5rbqXQjU4k?si=2add6b9543114f4f' },
    { src: 'assets/photo22.jpg', title: "She's So Handsome", artist: 'Arthur Hill', spotifyUrl: 'https://open.spotify.com/track/1G3Nm7gbxkjOtFmZDoMEc4?si=0173dfb87b2c4bbb' },
-   { src: 'assets/photo23.jpg', title: "Team", artist: 'Nemahsis', spotifyUrl: 'https://open.spotify.com/track/582bQD4BTrPGaV9yrMWrUq?si=1e2468fb61e943fb' }
+   { src: 'assets/photo23.jpg', title: "Team", artist: 'Nemahsis', spotifyUrl: 'https://open.spotify.com/track/582bQD4BTrPGaV9yrMWrUq?si=1e2468fb61e943fb' },
+  // { src: 'assets/photo24.jpg', title: "Magnolias", artist: 'ROSALÍA', spotifyUrl: 'https://www.rosalia.com' }
+
 
 ];
