@@ -1,7 +1,8 @@
+// Lower pinnedOrder numbers appear first; omit to keep original data order amongst pinned items.
 window.imagesData = [
-  { src: 'assets/photo1.jpg', title: 'Verbathim (Album)', artist: 'Nemahsis', spotifyUrl: 'https://open.spotify.com/track/2lmT9NiqohWoRf9yAxt4Ru?si=7291e441baaa452a', pinned: true },
-  { src: 'assets/photo2.jpg', title: 'TV Show', artist: 'Katie Gregson-MacLeod', spotifyUrl: 'https://open.spotify.com/track/0hQZyBWcYejAzb9WYM96pr?si=866aa6756cb24293', pinned: true },
-  { src: 'assets/photo3.jpg', title: 'We Need To Talk', artist: 'Matt Maltese', spotifyUrl: 'https://open.spotify.com/track/1gqMcDslzFtgOsAZDY58JX?si=f1e735a57f8e4076', pinned: true },
+  { src: 'assets/photo1.jpg', title: 'Verbathim (Album)', artist: 'Nemahsis', spotifyUrl: 'https://open.spotify.com/track/2lmT9NiqohWoRf9yAxt4Ru?si=7291e441baaa452a', pinned: true, pinnedOrder: 1 },
+  { src: 'assets/photo2.jpg', title: 'TV Show', artist: 'Katie Gregson-MacLeod', spotifyUrl: 'https://open.spotify.com/track/0hQZyBWcYejAzb9WYM96pr?si=866aa6756cb24293', pinned: true, pinnedOrder: 2 },
+  { src: 'assets/photo3.jpg', title: 'We Need To Talk', artist: 'Matt Maltese', spotifyUrl: 'https://open.spotify.com/track/1gqMcDslzFtgOsAZDY58JX?si=f1e735a57f8e4076', pinned: true, pinnedOrder: 3 },
   { src: 'assets/photo4.jpg', title: 'Alone At The Party', artist: 'Sam Tompkins', spotifyUrl: 'https://open.spotify.com/track/0YO7moiEboCUBDFf0hefSk?si=6abe803a16734b2e', pinned: false },
   { src: 'assets/photo5.jpg', title: 'Dollar Signs', artist: 'Nemahsis', spotifyUrl: 'https://open.spotify.com/track/6YyEuMnthCvLOZCGEbksAF?si=ea15d86f0f7d416d', pinned: false },
   { src: 'assets/photo6.jpg', title: 'Coming Closer', artist: 'Duckwrth', spotifyUrl: 'https://open.spotify.com/track/238p3EKRYESqsZdgE5DCDR?si=7f4332128f954948', pinned: false },

@@ -6,9 +6,21 @@ function shuffle(arr) {
   return arr;
 }
 
+function sortPinned(items) {
+  return items
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => {
+      const orderA = Number.isFinite(Number(a.item.pinnedOrder)) ? Number(a.item.pinnedOrder) : Number.POSITIVE_INFINITY;
+      const orderB = Number.isFinite(Number(b.item.pinnedOrder)) ? Number(b.item.pinnedOrder) : Number.POSITIVE_INFINITY;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.index - b.index;
+    })
+    .map(entry => entry.item);
+}
+
 function loadSongs() {
   const allSongs = (window.imagesData || []).slice();
-  const pinned = allSongs.filter(song => song.pinned);
+  const pinned = sortPinned(allSongs.filter(song => song.pinned));
   const rest = shuffle(allSongs.filter(song => !song.pinned));
   const songs = [...pinned, ...rest];
   const container = document.getElementById('songs');
