@@ -188,6 +188,46 @@ footer {
   opacity: 1;
 }
 
+.song-item:focus,
+.song-item:focus-visible {
+  outline: 2px solid var(--border-color);
+  outline-offset: 4px;
+}
+
+.song-item:focus img,
+.song-item:focus-visible img,
+.song-item:active img {
+  filter: grayscale(100%) brightness(60%);
+}
+
+.song-item:focus .song-info,
+.song-item:focus-visible .song-info,
+.song-item:focus-within .song-info,
+.song-item:active .song-info {
+  opacity: 1;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .song-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .song-item img {
+    filter: none !important;
+  }
+
+  .song-info {
+    position: static;
+    opacity: 1;
+    background: none;
+    color: var(--font-color-dark);
+    padding: var(--gap-small) 0 0;
+    transition: none;
+    text-align: left;
+  }
+}
+
 .back-button {
   margin: var(--gap-large) 0;
   text-decoration: none;
