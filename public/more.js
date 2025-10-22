@@ -6,8 +6,23 @@ function shuffle(arr) {
   return arr;
 }
 
+function sortPinned(items) {
+  return items
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => {
+      const orderA = Number.isFinite(Number(a.item.pinnedOrder)) ? Number(a.item.pinnedOrder) : Number.POSITIVE_INFINITY;
+      const orderB = Number.isFinite(Number(b.item.pinnedOrder)) ? Number(b.item.pinnedOrder) : Number.POSITIVE_INFINITY;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.index - b.index;
+    })
+    .map(entry => entry.item);
+}
+
 function loadSongs() {
-  const songs = shuffle((window.imagesData || []).slice());
+  const allSongs = (window.imagesData || []).slice();
+  const pinned = sortPinned(allSongs.filter(song => song.pinned));
+  const rest = shuffle(allSongs.filter(song => !song.pinned));
+  const songs = [...pinned, ...rest];
   const container = document.getElementById('songs');
   songs.forEach(song => {
     const link = document.createElement('a');
