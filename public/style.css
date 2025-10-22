@@ -159,6 +159,7 @@ footer {
 .song-item {
   position: relative;
   overflow: hidden;
+  text-decoration: none;
 }
 
 
@@ -221,7 +222,7 @@ footer {
     position: static;
     opacity: 1;
     background: none;
-    color: var(--font-color-dark);
+    color: rgba(0, 0, 0, 0.75);
     padding: var(--gap-small) 0 0;
     transition: none;
     text-align: left;
