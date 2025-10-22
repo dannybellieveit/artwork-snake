@@ -7,7 +7,10 @@ function shuffle(arr) {
 }
 
 function loadSongs() {
-  const songs = shuffle((window.imagesData || []).slice());
+  const allSongs = (window.imagesData || []).slice();
+  const pinned = allSongs.filter(song => song.pinned);
+  const rest = shuffle(allSongs.filter(song => !song.pinned));
+  const songs = [...pinned, ...rest];
   const container = document.getElementById('songs');
   songs.forEach(song => {
     const link = document.createElement('a');

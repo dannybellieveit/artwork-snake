@@ -145,8 +145,10 @@ class GameController {
     this._updateScores();
 
     // song data
-    this.imagesData = (window.imagesData || []).slice();
-    this._shuffle(this.imagesData);
+    const allImages = (window.imagesData || []).slice();
+    const pinnedImages = allImages.filter(image => image.pinned);
+    const restImages = this._shuffle(allImages.filter(image => !image.pinned));
+    this.imagesData = [...pinnedImages, ...restImages];
     this.loadedImages = [];
 
     this.snake       = null;
