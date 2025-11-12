@@ -24,7 +24,7 @@ window.imagesData = [
   //{ src: 'assets/photo22.jpg', title: "She's So Handsome", artist: 'Arthur Hill', spotifyUrl: 'https://open.spotify.com/track/1G3Nm7gbxkjOtFmZDoMEc4?si=0173dfb87b2c4bbb', pinned: false },
   { src: 'assets/photo23.jpg', title: "Team", artist: 'Nemahsis', spotifyUrl: 'https://open.spotify.com/track/582bQD4BTrPGaV9yrMWrUq?si=1e2468fb61e943fb', pinned: false },
   { src: 'assets/photo24.jpg', title: "Magnolias", artist: 'ROSALÍA', spotifyUrl: 'https://open.spotify.com/track/7GF92haKwJg9WUdnkTxRtr', pinned: true, pinnedOrder: 1},
-  { src: 'assets/photo25.jpg', title: "'Appetite', 'Man In The Middle' & 'She's So Handsome'", artist: 'Arthur Hill', spotifyUrl: 'https://www.instagram.com/p/DPUJim3CYVL/', pinned: false },
+  { src: 'assets/photo25.jpg', title: "'Appetite', 'Man In The Middle' & 'She's So Handsome'", artist: 'Arthur Hill', spotifyUrl: 'https://open.spotify.com/album/2wrjAgp2Z1g2EBfkdDOfkT', pinned: false },
   { src: 'assets/photo26.jpg', title: "HONESTLY, OBVIOUSLY", artist: 'Joseph Lawrence', spotifyUrl: 'https://open.spotify.com/prerelease/5IZ3IcKQawSbLsOECRj7xo', pinned: false },
   
 
