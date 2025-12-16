@@ -26,7 +26,7 @@ window.imagesData = [
   { src: 'assets/photo24.jpg', title: "Magnolias", artist: 'ROSALÍA', spotifyUrl: 'https://open.spotify.com/track/7GF92haKwJg9WUdnkTxRtr', pinned: true, pinnedOrder: 1},
   { src: 'assets/photo25.jpg', title: "Appetite, Man In The Middle & She's So Handsome", artist: 'Arthur Hill', spotifyUrl: 'https://open.spotify.com/track/5Q3sMtleI9J0dUlorAvOqP', pinned: false },
   { src: 'assets/photo26.jpg', title: "HONESTLY, OBVIOUSLY", artist: 'Joseph Lawrence', spotifyUrl: 'https://open.spotify.com/prerelease/5IZ3IcKQawSbLsOECRj7xo', pinned: false },
-  { src: 'assets/photo26.jpg', title: "If My Heart Was A House", artist: 'JADE', spotifyUrl: 'https://open.spotify.com/track/1I5XmBxIpd9my9UFmjjF3g', pinned: true, pinnedOrder: 3},
+  { src: 'assets/photo27.jpg', title: "If My Heart Was A House", artist: 'JADE', spotifyUrl: 'https://open.spotify.com/track/1I5XmBxIpd9my9UFmjjF3g', pinned: true, pinnedOrder: 3},
   
 
 
