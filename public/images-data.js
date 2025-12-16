@@ -13,7 +13,7 @@ window.imagesData = [
   { src: 'assets/photo11.jpg', title: '54321', artist: 'April', spotifyUrl: 'https://open.spotify.com/track/6Vn5hk8NQIkzGsdkx5nF4q', pinned: false },
   { src: 'assets/photo12.jpg', title: 'Boy Clothes', artist: 'Nxdia', spotifyUrl: 'https://open.spotify.com/track/7nuCxvFvVT5YEAjSDd6Glr', pinned: false },
   { src: 'assets/photo13.jpg', title: 'Options (feat. Lil Baby)', artist: 'Jordan Adetunji', spotifyUrl: 'https://open.spotify.com/track/0aQD4RI0U4pHWzNzQWTq9r', pinned: false },
-  { src: 'assets/photo14.jpg', title: '305 (feat. Bryson Tiller)', artist: 'Jordan Adetunji', spotifyUrl: 'https://open.spotify.com/track/494f07w2ArJNlkwnWWZViK', pinned: true, pinnedOrder: 3},
+  { src: 'assets/photo14.jpg', title: '305 (feat. Bryson Tiller)', artist: 'Jordan Adetunji', spotifyUrl: 'https://open.spotify.com/track/494f07w2ArJNlkwnWWZViK', pinned: true, pinnedOrder: 4},
   { src: 'assets/photo15.jpg', title: 'Stick Of Gum', artist: 'Nemahsis', spotifyUrl: 'https://open.spotify.com/track/7DvOMvKBZESff6Etf0v9MY', pinned: false },
   { src: 'assets/photo16.jpg', title: 'congrats! u did it!', artist: 'flowerovlove', spotifyUrl: 'https://open.spotify.com/track/5bp8CvtJ8pbh2OK2HSfTwE', pinned: false },
   //{ src: 'assets/photo17.jpg', title: 'Appetite', artist: 'Arthur Hill', spotifyUrl: 'https://open.spotify.com/track/0q5zMDVszIVZb7kPi2XiOj?si=34033487b3344e8a', pinned: false },
@@ -26,6 +26,7 @@ window.imagesData = [
   { src: 'assets/photo24.jpg', title: "Magnolias", artist: 'ROSALÍA', spotifyUrl: 'https://open.spotify.com/track/7GF92haKwJg9WUdnkTxRtr', pinned: true, pinnedOrder: 1},
   { src: 'assets/photo25.jpg', title: "Appetite, Man In The Middle & She's So Handsome", artist: 'Arthur Hill', spotifyUrl: 'https://open.spotify.com/track/5Q3sMtleI9J0dUlorAvOqP', pinned: false },
   { src: 'assets/photo26.jpg', title: "HONESTLY, OBVIOUSLY", artist: 'Joseph Lawrence', spotifyUrl: 'https://open.spotify.com/prerelease/5IZ3IcKQawSbLsOECRj7xo', pinned: false },
+  { src: 'assets/photo26.jpg', title: "If My Heart Was A House", artist: 'JADE', spotifyUrl: 'https://open.spotify.com/track/1I5XmBxIpd9my9UFmjjF3g', pinned: true, pinnedOrder: 3},
   
 
 
