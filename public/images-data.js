@@ -14,7 +14,7 @@ window.imagesData = [
   { src: 'assets/photo12.jpg', title: 'Boy Clothes', artist: 'Nxdia', spotifyUrl: 'https://open.spotify.com/track/7nuCxvFvVT5YEAjSDd6Glr', pinned: false },
   { src: 'assets/photo13.jpg', title: 'Options (feat. Lil Baby)', artist: 'Jordan Adetunji', spotifyUrl: 'https://open.spotify.com/track/0aQD4RI0U4pHWzNzQWTq9r', pinned: false },
   { src: 'assets/photo14.jpg', title: '305 (feat. Bryson Tiller)', artist: 'Jordan Adetunji', spotifyUrl: 'https://open.spotify.com/track/494f07w2ArJNlkwnWWZViK', pinned: true, pinnedOrder: 4},
-  { src: 'assets/photo15.jpg', title: 'Stick Of Gum', artist: 'Nemahsis', spotifyUrl: 'https://open.spotify.com/track/7DvOMvKBZESff6Etf0v9MY', pinned: false },
+  { src: 'assets/photo15.jpg', title: 'Stick Of Gum', artist: 'Nemahsis', spotifyUrl: 'https://open.spotify.com/track/7DvOMvKBZESff6Etf0v9MY', pinned: true, pinnedOrder: 5 },
   { src: 'assets/photo16.jpg', title: 'congrats! u did it!', artist: 'flowerovlove', spotifyUrl: 'https://open.spotify.com/track/5bp8CvtJ8pbh2OK2HSfTwE', pinned: false },
   //{ src: 'assets/photo17.jpg', title: 'Appetite', artist: 'Arthur Hill', spotifyUrl: 'https://open.spotify.com/track/0q5zMDVszIVZb7kPi2XiOj?si=34033487b3344e8a', pinned: false },
   { src: 'assets/photo18.jpg', title: 'Body On Me', artist: 'Nxdia', spotifyUrl: 'https://open.spotify.com/track/6MglZeuPDQwHzZTxrRZfCW', pinned: false },
