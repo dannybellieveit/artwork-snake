@@ -4,6 +4,9 @@
   "description": "A small snake game that uses images for the snake body. Open `index.html` in your browser to play.",
   "main": "next.config.js",
   "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -11,6 +14,9 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "xml2js": "^0.6.2"
   }
 }

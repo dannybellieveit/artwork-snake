@@ -90,13 +90,10 @@ export async function getServerSideProps({ params, req, res }) {
     .replace(/<\/head>/i, `${headOG}\n</head>`);
 
   // 5) Send exactly one response, no cache
-res.setHeader('Content-Type', 'text/html; charset=utf-8');
-res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-res.setHeader('Pragma', 'no-cache');
-res.setHeader('x-ssr-drop', '1');
-res.end(out);
-
-
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('x-ssr-drop', '1');
   res.end(out);
 
   // Next.js requires a props return even if we wrote the response

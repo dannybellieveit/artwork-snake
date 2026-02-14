@@ -30,7 +30,7 @@ export default async function handler(req, res) {
     const upstream = await fetch(url, { headers });
 
     res.status(upstream.status);
-    ['content-type', 'content-length', 'accept-ranges'].forEach(h => {
+    ['content-type', 'content-length', 'content-range', 'accept-ranges'].forEach(h => {
       const val = upstream.headers.get(h);
       if (val) res.setHeader(h, val);
     });
