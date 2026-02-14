@@ -125,7 +125,7 @@ class GameController {
     this.SPEED_BASE  = 400;
     this.MIN_SPEED   = 50;
     this.FLASH_COUNT = 6;
-    this.MAX_SPEEDUP = 5;      // cap at 8×
+    this.MAX_SPEEDUP = 8;      // cap at 8×
 
     this.nextImageIndex = 0;  // cycles across rounds
     this.speedup        = 1;  // bumped only in _die()
@@ -236,40 +236,27 @@ class GameController {
   _handleClick(e) {
     const pos = this._getEventPos(e);
     if (this.target && pos.x === this.target.x && pos.y === this.target.y) {
-      const id = this.imagesData[this.target.metaIndex]
-                     .spotifyUrl.match(/track\/(\w+)/)[1];
-      this.spotifyEmbed.src = `https://open.spotify.com/embed/track/${id}`
+      const match = this.imagesData[this.target.metaIndex]
+                        .spotifyUrl.match(/track\/(\w+)/);
+      if (!match) return;
+      this.spotifyEmbed.src = `https://open.spotify.com/embed/track/${match[1]}`
                             + `?utm_source=generator&autoplay=1`;
       this.embedContainer.style.display = 'block';
     }
   }
 
-_handleMouseMove(e) {
+  _handleMouseMove(e) {
     if (!this.cursorActive) {
-        this.cursorActive = true;
-        return;
+      this.cursorActive = true;
+      return;
     }
 
     const pos = this._getEventPos(e);
-    const { cellSize } = this.board;
+    const isOverTarget = this.target &&
+      pos.x === this.target.x && pos.y === this.target.y;
 
-    // Check if the mouse is within the target's bounding box
-    const isOverTarget =
-        this.target &&
-        pos.x >= this.target.x &&
-        pos.x < this.target.x + cellSize &&
-        pos.y >= this.target.y &&
-        pos.y < this.target.y + cellSize;
-
-    if (isOverTarget) {
-        const md = this.imagesData[this.target.metaIndex];
-
-        this.board.canvas.style.cursor = 'pointer'; // Show pointer cursor
-    } else {
-        this.board.canvas.style.cursor = 'default'; // Reset to default cursor
-
-    }
-}
+    this.board.canvas.style.cursor = isOverTarget ? 'pointer' : 'default';
+  }
 
   _handleKey(e) {
     const d = this.CELL;
@@ -321,6 +308,9 @@ _handleMouseMove(e) {
 
   _spawnTarget() {
     const { cols, rows, cellSize } = this.board;
+    const total = cols * rows;
+    if (this.snake.positions.length >= total) return; // board full
+
     let x, y;
     do {
       x = Math.floor(Math.random() * cols) * cellSize;
@@ -384,7 +374,7 @@ _handleMouseMove(e) {
     const ate = nextPos.x === this.target.x && nextPos.y === this.target.y;
     this.snake.growOrMove(nextPos, ate ? this.target.metaIndex : null);
     if (ate) {
-      this.speedup += 0.1; // Increment speedup factor
+      this.speedup = Math.min(this.speedup + 0.1, this.MAX_SPEEDUP);
       this.interval = Math.max(this.MIN_SPEED, this.SPEED_BASE / this.speedup);
       if (this.isManual) {
         this.score++;
