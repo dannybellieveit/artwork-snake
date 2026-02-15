@@ -49,6 +49,7 @@ body {
   max-width: var(--container-max-width);
   border: 5px solid var(--border-color);
   box-sizing: border-box;
+  border-radius: var(--border-radius);
 }
 
 canvas {
