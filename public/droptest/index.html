@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Audio Player Test</title>
+
+  <base href="/" />
+  <link rel="stylesheet" href="/style.css">
+  <style>
+  :root{
+    --bg      : #87CEEB;
+    --btn     : #5AB4E5;
+    --btn-dk  : #3F93C8;
+  }
+
+  html,body{
+    margin:0;
+    background:var(--bg);
+    color:#000;
+  }
+
+  header{
+    position:relative;
+    padding:1.2rem 1rem 0;
+    text-align:center;
+  }
+  .back-btn{
+    position:absolute; left:1rem; top:1rem;
+    text-decoration:none; color:#000; font-size:1rem;
+  }
+  header h1{
+    margin:0;
+    font-size:clamp(1.6rem,4vw,2.2rem);
+    font-weight:700;
+    letter-spacing:.02em;
+  }
+
+  #drop-content{
+    max-width:1200px;
+    width:min(100%,90vw);
+    margin:2rem auto 2.5rem;
+    padding:0 1rem;
+    display:grid;
+    gap:2rem;
+    text-align:center;
+  }
+
+  .file-item h2{
+    margin:0 0 .7rem;
+    font-size:1.15rem;
+    font-weight:600;
+    word-break:break-all;
+    text-align:center;
+  }
+  .file-item audio{
+    width:100%;
+    margin:.6rem 0 1.1rem;
+    outline:none;
+    border-radius:8px;
+  }
+
+  .download{
+    display:block;
+    width:max-content;
+    margin:0 auto;
+    text-align:center;
+    background:var(--btn);
+    color:#fff;
+    text-decoration:none;
+    padding:.65rem 1.2rem;
+    border-radius:10px;
+    font-weight:600;
+    transition:background .15s ease;
+  }
+  .download:hover{ background:var(--btn-dk); }
+
+  .subtitle{
+    font-size:.95rem;
+    color:#333;
+    margin:.25rem 0 0;
+  }
+  .kbd{
+    display:inline-block;
+    background:rgba(0,0,0,.08);
+    border:1px solid rgba(0,0,0,.15);
+    border-radius:4px;
+    padding:.1em .4em;
+    font-family:monospace;
+    font-size:.85em;
+  }
+  .shortcuts{
+    max-width:420px;
+    margin:0 auto;
+    text-align:left;
+    font-size:.9rem;
+    line-height:1.8;
+  }
+
+  footer{
+    text-align:center;
+    margin:3rem 0 2rem;
+    font-size:.95rem;
+  }
+
+  @media(max-width:600px){
+    #drop-content{ gap:1.4rem; }
+  }
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="back-btn" href="/">&larr; Home</a>
+  <h1>Audio Player Test</h1>
+  <p class="subtitle">Improved WaveSurfer.js player demo</p>
+</header>
+
+<div id="drop-content">
+  <!-- Track 1 -->
+  <section class="file-item">
+    <h2>T-Rex Roar (CC0 sample)</h2>
+    <audio controls crossorigin="anonymous"
+           src="https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3"
+           style="width:100%"></audio>
+    <a class="download"
+       href="https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3"
+       download>Download</a>
+  </section>
+
+  <!-- Track 2 -->
+  <section class="file-item">
+    <h2>Viper Strike (CC0 sample)</h2>
+    <audio controls crossorigin="anonymous"
+           src="https://upload.wikimedia.org/wikipedia/commons/2/21/Ballou-Grand_Overture.ogg"
+           style="width:100%"></audio>
+    <a class="download"
+       href="https://upload.wikimedia.org/wikipedia/commons/2/21/Ballou-Grand_Overture.ogg"
+       download>Download</a>
+  </section>
+
+  <!-- Keyboard shortcuts reference -->
+  <section class="file-item">
+    <h2>Keyboard Shortcuts</h2>
+    <div class="shortcuts">
+      <kbd class="kbd">Space</kbd> Play / Pause<br>
+      <kbd class="kbd">&larr;</kbd> Rewind 5 s<br>
+      <kbd class="kbd">&rarr;</kbd> Skip 5 s<br>
+      <kbd class="kbd">&uarr;</kbd> Volume up<br>
+      <kbd class="kbd">&darr;</kbd> Volume down<br>
+      Click the speaker icon to mute / unmute
+    </div>
+  </section>
+</div>
+
+<footer>
+  <ul class="contacts">
+    <li><a href="mailto:dannycasio@me.com">Email</a></li>
+    <li><a href="https://instagram.com/dannycasio_" target="_blank" rel="noopener">Instagram</a></li>
+    <li><a href="/more.html">More</a></li>
+  </ul>
+</footer>
+
+<!-- WaveSurfer player (same as drop page) -->
+<script src="https://unpkg.com/wavesurfer.js@7.9.9/dist/wavesurfer.min.js"></script>
+<style id="ws-style">
+  .ws-player{
+    position:relative;
+    width:min(90vw,720px);
+    margin:.75rem auto;
+    padding:.75rem 1rem;
+    font-family:system-ui,-apple-system,sans-serif;
+    border-radius:16px;
+    background:rgba(255,255,255,.35);
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+    box-shadow:0 2px 12px rgba(0,0,0,.08),0 0 0 1px rgba(255,255,255,.45) inset;
+  }
+  .ws-wave{
+    height:80px;
+    border-radius:10px;
+    background:linear-gradient(135deg,rgba(223,242,255,.6),rgba(200,230,255,.4));
+    cursor:pointer;
+    position:relative;
+    overflow:hidden;
+  }
+  .ws-wave.is-loading::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:linear-gradient(90deg,transparent 30%,rgba(255,255,255,.5) 50%,transparent 70%);
+    animation:ws-shimmer 1.4s ease-in-out infinite;
+  }
+  @keyframes ws-shimmer{
+    0%{transform:translateX(-100%)}
+    100%{transform:translateX(100%)}
+  }
+  .ws-controls{
+    display:flex;
+    align-items:center;
+    gap:.6rem;
+    margin-top:.5rem;
+    min-height:36px;
+  }
+  .ws-btn{
+    background:var(--btn);
+    color:#fff;
+    border:none;
+    width:36px;
+    height:36px;
+    border-radius:50%;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    transition:background .15s,transform .1s;
+    flex-shrink:0;
+  }
+  .ws-btn:hover{background:var(--btn-dk)}
+  .ws-btn:active{transform:scale(.93)}
+  .ws-btn svg{
+    width:16px;
+    height:16px;
+    fill:currentColor;
+    pointer-events:none;
+  }
+  .ws-vol-group{
+    display:flex;
+    align-items:center;
+    gap:.3rem;
+    margin-left:.25rem;
+  }
+  .ws-vol-btn{
+    background:none;
+    border:none;
+    color:#1a1a1a;
+    cursor:pointer;
+    padding:4px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:4px;
+    transition:color .15s;
+  }
+  .ws-vol-btn:hover{color:var(--btn-dk)}
+  .ws-vol-btn svg{
+    width:18px;
+    height:18px;
+    fill:currentColor;
+    pointer-events:none;
+  }
+  .ws-vol-slider{
+    -webkit-appearance:none;
+    appearance:none;
+    width:80px;
+    height:4px;
+    border-radius:2px;
+    background:linear-gradient(to right,var(--btn) var(--vol-pct,100%),rgba(0,0,0,.15) var(--vol-pct,100%));
+    outline:none;
+    cursor:pointer;
+    transition:opacity .2s;
+  }
+  .ws-vol-slider::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:14px;
+    height:14px;
+    border-radius:50%;
+    background:var(--btn);
+    border:2px solid #fff;
+    box-shadow:0 1px 3px rgba(0,0,0,.2);
+    cursor:pointer;
+  }
+  .ws-vol-slider::-moz-range-thumb{
+    width:14px;
+    height:14px;
+    border-radius:50%;
+    background:var(--btn);
+    border:2px solid #fff;
+    box-shadow:0 1px 3px rgba(0,0,0,.2);
+    cursor:pointer;
+  }
+  .ws-time{
+    margin-left:auto;
+    font-variant-numeric:tabular-nums;
+    font-size:.85rem;
+    color:#1a1a1a;
+    white-space:nowrap;
+    user-select:none;
+  }
+  @media(max-width:600px){
+    .ws-player{
+      width:min(95vw,720px);
+      padding:.6rem .75rem;
+      border-radius:12px;
+    }
+    .ws-btn{width:40px;height:40px}
+    .ws-btn svg{width:18px;height:18px}
+    .ws-vol-slider{width:60px}
+    .ws-wave{height:64px}
+  }
+</style>
+<script>
+(() => {
+  const ICO_PLAY  = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+  const ICO_PAUSE = '<svg viewBox="0 0 24 24"><path d="M6 4h4v16H6zm8 0h4v16h-4z"/></svg>';
+  const ICO_VOL   = '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8.3v7.4a4.47 4.47 0 0 0 2.5-3.7zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>';
+  const ICO_MUTE  = '<svg viewBox="0 0 24 24"><path d="M16.5 12A4.5 4.5 0 0 0 14 8.3v1.5l2.4 2.4c.1-.4.1-.8.1-1.2zm2.5 0a7 7 0 0 1-.6 2.8l1.5 1.5A8.9 8.9 0 0 0 21 12a9 9 0 0 0-7-8.8v2.1a7 7 0 0 1 5 6.7zM4.3 3 3 4.3 7.7 9H3v6h4l5 5v-6.7l4.2 4.2c-.7.5-1.4.9-2.2 1.1v2.1a8.9 8.9 0 0 0 3.8-1.8l1.9 1.9 1.3-1.3-9-9L4.3 3zM12 4l-2.1 2.1L12 8.3V4z"/></svg>';
+
+  const handled = new WeakSet();
+
+  const init = audio => {
+    if (handled.has(audio)) return;
+    handled.add(audio);
+    audio.crossOrigin = 'anonymous';
+    audio.load();
+    try {
+      audio.controls = false;
+      audio.hidden = true;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'ws-player';
+
+      const wave = document.createElement('div');
+      wave.className = 'ws-wave is-loading';
+
+      const controls = document.createElement('div');
+      controls.className = 'ws-controls';
+      controls.innerHTML =
+        `<button class="ws-btn" aria-label="Play" type="button">${ICO_PLAY}</button>` +
+        `<div class="ws-vol-group">` +
+          `<button class="ws-vol-btn" aria-label="Mute" type="button">${ICO_VOL}</button>` +
+          `<input class="ws-vol-slider" type="range" min="0" max="1" step="0.01" value="1" aria-label="Volume">` +
+        `</div>` +
+        `<span class="ws-time">0:00 / 0:00</span>`;
+
+      audio.parentNode.insertBefore(wrap, audio);
+      wrap.appendChild(wave);
+      wrap.appendChild(controls);
+      wrap.appendChild(audio);
+
+      const btn       = controls.querySelector('.ws-btn');
+      const volBtn    = controls.querySelector('.ws-vol-btn');
+      const volSlider = controls.querySelector('.ws-vol-slider');
+      const time      = controls.querySelector('.ws-time');
+
+      const updateSliderFill = () => {
+        volSlider.style.setProperty('--vol-pct', (volSlider.value * 100) + '%');
+      };
+      updateSliderFill();
+
+      const ws = WaveSurfer.create({
+        container: wave,
+        media: audio,
+        height: 80,
+        barWidth: 2,
+        barGap: 1,
+        barRadius: 2,
+        waveColor: getComputedStyle(document.documentElement)
+          .getPropertyValue('--btn').trim() || '#5AB4E5',
+        progressColor: getComputedStyle(document.documentElement)
+          .getPropertyValue('--btn-dk').trim() || '#3F93C8',
+        cursorColor: 'rgba(0,0,0,.35)',
+        cursorWidth: 1,
+        backend: 'MediaElement',
+        xhr: { mode: 'cors' }
+      });
+
+      const fmt = t => {
+        if (!isFinite(t) || t < 0) t = 0;
+        const m = Math.floor(t / 60);
+        const s = Math.floor(t % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+      };
+
+      const update = () => {
+        time.textContent = `${fmt(ws.getCurrentTime())} / ${fmt(ws.getDuration())}`;
+      };
+
+      ws.once('ready', () => { wave.classList.remove('is-loading'); update(); });
+      ws.on('play', () => { btn.innerHTML = ICO_PAUSE; btn.setAttribute('aria-label', 'Pause'); });
+      ws.on('pause', () => { btn.innerHTML = ICO_PLAY; btn.setAttribute('aria-label', 'Play'); });
+      ws.on('timeupdate', update);
+
+      btn.addEventListener('click', () => { ws.isPlaying() ? ws.pause() : ws.play(); });
+
+      let savedVol = 1;
+      volSlider.addEventListener('input', () => {
+        const v = parseFloat(volSlider.value);
+        ws.setVolume(v);
+        volBtn.innerHTML = v === 0 ? ICO_MUTE : ICO_VOL;
+        updateSliderFill();
+      });
+      volBtn.addEventListener('click', () => {
+        if (parseFloat(volSlider.value) > 0) {
+          savedVol = parseFloat(volSlider.value);
+          volSlider.value = 0;
+          ws.setVolume(0);
+          volBtn.innerHTML = ICO_MUTE;
+        } else {
+          volSlider.value = savedVol;
+          ws.setVolume(savedVol);
+          volBtn.innerHTML = ICO_VOL;
+        }
+        updateSliderFill();
+      });
+
+      wrap.tabIndex = 0;
+      wrap.addEventListener('keydown', e => {
+        if (e.code === 'Space') { e.preventDefault(); btn.click(); }
+        else if (e.code === 'ArrowRight') { ws.seekTo(Math.min(1, (ws.getCurrentTime() + 5) / ws.getDuration())); }
+        else if (e.code === 'ArrowLeft') { ws.seekTo(Math.max(0, (ws.getCurrentTime() - 5) / ws.getDuration())); }
+        else if (e.code === 'ArrowUp') { e.preventDefault(); const nv = Math.min(1, parseFloat(volSlider.value) + .1); volSlider.value = nv; volSlider.dispatchEvent(new Event('input')); }
+        else if (e.code === 'ArrowDown') { e.preventDefault(); const nv = Math.max(0, parseFloat(volSlider.value) - .1); volSlider.value = nv; volSlider.dispatchEvent(new Event('input')); }
+      });
+
+      const fallback = () => { if (wrap.parentNode) wrap.remove(); audio.controls = true; audio.hidden = false; };
+      ws.on('error', fallback);
+      audio.addEventListener('error', fallback);
+    } catch (e) {
+      audio.controls = true;
+      audio.hidden = false;
+    }
+  };
+
+  document.querySelectorAll('#drop-content audio').forEach(init);
+})();
+</script>
+
+</body>
+</html>
