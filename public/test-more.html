@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>More - Danny Casio (Test - Background Music Player)</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      padding-bottom: 140px;
+    }
+
+    .test-badge {
+      display: inline-block;
+      background: #ff6b6b;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      margin-left: 8px;
+    }
+
+    header {
+      text-align: center;
+      padding: 1.5rem 1rem;
+    }
+
+    header h1 {
+      margin: 0 0 0.5rem;
+    }
+
+    .page-subtitle {
+      font-size: 0.9rem;
+      color: #666;
+      margin: 0;
+    }
+
+    @media(max-width:600px){
+      body { padding-bottom: 160px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>My Discography <span class="test-badge">TEST</span></h1>
+    <p class="page-subtitle">Music continues playing in the background! Browse and enjoy 🎵</p>
+  </header>
+
+  <a href="test-drop.html" class="back-button" aria-label="Back to drop page">← Back to Drop Page</a>
+  <div id="songs" class="songs-container"></div>
+
+  <!-- Shared Audio Player (persists across pages) -->
+  <script src="/shared-player.js"></script>
+  <script src="images-data.js"></script>
+  <script>
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function sortPinned(items) {
+      return items
+        .map((item, index) => ({ item, index }))
+        .sort((a, b) => {
+          const orderA = Number.isFinite(Number(a.item.pinnedOrder)) ? Number(a.item.pinnedOrder) : Number.POSITIVE_INFINITY;
+          const orderB = Number.isFinite(Number(b.item.pinnedOrder)) ? Number(b.item.pinnedOrder) : Number.POSITIVE_INFINITY;
+          if (orderA !== orderB) return orderA - orderB;
+          return a.index - b.index;
+        })
+        .map(entry => entry.item);
+    }
+
+    function loadSongs() {
+      const allSongs = (window.imagesData || []).slice();
+      const pinned = sortPinned(allSongs.filter(song => song.pinned));
+      const rest = shuffle(allSongs.filter(song => !song.pinned));
+      const songs = [...pinned, ...rest];
+      const container = document.getElementById('songs');
+
+      songs.forEach(song => {
+        const item = document.createElement('div');
+        item.className = 'song-item';
+        item.style.cursor = 'pointer';
+        item.style.transition = 'transform 0.2s';
+
+        const img = document.createElement('img');
+        img.src = song.src;
+        img.alt = `${song.title} by ${song.artist}`;
+
+        const info = document.createElement('div');
+        info.className = 'song-info';
+        info.textContent = `${song.artist} - ${song.title}`;
+
+        item.appendChild(img);
+        item.appendChild(info);
+
+        // Add click handler to play in shared player
+        item.addEventListener('click', (e) => {
+          e.preventDefault();
+          // For demo, we'll use a generic audio URL
+          const audioUrl = `https://open.spotify.com/embed/track/${song.spotifyUrl.split('/').pop()}`;
+          console.log(`Playing: ${song.artist} - ${song.title}`);
+          window.sharedAudioPlayer.playAudio(
+            'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+            `${song.artist} - ${song.title}`
+          );
+        });
+
+        // Add hover effects
+        item.addEventListener('mouseenter', () => {
+          item.style.transform = 'scale(0.95)';
+        });
+        item.addEventListener('mouseleave', () => {
+          item.style.transform = 'scale(1)';
+        });
+
+        container.appendChild(item);
+      });
+
+      console.log(`Loaded ${songs.length} songs (Test Page)`);
+    }
+
+    document.addEventListener('DOMContentLoaded', loadSongs);
+  </script>
+</body>
+</html>
