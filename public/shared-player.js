@@ -1,86 +1,92 @@
 /**
- * Minimal Background Audio Player
- * Keeps music playing seamlessly across page navigations
- * Completely transparent - no visible UI
+ * Transparent background audio persistence.
+ * Hooks into existing <audio> elements on the page — no UI, no extra player.
+ * Saves playback state to sessionStorage so music survives page navigations.
  */
-
 (() => {
-  const audioKey = 'audioState';
+  const KEY = 'bgAudio';
+  const bg = new Audio();            // hidden element for pages that lack a native player
+  let tracked = null;                // whichever <audio> is currently playing
+  let interval = null;
 
-  const audio = new Audio();
-
-  function clearSaveInterval() {
-    if (saveInterval) {
-      clearInterval(saveInterval);
-      saveInterval = null;
-    }
-  }
-
-  // Restore audio state on page load
-  function restoreAudio() {
-    const state = sessionStorage.getItem(audioKey);
-    if (!state) return;
-
-    try {
-      const { src, currentTime } = JSON.parse(state);
-      if (!src) return;
-      audio.src = src;
-      // Wait for metadata before seeking — setting currentTime earlier silently fails
-      audio.addEventListener('loadedmetadata', function onMeta() {
-        audio.removeEventListener('loadedmetadata', onMeta);
-        audio.currentTime = currentTime || 0;
-      });
-      audio.play().catch(() => {});
-    } catch (e) {
-      sessionStorage.removeItem(audioKey);
-    }
-  }
-
-  // Save audio state before navigation
-  function saveAudio() {
-    if (audio.src && !audio.paused) {
-      sessionStorage.setItem(audioKey, JSON.stringify({
-        src: audio.src,
-        currentTime: audio.currentTime
+  function save() {
+    if (tracked && !tracked.paused && tracked.src) {
+      sessionStorage.setItem(KEY, JSON.stringify({
+        src: tracked.src,
+        time: tracked.currentTime
       }));
     }
   }
 
-  // Save state periodically while playing
-  let saveInterval = null;
-  audio.addEventListener('play', () => {
-    if (!saveInterval) {
-      saveInterval = setInterval(saveAudio, 500);
-    }
-  });
+  function startSaving()  { if (!interval) interval = setInterval(save, 500); }
+  function stopSaving()   { if (interval) { clearInterval(interval); interval = null; } }
 
-  audio.addEventListener('pause', () => {
-    clearSaveInterval();
-  });
-
-  // Clear stale state when audio finishes naturally
-  audio.addEventListener('ended', () => {
-    clearSaveInterval();
-    sessionStorage.removeItem(audioKey);
-  });
-
-  // Restore on load
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', restoreAudio);
-  } else {
-    restoreAudio();
+  function track(el) {
+    if (tracked === el) return;
+    if (tracked === bg && el !== bg) bg.pause();   // native element takes over
+    tracked = el;
+    startSaving();
   }
 
-  // Expose play/pause controls
-  window.playAudio = (src) => {
-    audio.src = src;
-    audio.play().catch(() => {});
-  };
+  // Use capture phase — audio events don't bubble
+  document.addEventListener('play', e => {
+    if (!(e.target instanceof HTMLAudioElement)) return;
+    if (e.target !== bg && !bg.paused) bg.pause(); // stop background if a real player starts
+    track(e.target);
+  }, true);
 
-  window.pauseAudio = () => {
-    audio.pause();
-  };
+  document.addEventListener('pause', e => {
+    if (e.target === tracked) stopSaving();
+  }, true);
 
-  // Save before unload
-  window.addEventListener('beforeunload', saveAudio);
+  document.addEventListener('ended', e => {
+    if (e.target === tracked) {
+      stopSaving();
+      sessionStorage.removeItem(KEY);
+      tracked = null;
+    }
+  }, true);
+
+  // Restore on page load
+  function restore() {
+    const raw = sessionStorage.getItem(KEY);
+    if (!raw) return;
+
+    try {
+      const { src, time } = JSON.parse(raw);
+      if (!src) return;
+
+      // If the new page already has an <audio> with the same source, use it
+      const match = Array.from(document.querySelectorAll('audio')).find(a => a.src === src);
+      const target = match || bg;
+
+      if (!match) target.src = src;
+
+      function seekAndPlay() {
+        target.currentTime = time || 0;
+        target.play().catch(() => {});
+        track(target);
+      }
+
+      // Seek only once metadata is available
+      if (target.readyState >= 1) {
+        seekAndPlay();
+      } else {
+        target.addEventListener('loadedmetadata', function once() {
+          target.removeEventListener('loadedmetadata', once);
+          seekAndPlay();
+        });
+      }
+    } catch (e) {
+      sessionStorage.removeItem(KEY);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', restore);
+  } else {
+    restore();
+  }
+
+  window.addEventListener('beforeunload', save);
 })();
