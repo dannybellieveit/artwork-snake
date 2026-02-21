@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>More - Danny Casio (TEST)</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    header {
+      text-align: center;
+      padding: 1.5rem 1rem;
+    }
+
+    header h1 {
+      margin: 0;
+    }
+
+    .back-button {
+      margin: var(--gap-large);
+      text-decoration: none;
+      color: var(--font-color-dark);
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>My Discography (TEST)</h1>
+  </header>
+
+  <a href="/test-drop.html" id="back-button" class="back-button" aria-label="Back">← Back</a>
+  <div id="songs" class="songs-container"></div>
+
+  <script src="/shared-player.js"></script>
+  <script src="images-data.js"></script>
+  <script src="more.js"></script>
+  <script>
+    // Set up back button from sessionStorage (set by the referring page)
+    function setupBackButton() {
+      const from = sessionStorage.getItem('discographyReferrer');
+      if (from === 'index') {
+        document.getElementById('back-button').href = '/';
+      }
+    }
+
+    setupBackButton();
+  </script>
+</body>
+</html>
