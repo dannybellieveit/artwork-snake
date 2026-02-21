@@ -7,9 +7,14 @@
 (() => {
   const audioKey = 'audioState';
 
-  // Create hidden audio element
   const audio = new Audio();
-  audio.crossOrigin = 'anonymous';
+
+  function clearSaveInterval() {
+    if (saveInterval) {
+      clearInterval(saveInterval);
+      saveInterval = null;
+    }
+  }
 
   // Restore audio state on page load
   function restoreAudio() {
@@ -18,11 +23,16 @@
 
     try {
       const { src, currentTime } = JSON.parse(state);
+      if (!src) return;
       audio.src = src;
-      audio.currentTime = currentTime || 0;
+      // Wait for metadata before seeking — setting currentTime earlier silently fails
+      audio.addEventListener('loadedmetadata', function onMeta() {
+        audio.removeEventListener('loadedmetadata', onMeta);
+        audio.currentTime = currentTime || 0;
+      });
       audio.play().catch(() => {});
     } catch (e) {
-      console.log('Could not restore audio');
+      sessionStorage.removeItem(audioKey);
     }
   }
 
@@ -45,10 +55,13 @@
   });
 
   audio.addEventListener('pause', () => {
-    if (saveInterval) {
-      clearInterval(saveInterval);
-      saveInterval = null;
-    }
+    clearSaveInterval();
+  });
+
+  // Clear stale state when audio finishes naturally
+  audio.addEventListener('ended', () => {
+    clearSaveInterval();
+    sessionStorage.removeItem(audioKey);
   });
 
   // Restore on load
@@ -58,10 +71,14 @@
     restoreAudio();
   }
 
-  // Expose simple play function
+  // Expose play/pause controls
   window.playAudio = (src) => {
     audio.src = src;
     audio.play().catch(() => {});
+  };
+
+  window.pauseAudio = () => {
+    audio.pause();
   };
 
   // Save before unload

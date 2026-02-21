@@ -107,7 +107,7 @@
   </script>
 
   <script>
-  (async () => {
+  (() => {
     const box = document.getElementById('drop-content');
 
     const demoTracks = [
@@ -134,9 +134,7 @@
       if (/^audio\//.test(mime) || /\.(mp3|wav|ogg)$/i.test(name)) {
         const audio = document.createElement('audio');
         audio.controls = true;
-        audio.crossOrigin = 'anonymous';
         audio.src = url;
-        audio.style.width = '100%';
         wrap.appendChild(audio);
       }
 

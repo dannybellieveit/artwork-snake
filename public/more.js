@@ -28,6 +28,7 @@ function loadSongs() {
     const link = document.createElement('a');
     link.href = song.spotifyUrl;
     link.target = '_blank';
+    link.rel = 'noopener';
     link.className = 'song-item';
 
     const img = document.createElement('img');
