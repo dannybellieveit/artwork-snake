@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>File Share - Test (Background Music Player)</title>
+  <title>File Share - Test</title>
   <base href="/" />
   <link rel="stylesheet" href="/style.css">
   <style>
@@ -17,7 +17,6 @@
       margin:0;
       background:var(--bg);
       color:#000;
-      padding-bottom: 140px;
     }
 
     header{
@@ -25,10 +24,7 @@
       padding:1.2rem 1rem 0;
       text-align:center;
     }
-    .back-btn{
-      position:absolute; left:1rem; top:1rem;
-      text-decoration:none; color:#000; font-size:1rem;
-    }
+
     header h1{
       margin:0;
       font-size:clamp(1.6rem,4vw,2.2rem);
@@ -53,6 +49,7 @@
       word-break:break-all;
       text-align:center;
     }
+
     .file-item audio{
       width:100%;
       margin:.6rem 0 1.1rem;
@@ -60,14 +57,7 @@
       border-radius:8px;
     }
 
-    .file-actions {
-      display: flex;
-      gap: 1rem;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    .download, .view-more-btn{
+    .download{
       display:block;
       width:max-content;
       margin:0 auto;
@@ -79,11 +69,8 @@
       border-radius:10px;
       font-weight:600;
       transition:background .15s ease;
-      border: none;
-      cursor: pointer;
-      font-size: 1rem;
     }
-    .download:hover, .view-more-btn:hover{ background:var(--btn-dk); }
+    .download:hover{ background:var(--btn-dk); }
 
     footer{
       text-align:center;
@@ -91,30 +78,15 @@
       font-size:.95rem;
     }
 
-    .test-badge {
-      display: inline-block;
-      background: #ff6b6b;
-      color: white;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: bold;
-      margin-left: 8px;
-    }
-
     @media(max-width:600px){
       #drop-content{ gap:1.4rem; }
-      html,body { padding-bottom: 160px; }
     }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>File Share <span class="test-badge">TEST</span></h1>
-    <p style="margin: 8px 0 0; font-size: 0.9rem; color: #666;">
-      Test page with background music player. Click "View More" to navigate while music keeps playing!
-    </p>
+    <h1>File Share (TEST)</h1>
   </header>
 
   <div id="drop-content">Loading…</div>
@@ -122,35 +94,36 @@
   <footer>
     <ul class="contacts">
       <li><a href="/">Back to Home</a></li>
-      <li><a href="/more.html">Live Discography</a></li>
+      <li><a href="test-more.html" id="more-link">More</a></li>
+      <li><a href="https://instagram.com/dannycasio_" target="_blank" rel="noopener">Instagram</a></li>
     </ul>
   </footer>
 
-  <!-- Shared Audio Player (persists across pages) -->
   <script src="/shared-player.js"></script>
+  <script>
+    document.getElementById('more-link').addEventListener('click', () => {
+      sessionStorage.setItem('discographyReferrer', 'test-drop');
+    });
+  </script>
 
   <script>
   (async () => {
-    console.time('total-load');
     const box = document.getElementById('drop-content');
 
-    // Demo mode for testing
-    const qs  = new URLSearchParams(location.search);
-    const isDemo = qs.get('demo') === '1';
     const demoTracks = [
       {
         name: 'Demo Track 1',
-        url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3',
+        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
         mime: 'audio/mpeg'
       },
       {
         name: 'Demo Track 2',
-        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+        url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3',
         mime: 'audio/mpeg'
       }
     ];
 
-    function render(name, url, mime='', bytes=0){
+    function render(name, url, mime=''){
       const wrap = document.createElement('section');
       wrap.className = 'file-item';
 
@@ -158,82 +131,29 @@
       title.textContent = name;
       wrap.appendChild(title);
 
-      // Add audio player with integration to shared player
       if (/^audio\//.test(mime) || /\.(mp3|wav|ogg)$/i.test(name)) {
-        const audioWrap = document.createElement('div');
-
         const audio = document.createElement('audio');
         audio.controls = true;
         audio.crossOrigin = 'anonymous';
         audio.src = url;
         audio.style.width = '100%';
-        audioWrap.appendChild(audio);
-
-        // Add play button to start shared player
-        const playBtn = document.createElement('button');
-        playBtn.textContent = '▶ Play in Background';
-        playBtn.style.cssText = `
-          display: block;
-          margin: 1rem auto;
-          padding: 0.65rem 1.2rem;
-          background: #4CAF50;
-          color: white;
-          border: none;
-          border-radius: 10px;
-          font-weight: 600;
-          cursor: pointer;
-          font-size: 1rem;
-          transition: background 0.15s ease;
-        `;
-        playBtn.onmouseover = () => playBtn.style.background = '#45a049';
-        playBtn.onmouseout = () => playBtn.style.background = '#4CAF50';
-        playBtn.onclick = (e) => {
-          e.preventDefault();
-          window.sharedAudioPlayer.playAudio(url, name);
-        };
-
-        audioWrap.appendChild(playBtn);
-        wrap.appendChild(audioWrap);
+        wrap.appendChild(audio);
       }
 
-      // Download button
-      if (isDemo) {
-        const downloadBtn = document.createElement('a');
-        downloadBtn.className = 'download';
-        downloadBtn.href = url;
-        downloadBtn.download = name;
-        downloadBtn.textContent = 'Download';
-        wrap.appendChild(downloadBtn);
-      }
-
-      // View More button
-      const viewMoreBtn = document.createElement('a');
-      viewMoreBtn.className = 'view-more-btn';
-      viewMoreBtn.href = '/test-more.html';
-      viewMoreBtn.textContent = '→ View More (Music Continues Playing)';
-      viewMoreBtn.style.marginLeft = '0.5rem';
-      wrap.appendChild(viewMoreBtn);
-
-      if (bytes) {
-        const sizeDiv = document.createElement('div');
-        sizeDiv.style.fontSize = '.9rem';
-        sizeDiv.style.marginTop = '.4rem';
-        sizeDiv.textContent = `Size: ${(bytes/(1024*1024)).toFixed(1)} MB`;
-        wrap.appendChild(sizeDiv);
-      }
+      const downloadBtn = document.createElement('a');
+      downloadBtn.className = 'download';
+      downloadBtn.href = url;
+      downloadBtn.download = name;
+      downloadBtn.textContent = 'Download';
+      wrap.appendChild(downloadBtn);
 
       box.appendChild(wrap);
     }
 
-    // Load demo tracks for testing
     box.innerHTML = '';
-    if (isDemo || true) { // Always show demo for test page
-      demoTracks.forEach(track => {
-        render(track.name, track.url, track.mime);
-      });
-    }
-
-    console.timeEnd('total-load');
+    demoTracks.forEach(track => {
+      render(track.name, track.url, track.mime);
+    });
   })();
   </script>
 

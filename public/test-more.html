@@ -3,57 +3,55 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>More - Danny Casio (Test - Background Music Player)</title>
+  <title>More - Danny Casio (TEST)</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    body {
-      padding-bottom: 140px;
-    }
-
-    .test-badge {
-      display: inline-block;
-      background: #ff6b6b;
-      color: white;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: bold;
-      margin-left: 8px;
-    }
-
     header {
       text-align: center;
       padding: 1.5rem 1rem;
     }
 
     header h1 {
-      margin: 0 0 0.5rem;
-    }
-
-    .page-subtitle {
-      font-size: 0.9rem;
-      color: #666;
       margin: 0;
     }
 
-    @media(max-width:600px){
-      body { padding-bottom: 160px; }
+    .back-button {
+      margin: var(--gap-large);
+      text-decoration: none;
+      color: var(--font-color-dark);
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>My Discography <span class="test-badge">TEST</span></h1>
-    <p class="page-subtitle">Music continues playing in the background! Browse and enjoy 🎵</p>
+    <h1>My Discography (TEST)</h1>
   </header>
 
-  <a href="test-drop.html" class="back-button" aria-label="Back to drop page">← Back to Drop Page</a>
+  <a href="#" id="back-button" class="back-button" aria-label="Back">← Back</a>
   <div id="songs" class="songs-container"></div>
 
-  <!-- Shared Audio Player (persists across pages) -->
   <script src="/shared-player.js"></script>
   <script src="images-data.js"></script>
   <script>
+    // Track referrer to know where user came from
+    function setReferrer() {
+      const from = new URLSearchParams(window.location.search).get('from') || 'test-drop';
+      sessionStorage.setItem('discographyReferrer', from);
+    }
+
+    // Set up back button to go to correct page
+    function setupBackButton() {
+      const from = sessionStorage.getItem('discographyReferrer') || 'test-drop';
+      const backBtn = document.getElementById('back-button');
+
+      if (from === 'index') {
+        backBtn.href = '/';
+      } else {
+        backBtn.href = '/test-drop.html';
+      }
+    }
+
     function shuffle(arr) {
       for (let i = arr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -82,10 +80,10 @@
       const container = document.getElementById('songs');
 
       songs.forEach(song => {
-        const item = document.createElement('div');
-        item.className = 'song-item';
-        item.style.cursor = 'pointer';
-        item.style.transition = 'transform 0.2s';
+        const link = document.createElement('a');
+        link.href = song.spotifyUrl;
+        link.target = '_blank';
+        link.className = 'song-item';
 
         const img = document.createElement('img');
         img.src = song.src;
@@ -95,35 +93,15 @@
         info.className = 'song-info';
         info.textContent = `${song.artist} - ${song.title}`;
 
-        item.appendChild(img);
-        item.appendChild(info);
-
-        // Add click handler to play in shared player
-        item.addEventListener('click', (e) => {
-          e.preventDefault();
-          // For demo, we'll use a generic audio URL
-          const audioUrl = `https://open.spotify.com/embed/track/${song.spotifyUrl.split('/').pop()}`;
-          console.log(`Playing: ${song.artist} - ${song.title}`);
-          window.sharedAudioPlayer.playAudio(
-            'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-            `${song.artist} - ${song.title}`
-          );
-        });
-
-        // Add hover effects
-        item.addEventListener('mouseenter', () => {
-          item.style.transform = 'scale(0.95)';
-        });
-        item.addEventListener('mouseleave', () => {
-          item.style.transform = 'scale(1)';
-        });
-
-        container.appendChild(item);
+        link.appendChild(img);
+        link.appendChild(info);
+        container.appendChild(link);
       });
-
-      console.log(`Loaded ${songs.length} songs (Test Page)`);
     }
 
+    // Initialize
+    setReferrer();
+    setupBackButton();
     document.addEventListener('DOMContentLoaded', loadSongs);
   </script>
 </body>
