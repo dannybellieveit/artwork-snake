@@ -18,7 +18,7 @@ Link previews in messaging apps (iMessage, WhatsApp, Facebook, etc.) now show **
 - **Bots:** Redirects (308) to `drop.dannycasio.com` (SSR server with proper og:title)
 - **Humans:** Serves static file browser page
 
-**SSR Server** (Hetzner server at drop.dannycasio.com):
+**SSR Server** (drop.dannycasio.com):
 - Detects bot user-agents
 - Fetches filename from Nextcloud via WebDAV PROPFIND
 - Returns HTML with `<meta property="og:title" content="filename.mp3">`
