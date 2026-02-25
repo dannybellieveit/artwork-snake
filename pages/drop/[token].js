@@ -2,6 +2,242 @@ import fs from 'fs';
 import path from 'path';
 import { parseStringPromise, processors } from 'xml2js';
 
+// Strategy 1: Public share XML endpoint (current method)
+async function strategy1_PublicShareXML(token, diagnostics) {
+  diagnostics.steps.push({ strategy: 1, name: 'PublicShareXML', started: true });
+  console.log('[LINK_PREVIEW_DEBUG] Strategy 1: Public share XML endpoint');
+
+  const url = `https://transfer.dannycasio.com/s/${encodeURIComponent(token)}/files?format=xml`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+  const upstream = await fetch(url, {
+    signal: controller.signal,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (compatible; NextJS-Drop-SSR/1.0; +https://dannycasio.com)'
+    }
+  });
+  clearTimeout(timeoutId);
+
+  if (!upstream.ok) {
+    throw new Error(`HTTP ${upstream.status}: ${upstream.statusText}`);
+  }
+
+  const xml = await upstream.text();
+  const parsed = await parseStringPromise(xml, {
+    explicitArray: false,
+    tagNameProcessors: [processors.stripPrefix],
+  });
+
+  const responses = Array.isArray(parsed.multistatus?.response)
+    ? parsed.multistatus.response
+    : [parsed.multistatus?.response].filter(Boolean);
+
+  const hrefs = (responses || []).map(r => r.href).filter(Boolean);
+  const files = hrefs.filter(h => !h.endsWith('/webdav/') && !h.endsWith('/'));
+
+  if (files.length === 0) {
+    throw new Error('No files found in XML response');
+  }
+
+  if (files.length === 1) {
+    return decodeURIComponent(files[0].split('/').filter(Boolean).pop());
+  } else {
+    const first = decodeURIComponent(files[0].split('/').filter(Boolean).pop());
+    return `${first} + ${files.length - 1} more`;
+  }
+}
+
+// Strategy 2: Public WebDAV with auth
+async function strategy2_WebDAVWithAuth(token, diagnostics) {
+  diagnostics.steps.push({ strategy: 2, name: 'WebDAVWithAuth', started: true });
+  console.log('[LINK_PREVIEW_DEBUG] Strategy 2: Public WebDAV with auth');
+
+  const url = 'https://transfer.dannycasio.com/public.php/webdav/';
+  const auth = 'Basic ' + Buffer.from(token + ':').toString('base64');
+
+  const propfindBody = `<?xml version="1.0"?>
+    <d:propfind xmlns:d="DAV:">
+      <d:prop><d:displayname/></d:prop>
+    </d:propfind>`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+  const response = await fetch(url, {
+    method: 'PROPFIND',
+    signal: controller.signal,
+    headers: {
+      'Authorization': auth,
+      'Depth': '1',
+      'Content-Type': 'application/xml',
+      'User-Agent': 'Mozilla/5.0 (compatible; NextJS-Drop-SSR/1.0; +https://dannycasio.com)'
+    },
+    body: propfindBody
+  });
+  clearTimeout(timeoutId);
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  const xml = await response.text();
+
+  // Extract displaynames using regex
+  const names = [];
+  const regex = /<(?:d:)?displayname[^>]*>(.*?)<\/(?:d:)?displayname>/gi;
+  let match;
+
+  while ((match = regex.exec(xml)) !== null) {
+    let name = match[1].trim();
+    if (name && !name.startsWith('/')) {
+      // Decode HTML entities
+      name = name.replace(/&amp;/g, '&')
+                 .replace(/&lt;/g, '<')
+                 .replace(/&gt;/g, '>')
+                 .replace(/&quot;/g, '"')
+                 .replace(/&#39;/g, "'");
+      names.push(name);
+    }
+  }
+
+  if (names.length === 0) {
+    throw new Error('No displaynames found in PROPFIND response');
+  }
+
+  if (names.length === 1) {
+    return names[0];
+  } else {
+    return `${names[0]} + ${names.length - 1} more`;
+  }
+}
+
+// Strategy 3: Download endpoint header extraction
+async function strategy3_DownloadHeader(token, diagnostics) {
+  diagnostics.steps.push({ strategy: 3, name: 'DownloadHeader', started: true });
+  console.log('[LINK_PREVIEW_DEBUG] Strategy 3: Download endpoint header extraction');
+
+  const url = `https://transfer.dannycasio.com/s/${encodeURIComponent(token)}/download`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+  const response = await fetch(url, {
+    method: 'HEAD',
+    signal: controller.signal,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (compatible; NextJS-Drop-SSR/1.0; +https://dannycasio.com)'
+    },
+    redirect: 'manual' // Don't follow redirects
+  });
+  clearTimeout(timeoutId);
+
+  const contentDisposition = response.headers.get('content-disposition');
+
+  if (!contentDisposition) {
+    throw new Error('No Content-Disposition header found');
+  }
+
+  // Parse filename from Content-Disposition header
+  // Format: attachment; filename="filename.ext" or filename*=UTF-8''filename.ext
+  const filenameMatch = contentDisposition.match(/filename\*?=['"]?([^'";\n]+)['"]?/i);
+
+  if (!filenameMatch || !filenameMatch[1]) {
+    throw new Error('Could not parse filename from Content-Disposition');
+  }
+
+  let filename = filenameMatch[1];
+
+  // Handle RFC 5987 encoding (filename*=UTF-8''...)
+  if (filename.includes("UTF-8''")) {
+    filename = decodeURIComponent(filename.split("UTF-8''")[1]);
+  }
+
+  return filename;
+}
+
+// Strategy 4: Use existing list-proxy API
+async function strategy4_ListProxyAPI(token, diagnostics) {
+  diagnostics.steps.push({ strategy: 4, name: 'ListProxyAPI', started: true });
+  console.log('[LINK_PREVIEW_DEBUG] Strategy 4: List proxy API');
+
+  const url = `https://dannycasio.com/api/list-proxy/${encodeURIComponent(token)}`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+  const response = await fetch(url, {
+    signal: controller.signal,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (compatible; NextJS-Drop-SSR/1.0; +https://dannycasio.com)'
+    }
+  });
+  clearTimeout(timeoutId);
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  const xml = await response.text();
+  const parsed = await parseStringPromise(xml, {
+    explicitArray: false,
+    tagNameProcessors: [processors.stripPrefix],
+  });
+
+  const responses = Array.isArray(parsed.multistatus?.response)
+    ? parsed.multistatus.response
+    : [parsed.multistatus?.response].filter(Boolean);
+
+  const hrefs = (responses || []).map(r => r.href).filter(Boolean);
+  const files = hrefs.filter(h => !h.endsWith('/webdav/') && !h.endsWith('/'));
+
+  if (files.length === 0) {
+    throw new Error('No files found');
+  }
+
+  if (files.length === 1) {
+    return decodeURIComponent(files[0].split('/').filter(Boolean).pop());
+  } else {
+    const first = decodeURIComponent(files[0].split('/').filter(Boolean).pop());
+    return `${first} + ${files.length - 1} more`;
+  }
+}
+
+// Try all strategies in order until one succeeds
+async function fetchFilename(token, diagnostics) {
+  const strategies = [
+    strategy1_PublicShareXML,
+    strategy2_WebDAVWithAuth,
+    strategy3_DownloadHeader,
+    strategy4_ListProxyAPI
+  ];
+
+  for (const strategy of strategies) {
+    try {
+      const result = await strategy(token, diagnostics);
+      diagnostics.steps.push({
+        strategy: strategies.indexOf(strategy) + 1,
+        success: true,
+        result
+      });
+      console.log(`[LINK_PREVIEW_DEBUG] Strategy ${strategies.indexOf(strategy) + 1} succeeded:`, result);
+      return result;
+    } catch (err) {
+      diagnostics.steps.push({
+        strategy: strategies.indexOf(strategy) + 1,
+        failed: true,
+        error: err.message
+      });
+      console.log(`[LINK_PREVIEW_DEBUG] Strategy ${strategies.indexOf(strategy) + 1} failed:`, err.message);
+      // Continue to next strategy
+    }
+  }
+
+  // All strategies failed
+  throw new Error('All filename fetch strategies failed');
+}
+
 export async function getServerSideProps({ params, req, res }) {
   const token = params.token || '';
   let title = 'File Share';
@@ -12,86 +248,12 @@ export async function getServerSideProps({ params, req, res }) {
     steps: []
   };
 
-  // 1) Work out the file name (single-file shares)
+  // Try to fetch filename using multi-strategy approach
   try {
-    const url = `https://transfer.dannycasio.com/s/${encodeURIComponent(token)}/files?format=xml`;
-    diagnostics.steps.push({ step: 'fetch_url', url });
-    console.log('[LINK_PREVIEW_DEBUG]', 'Fetching:', url);
-
-    // Add timeout and User-Agent
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-    const upstream = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; NextJS-Drop-SSR/1.0; +https://dannycasio.com)'
-      }
-    });
-    clearTimeout(timeoutId);
-
-    diagnostics.steps.push({
-      step: 'fetch_response',
-      status: upstream.status,
-      ok: upstream.ok,
-      headers: Object.fromEntries(upstream.headers.entries())
-    });
-    console.log('[LINK_PREVIEW_DEBUG]', 'Response status:', upstream.status);
-
-    if (!upstream.ok) {
-      throw new Error(`HTTP ${upstream.status}: ${upstream.statusText}`);
-    }
-
-    const xml = await upstream.text();
-    diagnostics.steps.push({ step: 'fetch_complete', xmlLength: xml.length });
-    console.log('[LINK_PREVIEW_DEBUG]', 'XML length:', xml.length, 'bytes');
-
-    const parsed = await parseStringPromise(xml, {
-      explicitArray: false,
-      tagNameProcessors: [processors.stripPrefix],
-    });
-    diagnostics.steps.push({ step: 'xml_parsed', hasMultistatus: !!parsed.multistatus });
-    console.log('[LINK_PREVIEW_DEBUG]', 'Parsed XML structure:', Object.keys(parsed));
-
-    const responses = Array.isArray(parsed.multistatus?.response)
-      ? parsed.multistatus.response
-      : [parsed.multistatus?.response].filter(Boolean);
-
-    diagnostics.steps.push({ step: 'responses_extracted', count: responses.length });
-    console.log('[LINK_PREVIEW_DEBUG]', 'Responses found:', responses.length);
-
-    const hrefs = (responses || []).map(r => r.href).filter(Boolean);
-    diagnostics.steps.push({ step: 'hrefs_extracted', hrefs });
-    console.log('[LINK_PREVIEW_DEBUG]', 'HREFs:', hrefs);
-
-    const files = hrefs.filter(h => !h.endsWith('/webdav/') && !h.endsWith('/'));
-    diagnostics.steps.push({ step: 'files_filtered', count: files.length, files });
-    console.log('[LINK_PREVIEW_DEBUG]', 'Files after filtering:', files);
-
-    if (files.length === 1) {
-      const name = decodeURIComponent(files[0].split('/').filter(Boolean).pop());
-      title = name;
-      diagnostics.steps.push({ step: 'title_set_single', title });
-      console.log('[LINK_PREVIEW_DEBUG]', 'Single file title:', title);
-    } else if (files.length > 1) {
-      // better multi-file title
-      const first = decodeURIComponent(files[0].split('/').filter(Boolean).pop());
-      title = `${first} + ${files.length - 1} more`;
-      diagnostics.steps.push({ step: 'title_set_multiple', title });
-      console.log('[LINK_PREVIEW_DEBUG]', 'Multiple files title:', title);
-    } else {
-      diagnostics.steps.push({ step: 'no_files_found' });
-      console.log('[LINK_PREVIEW_DEBUG]', 'No files found, using default title');
-    }
+    title = await fetchFilename(token, diagnostics);
   } catch (err) {
-    const errorInfo = {
-      step: 'error',
-      message: err.message,
-      name: err.name,
-      stack: err.stack?.split('\n').slice(0, 3).join('\n')
-    };
-    diagnostics.steps.push(errorInfo);
-    console.error('[LINK_PREVIEW_DEBUG] Error:', errorInfo);
+    console.error('[LINK_PREVIEW_DEBUG] All strategies failed:', err.message);
+    diagnostics.steps.push({ allFailed: true, error: err.message });
   }
 
   // 2) Read template
