@@ -245,15 +245,15 @@ export async function getServerSideProps({ params, req, res }) {
     timestamp: new Date().toISOString(),
     token,
     userAgent: req.headers['user-agent'] || 'unknown',
-    featureFlagEnabled: process.env.NEXT_PUBLIC_ENABLE_SMART_TITLES !== 'false',
+    featureFlagEnabled: process.env.NEXT_PUBLIC_ENABLE_SMART_TITLES === 'true',
     steps: []
   };
 
   // Feature flag: NEXT_PUBLIC_ENABLE_SMART_TITLES
   // Can be toggled via Cloudflare Pages dashboard environment variables
-  // Default: enabled (undefined or 'true')
-  // To disable: set to 'false'
-  const ENABLE_SMART_TITLES = process.env.NEXT_PUBLIC_ENABLE_SMART_TITLES !== 'false';
+  // Default: DISABLED (undefined or anything except 'true')
+  // To enable: set to 'true' in Cloudflare dashboard
+  const ENABLE_SMART_TITLES = process.env.NEXT_PUBLIC_ENABLE_SMART_TITLES === 'true';
 
   if (ENABLE_SMART_TITLES) {
     console.log('[LINK_PREVIEW_DEBUG] Smart titles ENABLED');

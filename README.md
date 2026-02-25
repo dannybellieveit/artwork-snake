@@ -26,8 +26,10 @@ If one fails, it automatically tries the next. All failures are logged for debug
 **Environment Variable:** `NEXT_PUBLIC_ENABLE_SMART_TITLES`
 
 **Values:**
-- `true` (default) - Enable smart title fetching
-- `false` - Disable, use default "File Share" title
+- `true` - Enable smart title fetching
+- `false` or undefined (default) - Disable, use default "File Share" title
+
+**Default:** DISABLED (for zero-risk deployment)
 
 **Cloudflare Pages Deployment:**
 1. Go to dashboard → Settings → Environment Variables → Production
