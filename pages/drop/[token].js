@@ -245,15 +245,28 @@ export async function getServerSideProps({ params, req, res }) {
     timestamp: new Date().toISOString(),
     token,
     userAgent: req.headers['user-agent'] || 'unknown',
+    featureFlagEnabled: process.env.NEXT_PUBLIC_ENABLE_SMART_TITLES !== 'false',
     steps: []
   };
 
-  // Try to fetch filename using multi-strategy approach
-  try {
-    title = await fetchFilename(token, diagnostics);
-  } catch (err) {
-    console.error('[LINK_PREVIEW_DEBUG] All strategies failed:', err.message);
-    diagnostics.steps.push({ allFailed: true, error: err.message });
+  // Feature flag: NEXT_PUBLIC_ENABLE_SMART_TITLES
+  // Can be toggled via Cloudflare Pages dashboard environment variables
+  // Default: enabled (undefined or 'true')
+  // To disable: set to 'false'
+  const ENABLE_SMART_TITLES = process.env.NEXT_PUBLIC_ENABLE_SMART_TITLES !== 'false';
+
+  if (ENABLE_SMART_TITLES) {
+    console.log('[LINK_PREVIEW_DEBUG] Smart titles ENABLED');
+    // Try to fetch filename using multi-strategy approach
+    try {
+      title = await fetchFilename(token, diagnostics);
+    } catch (err) {
+      console.error('[LINK_PREVIEW_DEBUG] All strategies failed:', err.message);
+      diagnostics.steps.push({ allFailed: true, error: err.message });
+    }
+  } else {
+    console.log('[LINK_PREVIEW_DEBUG] Smart titles DISABLED via feature flag');
+    diagnostics.steps.push({ skipped: true, reason: 'Feature flag disabled' });
   }
 
   // 2) Read template
