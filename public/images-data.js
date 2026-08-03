@@ -29,6 +29,9 @@ window.imagesData = [
   { src: 'assets/photo27.jpg', title: "If My Heart Was A House", artist: 'JADE', spotifyUrl: 'https://open.spotify.com/track/1I5XmBxIpd9my9UFmjjF3g', pinned: true, pinnedOrder: 3},
   { src: 'assets/photo28.jpg', title: "Climbing Up", artist: 'Jordan Adetunji', spotifyUrl: 'https://open.spotify.com/track/5RstLcurfXb5TSQnLi7kYf', pinned: false },
   { src: 'assets/photo29.jpg', title: "try praying", artist: 'Orlando', spotifyUrl: 'https://open.spotify.com/track/5mQMxc82vZuy9goTAEl4JJ', pinned: false },
+  { src: 'assets/photo30.jpg', title: "Lovemesick, Anchor & Fuck Me Up", artist: 'Nxdia', spotifyUrl: 'https://open.spotify.com/album/7zpQ3LP0JDe5mLEl10MPiv', pinned: false },
+  { src: 'assets/photo31.jpg', title: "Hell For Leather", artist: 'Orlando', spotifyUrl: 'https://open.spotify.com/track/3emgzRa8ojyoB90K2QM57Y', pinned: false },
+
 
   
 
