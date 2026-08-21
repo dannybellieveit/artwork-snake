@@ -32,7 +32,7 @@ window.imagesData = [
   { src: 'assets/photo30.jpg', title: "Lovemesick, Anchor & Fuck Me Up", artist: 'Nxdia', spotifyUrl: 'https://open.spotify.com/album/7zpQ3LP0JDe5mLEl10MPiv', pinned: false },
   { src: 'assets/photo31.jpg', title: "Hell For Leather", artist: 'Orlando', spotifyUrl: 'https://open.spotify.com/track/3emgzRa8ojyoB90K2QM57Y', pinned: false },
   { src: 'assets/photo32.jpg', title: "Fun", artist: 'The Big Moon', spotifyUrl: 'https://open.spotify.com/track/36u7bz30t8wlYlyKhN7LKG', pinned: false },
-  { src: 'assets/photo33.jpg', title: "şaka maka & rose in the shadow", artist: 'Emir Taha', spotifyUrl: 'https://open.spotify.com/track/7mcNakdsyT4UCR7GAl6Ei8', pinned: false },
+  { src: 'assets/photo33.jpg', title: "şaka maka & rose in the shadow", artist: 'emir taha', spotifyUrl: 'https://open.spotify.com/track/7mcNakdsyT4UCR7GAl6Ei8', pinned: false },
 
 
 
