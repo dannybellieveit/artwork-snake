@@ -8,7 +8,7 @@ window.imagesData = [
   { src: 'assets/photo6.jpg', title: 'Coming Closer', artist: 'Duckwrth', spotifyUrl: 'https://open.spotify.com/track/238p3EKRYESqsZdgE5DCDR', pinned: false },
   { src: 'assets/photo7.jpg', title: 'This Is The Place', artist: 'Tom Grennan', spotifyUrl: 'https://open.spotify.com/track/0UtoTf0kuz8x6Zfy59r8hp', pinned: false },
   { src: 'assets/photo8.jpg', title: 'Skin', artist: 'Joy Crookes', spotifyUrl: 'https://open.spotify.com/track/7k8b5u5fisGTDNahrJK6dw', pinned: false },
-  //{ src: 'assets/photo9.jpg', title: 'Paradise', artist: 'Griff', spotifyUrl: 'https://open.spotify.com/track/7nfaD0trhQiStQ8DOQRC0h', pinned: false },
+  { src: 'assets/photo9.jpg', title: 'Paradise', artist: 'Griff', spotifyUrl: 'https://open.spotify.com/track/7nfaD0trhQiStQ8DOQRC0h', pinned: false },
   //{ src: 'assets/photo10.jpg', title: 'LMLY', artist: 'Jackson Wang', spotifyUrl: 'https://open.spotify.com/track/3kPoV6L9vXpbxoM4Ux0KnX', pinned: false },
   //{ src: 'assets/photo11.jpg', title: '54321', artist: 'April', spotifyUrl: 'https://open.spotify.com/track/6Vn5hk8NQIkzGsdkx5nF4q', pinned: false },
   { src: 'assets/photo12.jpg', title: 'Boy Clothes', artist: 'Nxdia', spotifyUrl: 'https://open.spotify.com/track/7nuCxvFvVT5YEAjSDd6Glr', pinned: false },
