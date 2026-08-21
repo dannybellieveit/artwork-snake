@@ -33,6 +33,8 @@ window.imagesData = [
   { src: 'assets/photo31.jpg', title: "Hell For Leather", artist: 'Orlando', spotifyUrl: 'https://open.spotify.com/track/3emgzRa8ojyoB90K2QM57Y', pinned: false },
   { src: 'assets/photo32.jpg', title: "Fun", artist: 'The Big Moon', spotifyUrl: 'https://open.spotify.com/track/36u7bz30t8wlYlyKhN7LKG', pinned: false },
   { src: 'assets/photo33.jpg', title: "şaka maka & rose in the shadow", artist: 'emir taha', spotifyUrl: 'https://open.spotify.com/track/7mcNakdsyT4UCR7GAl6Ei8', pinned: false },
+  { src: 'assets/photo34.jpg', title: "You Hate That I'm In Love", artist: 'Only The Poets', spotifyUrl: 'https://open.spotify.com/track/07xhp6kia1cud5frleoVEu', pinned: false },
+
 
 
 
