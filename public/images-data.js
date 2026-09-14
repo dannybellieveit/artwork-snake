@@ -30,7 +30,7 @@ window.imagesData = [
   { src: 'assets/photo28.jpg', title: "Climbing Up", artist: 'Jordan Adetunji', spotifyUrl: 'https://open.spotify.com/track/5RstLcurfXb5TSQnLi7kYf', pinned: false },
   //{ src: 'assets/photo29.jpg', title: "try praying", artist: 'Orlando', spotifyUrl: 'https://open.spotify.com/track/5mQMxc82vZuy9goTAEl4JJ', pinned: false },
   { src: 'assets/photo30.jpg', title: "Lovemesick, Anchor & Fuck Me Up", artist: 'Nxdia', spotifyUrl: 'https://open.spotify.com/album/7zpQ3LP0JDe5mLEl10MPiv', pinned: false },
-  { src: 'assets/photo31.jpg', title: "Hell For Leather", artist: 'Orlando', spotifyUrl: 'https://open.spotify.com/track/3emgzRa8ojyoB90K2QM57Y', pinned: false },
+  { src: 'assets/photo31.jpg', title: "Hell For Leather", artist: 'Orlando', spotifyUrl: 'https://open.spotify.com/track/3emgzRa8ojyoB90K2QM57Y', pinned: true, pinnedOrder: 6 },
   { src: 'assets/photo32.jpg', title: "Fun, Gravity & Three Things", artist: 'The Big Moon', spotifyUrl: 'https://open.spotify.com/track/36u7bz30t8wlYlyKhN7LKG', pinned: false },
   { src: 'assets/photo33.jpg', title: "şaka maka & rose in the shadow", artist: 'emir taha', spotifyUrl: 'https://open.spotify.com/track/7mcNakdsyT4UCR7GAl6Ei8', pinned: false },
   { src: 'assets/photo34.jpg', title: "You Hate That I'm In Love", artist: 'Only The Poets', spotifyUrl: 'https://open.spotify.com/track/07xhp6kia1cud5frleoVEu', pinned: false },
