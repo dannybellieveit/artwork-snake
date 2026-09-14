@@ -17,7 +17,7 @@ window.imagesData = [
   { src: 'assets/photo15.jpg', title: 'Stick Of Gum', artist: 'Nemahsis', spotifyUrl: 'https://open.spotify.com/track/7DvOMvKBZESff6Etf0v9MY', pinned: true, pinnedOrder: 4 },
   { src: 'assets/photo16.jpg', title: 'congrats! u did it!', artist: 'flowerovlove', spotifyUrl: 'https://open.spotify.com/track/5bp8CvtJ8pbh2OK2HSfTwE', pinned: false },
   //{ src: 'assets/photo17.jpg', title: 'Appetite', artist: 'Arthur Hill', spotifyUrl: 'https://open.spotify.com/track/0q5zMDVszIVZb7kPi2XiOj?si=34033487b3344e8a', pinned: false },
-  { src: 'assets/photo18.jpg', title: 'Body On Me', artist: 'Nxdia', spotifyUrl: 'https://open.spotify.com/track/6MglZeuPDQwHzZTxrRZfCW', pinned: false },
+  { src: 'assets/photo18.jpg', title: 'Body On Me', artist: 'Nxdia', spotifyUrl: 'https://open.spotify.com/track/6MglZeuPDQwHzZTxrRZfCW', pinned: true, pinnedOrder: 5 },
   //{ src: 'assets/photo19.jpg', title: 'Man In The Middle', artist: 'Arthur Hill', spotifyUrl: 'https://open.spotify.com/track/0JEsYciJ7ESWOckO7cSf4P?si=c8ee4129ed56416c', pinned: false },
   { src: 'assets/photo20.jpg', title: 'No Cameo', artist: 'Babymorocco', spotifyUrl: 'https://open.spotify.com/track/4H4w1qDifvKDRf9JIds8o9', pinned: false },
   { src: 'assets/photo21.jpg', title: 'Drama', artist: 'Jordan Adetunji', spotifyUrl: 'https://open.spotify.com/track/40ROAtBj7soL5rbqXQjU4k', pinned: false },
