@@ -24,7 +24,7 @@ window.imagesData = [
   //{ src: 'assets/photo22.jpg', title: "She's So Handsome", artist: 'Arthur Hill', spotifyUrl: 'https://open.spotify.com/track/1G3Nm7gbxkjOtFmZDoMEc4?si=0173dfb87b2c4bbb', pinned: false },
   { src: 'assets/photo23.jpg', title: "Team", artist: 'Nemahsis', spotifyUrl: 'https://open.spotify.com/track/582bQD4BTrPGaV9yrMWrUq', pinned: false },
   { src: 'assets/photo24.jpg', title: "Magnolias", artist: 'ROSALÍA', spotifyUrl: 'https://open.spotify.com/track/7GF92haKwJg9WUdnkTxRtr', pinned: true, pinnedOrder: 1},
-  { src: 'assets/photo25.jpg', title: "Appetite, Man In The Middle & She's So Handsome", artist: 'Arthur Hill', spotifyUrl: 'https://open.spotify.com/track/5Q3sMtleI9J0dUlorAvOqP', pinned: false },
+  //{ src: 'assets/photo25.jpg', title: "Appetite, Man In The Middle & She's So Handsome", artist: 'Arthur Hill', spotifyUrl: 'https://open.spotify.com/track/5Q3sMtleI9J0dUlorAvOqP', pinned: false },
   { src: 'assets/photo26.jpg', title: "HONESTLY, OBVIOUSLY", artist: 'Joseph Lawrence', spotifyUrl: 'https://open.spotify.com/prerelease/5IZ3IcKQawSbLsOECRj7xo', pinned: false },
   { src: 'assets/photo27.jpg', title: "If My Heart Was A House", artist: 'JADE', spotifyUrl: 'https://open.spotify.com/track/1I5XmBxIpd9my9UFmjjF3g', pinned: true, pinnedOrder: 3},
   { src: 'assets/photo28.jpg', title: "Climbing Up", artist: 'Jordan Adetunji', spotifyUrl: 'https://open.spotify.com/track/5RstLcurfXb5TSQnLi7kYf', pinned: false },
@@ -34,6 +34,8 @@ window.imagesData = [
   { src: 'assets/photo32.jpg', title: "Fun", artist: 'The Big Moon', spotifyUrl: 'https://open.spotify.com/track/36u7bz30t8wlYlyKhN7LKG', pinned: false },
   { src: 'assets/photo33.jpg', title: "şaka maka & rose in the shadow", artist: 'emir taha', spotifyUrl: 'https://open.spotify.com/track/7mcNakdsyT4UCR7GAl6Ei8', pinned: false },
   { src: 'assets/photo34.jpg', title: "You Hate That I'm In Love", artist: 'Only The Poets', spotifyUrl: 'https://open.spotify.com/track/07xhp6kia1cud5frleoVEu', pinned: false },
+  { src: 'assets/photo35.jpg', title: "Orange Wine", artist: 'Arthur Hill', spotifyUrl: 'https://open.spotify.com/track/2v1eNKtCcOThjhGcXAgI3V', pinned: false },
+
 
 
 
