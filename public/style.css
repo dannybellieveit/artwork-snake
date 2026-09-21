@@ -2,7 +2,7 @@
 
 /* font test */
 
-@font-face {
+/*@font-face {
   font-family: 'Guardian Text Sans Web';
   src: url('https://assets.guim.co.uk/static/frontend/fonts/guardian-textsans/noalts-not-hinted/GuardianTextSans-Regular.woff2') format('woff2');
   font-weight: normal;
@@ -12,7 +12,7 @@
 
 .guardian-text-sans-web {
   font-family: 'Guardian Text Sans Web', -apple-system, BlinkMacSystemFont, sans-serif;
-}
+}*/
 
 /* variables */
 :root {
