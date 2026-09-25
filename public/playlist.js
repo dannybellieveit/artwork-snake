@@ -61,6 +61,7 @@
     var responses = [...doc.getElementsByTagName('*')].filter(function (n) { return n.localName === 'response'; });
 
     var folderName = null;
+    var downloadsEnabled = true;
     var root = responses.find(function (r) {
       var href = r.getElementsByTagNameNS('*', 'href')[0]?.textContent || '';
       return href.endsWith('/webdav/');
@@ -68,6 +69,15 @@
     if (root) {
       var nameNode = root.getElementsByTagNameNS('*', 'displayname')[0];
       if (nameNode && nameNode.textContent) folderName = nameNode.textContent;
+
+      var attrsNode = root.getElementsByTagNameNS('*', 'share-attributes')[0];
+      if (attrsNode && attrsNode.textContent) {
+        try {
+          var attrs = JSON.parse(attrsNode.textContent);
+          var downloadAttr = attrs.find(function (a) { return a.scope === 'permissions' && a.key === 'download'; });
+          if (downloadAttr && downloadAttr.value === false) downloadsEnabled = false;
+        } catch (e) { /* malformed/unexpected shape — default to enabled */ }
+      }
     }
 
     var entries = responses
@@ -82,10 +92,10 @@
         return { name: name, bytes: lenNode ? Number(lenNode.textContent || 0) : 0 };
       });
 
-    return { entries: entries, folderName: folderName };
+    return { entries: entries, folderName: folderName, downloadsEnabled: downloadsEnabled };
   }
 
-  function render(token, entries, folderName) {
+  function render(token, entries, folderName, downloadsEnabled) {
     var app = document.getElementById('playlist-app');
     var tracks = entries.filter(function (e) { return AUDIO_EXT.test(e.name); });
     var images = entries.filter(function (e) { return IMAGE_EXT.test(e.name); });
@@ -112,7 +122,9 @@
     html += '  <div class="pl-title-block">';
     html += '    <h1>' + escapeHtml(title) + '</h1>';
     html += '    <p id="pl-summary">' + tracks.length + ' track' + (tracks.length === 1 ? '' : 's') + (totalBytes ? ' · ' + fmtBytes(totalBytes) : '') + '</p>';
-    html += '    <a class="pl-download-all" href="https://transfer.dannycasio.com/s/' + token + '/download?accept=zip">Download all (ZIP)</a>';
+    if (downloadsEnabled) {
+      html += '    <a class="pl-download-all" href="https://transfer.dannycasio.com/s/' + token + '/download?accept=zip">Download all (ZIP)</a>';
+    }
     html += '  </div>';
     html += '</div>';
     html += '<ul class="pl-tracks" id="pl-track-list"></ul>';
@@ -129,7 +141,9 @@
         '<span class="pl-track-playing-icon" aria-hidden="true">♪</span>' +
         '<span class="pl-track-name">' + escapeHtml(stripExt(track.name)) + '</span>' +
         '<span class="pl-track-duration">' + fmtBytes(track.bytes) + '</span>' +
-        '<a class="pl-track-download" href="' + fileUrl(token, track.name) + '" aria-label="Download ' + escapeHtml(stripExt(track.name)) + '">⬇</a>';
+        (downloadsEnabled
+          ? '<a class="pl-track-download" href="' + fileUrl(token, track.name) + '" aria-label="Download ' + escapeHtml(stripExt(track.name)) + '">⬇</a>'
+          : '');
       list.appendChild(li);
     });
 
@@ -238,7 +252,7 @@
     }
     try {
       var result = await fetchEntries(token);
-      render(token, result.entries, result.folderName);
+      render(token, result.entries, result.folderName, result.downloadsEnabled);
     } catch (err) {
       console.error(err);
       app.innerHTML = '<div id="playlist-state">Error loading playlist.</div>';
