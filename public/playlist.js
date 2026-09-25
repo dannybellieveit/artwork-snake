@@ -38,11 +38,13 @@
     return 'linear-gradient(135deg, hsl(' + hue1 + ',70%,65%) 0%, hsl(' + hue2 + ',70%,55%) 100%)';
   }
 
-  // Straight to Nextcloud, matching the same URL a browser already uses
-  // successfully when someone clicks the native Nextcloud download button.
-  // Bypasses both the dead local /share-proxy code and the edge Worker.
+  // Plain WebDAV GET with the share token as the Basic Auth username (blank
+  // password), embedded directly in the URL so <audio>/<img> src can use it
+  // without needing custom headers. This is the reliable, direct path to a
+  // file's bytes — the /s/TOKEN/download convenience redirect proved flaky
+  // under load for folder shares.
   function fileUrl(token, name) {
-    return 'https://transfer.dannycasio.com/s/' + token + '/download?path=%2F&files=' + encodeURIComponent(name);
+    return 'https://' + token + ':@transfer.dannycasio.com/public.php/webdav/' + encodeURIComponent(name);
   }
 
   function getToken() {
