@@ -1,2 +1,4 @@
 /drop      /drop/      200
 /drop/*    /drop/      200
+/playlist      /playlist/      200
+/playlist/*    /playlist/      200

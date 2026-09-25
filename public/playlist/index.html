@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Playlist</title>
+
+  <meta property="og:title" content="Danny Casio">
+  <meta property="og:description" content="Listen to the tracks">
+  <meta property="og:type" content="website">
+
+  <base href="/" />
+  <link rel="stylesheet" href="/style.css">
+  <style>
+  :root{
+    --bg      : #87CEEB;
+    --card-bg : #ffffff;
+    --btn     : #5AB4E5;
+    --btn-dk  : #3F93C8;
+  }
+
+  html,body{
+    margin:0;
+    background:var(--bg);
+    color:#000;
+  }
+
+  #playlist-app{
+    max-width:900px;
+    width:min(100%,92vw);
+    margin:0 auto;
+    padding:2.5rem 0 8rem;
+  }
+
+  #playlist-state{
+    text-align:center;
+    padding:3rem 1rem;
+    font-size:1.05rem;
+  }
+
+  /* header: cover art + title/byline */
+  .pl-header{
+    display:flex;
+    gap:1.75rem;
+    align-items:flex-end;
+    margin-bottom:2rem;
+  }
+
+  .pl-cover{
+    width:180px;
+    height:180px;
+    flex:none;
+    border-radius:12px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.15);
+    background-size:cover;
+    background-position:center;
+    overflow:hidden;
+  }
+
+  .pl-title-block h1{
+    margin:0 0 .3rem;
+    font-size:clamp(1.4rem,4vw,2rem);
+    font-weight:700;
+  }
+
+  .pl-title-block p{
+    margin:0;
+    opacity:.75;
+    font-size:.95rem;
+  }
+
+  /* track list */
+  .pl-tracks{
+    list-style:none;
+    margin:0;
+    padding:0;
+    background:var(--card-bg);
+    border-radius:12px;
+    overflow:hidden;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  .pl-track{
+    display:flex;
+    align-items:center;
+    gap:1rem;
+    padding:.85rem 1.2rem;
+    cursor:pointer;
+    border-bottom:1px solid rgba(0,0,0,0.06);
+    transition:background .12s ease;
+  }
+
+  .pl-track:last-child{ border-bottom:none; }
+  .pl-track:hover, .pl-track:focus-visible{ background:rgba(90,180,229,0.12); outline:none; }
+  .pl-track.playing{ background:rgba(90,180,229,0.18); }
+
+  .pl-track-index{
+    width:1.6rem;
+    text-align:center;
+    font-variant-numeric:tabular-nums;
+    opacity:.6;
+    flex:none;
+  }
+
+  .pl-track-playing-icon{
+    display:none;
+    width:1.6rem;
+    text-align:center;
+    flex:none;
+    color:var(--btn-dk);
+  }
+
+  .pl-track.playing .pl-track-index{ display:none; }
+  .pl-track.playing .pl-track-playing-icon{ display:inline-block; }
+
+  .pl-track-name{
+    flex:1;
+    min-width:0;
+    font-weight:600;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .pl-track-duration{
+    flex:none;
+    font-size:.85rem;
+    font-variant-numeric:tabular-nums;
+    opacity:.6;
+  }
+
+  .pl-track-download{
+    flex:none;
+    text-decoration:none;
+    color:var(--font-color-dark);
+    opacity:.6;
+    padding:.2rem;
+  }
+
+  .pl-track-download:hover{ opacity:1; }
+
+  .pl-download-all{
+    display:inline-block;
+    margin-top:.5rem;
+    font-size:.85rem;
+    font-weight:600;
+    color:var(--btn-dk);
+    text-decoration:none;
+  }
+
+  .pl-download-all:hover{ text-decoration:underline; }
+
+  /* sticky player bar */
+  #pl-player{
+    position:fixed;
+    left:0; right:0; bottom:0;
+    display:none;
+    align-items:center;
+    gap:1rem;
+    padding:.7rem 1.2rem;
+    background:var(--card-bg);
+    box-shadow:0 -2px 10px rgba(0,0,0,0.12);
+  }
+
+  #pl-player.visible{ display:flex; }
+
+  .pl-player-art{
+    width:44px;
+    height:44px;
+    flex:none;
+    border-radius:6px;
+    background-size:cover;
+    background-position:center;
+  }
+
+  .pl-player-meta{
+    flex:none;
+    width:min(28vw,220px);
+    min-width:0;
+  }
+
+  .pl-player-meta .name{
+    font-weight:600;
+    font-size:.9rem;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .pl-player-controls{
+    flex:none;
+    display:flex;
+    align-items:center;
+    gap:.6rem;
+  }
+
+  .pl-player-controls button{
+    background:none;
+    border:none;
+    cursor:pointer;
+    font-size:1.1rem;
+    line-height:1;
+    padding:.3rem;
+    color:#000;
+  }
+
+  .pl-player-controls .play-btn{
+    width:2.2rem;
+    height:2.2rem;
+    border-radius:50%;
+    background:var(--btn);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:1rem;
+  }
+
+  .pl-player-controls .play-btn:hover{ background:var(--btn-dk); }
+
+  .pl-player-scrub{
+    flex:1;
+    display:flex;
+    align-items:center;
+    gap:.6rem;
+    min-width:0;
+  }
+
+  .pl-player-scrub input[type="range"]{
+    flex:1;
+    accent-color:var(--btn);
+  }
+
+  .pl-player-scrub .time{
+    font-size:.8rem;
+    font-variant-numeric:tabular-nums;
+    opacity:.7;
+    flex:none;
+  }
+
+  @media(max-width:640px){
+    .pl-header{ flex-direction:column; align-items:center; text-align:center; }
+    .pl-cover{ width:140px; height:140px; }
+    .pl-player-meta{ display:none; }
+    #pl-player{ gap:.6rem; }
+  }
+
+  #playlist-footer{
+    padding:1rem 0 8rem;
+    text-align:center;
+  }
+
+  /* Footer nav dropdowns (self-contained: not shared with other pages yet) */
+  .nav-dropdown{ position:relative; }
+  .nav-dropdown summary{
+    cursor:pointer;
+    font-weight:bold;
+    color:var(--font-color-dark);
+    list-style:none;
+  }
+  .nav-dropdown summary::-webkit-details-marker{ display:none; }
+  .nav-dropdown summary:focus{
+    outline:2px solid var(--font-color-dark);
+    outline-offset:4px;
+  }
+  .nav-dropdown-menu{
+    position:absolute;
+    top:calc(100% + var(--gap-small, 8px));
+    left:50%;
+    transform:translateX(-50%);
+    list-style:none;
+    margin:0;
+    padding:var(--gap-small, 8px);
+    background:#fff;
+    border:1px solid var(--border-color, #000);
+    border-radius:var(--border-radius);
+    display:flex;
+    flex-direction:column;
+    gap:var(--gap-small, 8px);
+    white-space:nowrap;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .nav-dropdown summary{ pointer-events:none; }
+    .nav-dropdown{ pointer-events:auto; }
+    .nav-dropdown-menu a{ pointer-events:auto; }
+  }
+  </style>
+</head>
+<body>
+
+  <div id="playlist-app">
+    <div id="playlist-state">Loading…</div>
+  </div>
+
+  <footer id="playlist-footer">
+    <ul class="contacts" style="justify-content:center;">
+      <li><a href="/index.html" aria-label="Home">Home</a></li>
+      <li>
+        <details class="nav-dropdown">
+          <summary>Contact</summary>
+          <ul class="nav-dropdown-menu">
+            <li><a href="mailto:info@dannycasio.com" aria-label="Email Danny Casio">Email</a></li>
+            <li><a href="https://instagram.com/dannycasio_/" target="_blank" rel="noopener" aria-label="Visit Danny Casio's Instagram">Instagram</a></li>
+          </ul>
+        </details>
+      </li>
+      <li>
+        <details class="nav-dropdown">
+          <summary>Other</summary>
+          <ul class="nav-dropdown-menu">
+            <li><a href="/more.html">Discography</a></li>
+          </ul>
+        </details>
+      </li>
+    </ul>
+  </footer>
+
+  <div id="pl-player">
+    <div class="pl-player-art" id="pl-player-art"></div>
+    <div class="pl-player-meta">
+      <div class="name" id="pl-player-name">—</div>
+    </div>
+    <div class="pl-player-controls">
+      <button id="pl-prev" aria-label="Previous track">⏮</button>
+      <button id="pl-play" class="play-btn" aria-label="Play">▶</button>
+      <button id="pl-next" aria-label="Next track">⏭</button>
+    </div>
+    <div class="pl-player-scrub">
+      <span class="time" id="pl-time-current">0:00</span>
+      <input type="range" id="pl-seek" min="0" max="100" value="0" step="0.1">
+      <span class="time" id="pl-time-total">0:00</span>
+    </div>
+  </div>
+
+  <audio id="pl-audio" preload="metadata"></audio>
+
+  <script>
+    // Desktop with a real mouse: open/close footer dropdowns on hover.
+    // Touch devices (no hover) keep the native tap-to-toggle <details> behaviour.
+    (function () {
+      var hoverQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
+      var dropdowns = document.querySelectorAll('.nav-dropdown');
+      var closeTimers = new Map();
+      dropdowns.forEach(function (dropdown) {
+        dropdown.addEventListener('mouseenter', function () {
+          if (!hoverQuery.matches) return;
+          clearTimeout(closeTimers.get(dropdown));
+          dropdowns.forEach(function (other) {
+            if (other === dropdown) return;
+            clearTimeout(closeTimers.get(other));
+            other.open = false;
+          });
+          dropdown.open = true;
+        });
+        dropdown.addEventListener('mouseleave', function () {
+          if (!hoverQuery.matches) return;
+          closeTimers.set(dropdown, setTimeout(function () {
+            dropdown.open = false;
+          }, 250));
+        });
+      });
+    })();
+  </script>
+  <script src="/playlist/playlist.js" defer></script>
+</body>
+</html>
