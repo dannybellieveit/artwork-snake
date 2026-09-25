@@ -10,16 +10,6 @@
     return m + ':' + s;
   }
 
-  // For a playlist total, which can run past an hour
-  function fmtTimeLong(sec) {
-    if (!isFinite(sec) || sec <= 0) return null;
-    var h = Math.floor(sec / 3600);
-    var m = Math.floor((sec % 3600) / 60);
-    var s = Math.floor(sec % 60).toString().padStart(2, '0');
-    if (h > 0) return h + ':' + String(m).padStart(2, '0') + ':' + s;
-    return m + ':' + s;
-  }
-
   function fmtBytes(bytes) {
     if (!bytes) return '';
     var mb = bytes / (1024 * 1024);
@@ -121,7 +111,7 @@
     html += '  <div class="pl-title-block">';
     html += '    <h1>' + escapeHtml(title) + '</h1>';
     html += '    <p id="pl-summary">' + tracks.length + ' track' + (tracks.length === 1 ? '' : 's') + (totalBytes ? ' · ' + fmtBytes(totalBytes) : '') + '</p>';
-    html += '    <a id="pl-download-all" class="pl-download-all" hidden>Download all (ZIP)</a>';
+    html += '    <a class="pl-download-all" href="https://transfer.dannycasio.com/s/' + token + '/download?accept=zip">Download all (ZIP)</a>';
     html += '  </div>';
     html += '</div>';
     html += '<ul class="pl-tracks" id="pl-track-list"></ul>';
@@ -137,81 +127,12 @@
         '<span class="pl-track-index">' + (i + 1) + '</span>' +
         '<span class="pl-track-playing-icon" aria-hidden="true">♪</span>' +
         '<span class="pl-track-name">' + escapeHtml(stripExt(track.name)) + '</span>' +
-        '<span class="pl-track-duration" data-fallback="' + escapeHtml(fmtBytes(track.bytes)) + '">' + fmtBytes(track.bytes) + '</span>' +
-        '<a class="pl-track-download" href="' + fileUrl(token, track.name) + '" aria-label="Download ' + escapeHtml(stripExt(track.name)) + '" hidden>⬇</a>';
+        '<span class="pl-track-duration">' + fmtBytes(track.bytes) + '</span>' +
+        '<a class="pl-track-download" href="' + fileUrl(token, track.name) + '" aria-label="Download ' + escapeHtml(stripExt(track.name)) + '">⬇</a>';
       list.appendChild(li);
     });
 
     initPlayer(token, tracks, coverUrl || null, coverStyle);
-    probeTracks(token, tracks);
-  }
-
-  // Load each track's duration via a hidden Audio element (metadata only,
-  // not a full download) and use success/failure as the download-capability
-  // signal too — a fetch()-based check can't read the response cross-origin
-  // without CORS headers, but media elements don't need CORS to play.
-  //
-  // Probed one at a time, not all at once: firing 14 simultaneous requests
-  // at transfer.dannycasio.com reads as burst/bot traffic to Cloudflare and
-  // gets silently blocked even from a normal residential connection.
-  function probeOne(token, track) {
-    return new Promise(function (resolve) {
-      var probe = new Audio();
-      probe.preload = 'metadata';
-      var settled = false;
-
-      function done(duration) {
-        if (settled) return;
-        settled = true;
-        resolve(isFinite(duration) ? duration : null);
-      }
-
-      probe.addEventListener('loadedmetadata', function () {
-        if (isFinite(probe.duration)) { done(probe.duration); return; }
-        // Chrome/streamed-audio quirk: duration reads Infinity until you
-        // seek near the end, which forces it to resolve the real length.
-        probe.addEventListener('durationchange', function onChange() {
-          if (!isFinite(probe.duration)) return;
-          probe.removeEventListener('durationchange', onChange);
-          done(probe.duration);
-        });
-        probe.currentTime = 1e101;
-      });
-      probe.addEventListener('error', function () { done(NaN); });
-      probe.src = fileUrl(token, track.name);
-    });
-  }
-
-  async function probeTracks(token, tracks) {
-    var list = document.getElementById('pl-track-list');
-    var rows = list.children;
-    var totalKnown = 0;
-    var anyPlayable = false;
-
-    for (var i = 0; i < tracks.length; i++) {
-      var duration = await probeOne(token, tracks[i]);
-      if (duration !== null) {
-        anyPlayable = true;
-        totalKnown += duration;
-        rows[i].querySelector('.pl-track-duration').textContent = fmtTime(duration);
-      }
-    }
-
-    if (!anyPlayable) return;
-
-    var summary = document.getElementById('pl-summary');
-    var totalBytes = tracks.reduce(function (sum, t) { return sum + t.bytes; }, 0);
-    var parts = [tracks.length + ' track' + (tracks.length === 1 ? '' : 's')];
-    var durationLabel = fmtTimeLong(totalKnown);
-    if (durationLabel) parts.push(durationLabel);
-    if (totalBytes) parts.push(fmtBytes(totalBytes));
-    summary.textContent = parts.join(' · ');
-
-    var zipBtn = document.getElementById('pl-download-all');
-    zipBtn.href = 'https://transfer.dannycasio.com/s/' + token + '/download?accept=zip';
-    zipBtn.hidden = false;
-
-    [...list.querySelectorAll('.pl-track-download')].forEach(function (a) { a.hidden = false; });
   }
 
   function initPlayer(token, tracks, coverUrl, coverStyle) {
@@ -276,9 +197,21 @@
     audio.addEventListener('pause', function () { playBtn.textContent = '▶'; });
     audio.addEventListener('ended', function () { load(current + 1, true); });
 
+    function applyKnownDuration(duration) {
+      seek.max = duration;
+      timeTotal.textContent = fmtTime(duration);
+      var row = listEl.children[current];
+      if (row) row.querySelector('.pl-track-duration').textContent = fmtTime(duration);
+    }
+
     audio.addEventListener('loadedmetadata', function () {
-      seek.max = audio.duration || 0;
-      timeTotal.textContent = fmtTime(audio.duration);
+      if (isFinite(audio.duration)) applyKnownDuration(audio.duration);
+    });
+    // Chrome/streamed-audio quirk: duration can read Infinity at first and
+    // only resolve once enough of the file has loaded — no forced seek here
+    // (that causes an audible jump), just pick it up if it naturally settles.
+    audio.addEventListener('durationchange', function () {
+      if (isFinite(audio.duration)) applyKnownDuration(audio.duration);
     });
     audio.addEventListener('timeupdate', function () {
       if (seeking) return;
