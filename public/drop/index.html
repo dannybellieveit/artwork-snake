@@ -96,6 +96,14 @@
     font-size:.95rem;
   }
 
+  /* Footer sits at the end of a variable-height file list, so the
+     downward-opening default from style.css can clip below the
+     viewport on a long list — open upward here instead. */
+  .nav-dropdown-menu{
+    top:auto;
+    bottom:calc(100% + var(--gap-small));
+  }
+
   @media(max-width:600px){
     #drop-content{ gap:1.4rem; }
   }
