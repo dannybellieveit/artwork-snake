@@ -140,6 +140,59 @@ footer {
   outline-offset: 4px;
 }
 
+/* Footer nav dropdowns (Contact, Other, ...) */
+.nav-dropdown {
+  position: relative;
+}
+
+.nav-dropdown summary {
+  cursor: pointer;
+  font-weight: bold;
+  color: var(--font-color-dark);
+  list-style: none;
+}
+
+.nav-dropdown summary::-webkit-details-marker {
+  display: none;
+}
+
+.nav-dropdown summary:focus {
+  outline: 2px solid var(--font-color-dark);
+  outline-offset: 4px;
+}
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + var(--gap-small));
+  left: 50%;
+  transform: translateX(-50%);
+  list-style: none;
+  margin: 0;
+  padding: var(--gap-small);
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-small);
+  white-space: nowrap;
+}
+
+/* Desktop: open on hover instead of requiring a click */
+@media (hover: hover) and (pointer: fine) {
+  .nav-dropdown summary {
+    pointer-events: none;
+  }
+
+  .nav-dropdown {
+    pointer-events: auto;
+  }
+
+  .nav-dropdown-menu a {
+    pointer-events: auto;
+  }
+}
+
 @media (max-width: 600px) {
   .contacts {
     gap: var(--gap-small);

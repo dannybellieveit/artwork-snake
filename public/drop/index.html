@@ -110,9 +110,23 @@
   <!-- footer -->
   <footer>
     <ul class="contacts">
-      <li><a href="mailto:dannycasio@me.com">Email</a></li>
-      <li><a href="https://instagram.com/dannycasio_" target="_blank" rel="noopener">Instagram</a></li>
-      <li><a href="/more.html">More</a></li>
+      <li>
+        <details class="nav-dropdown">
+          <summary>Contact</summary>
+          <ul class="nav-dropdown-menu">
+            <li><a href="mailto:dannycasio@me.com">Email</a></li>
+            <li><a href="https://instagram.com/dannycasio_" target="_blank" rel="noopener">Instagram</a></li>
+          </ul>
+        </details>
+      </li>
+      <li>
+        <details class="nav-dropdown">
+          <summary>Other</summary>
+          <ul class="nav-dropdown-menu">
+            <li><a href="/discography.html">Discography</a></li>
+          </ul>
+        </details>
+      </li>
     </ul>
   </footer>
 
@@ -267,7 +281,7 @@ if (files.length) {
 
 
 
-
+<script src="/nav-dropdown.js" defer></script>
 
 <script src="https://unpkg.com/wavesurfer.js@7.9.9/dist/wavesurfer.min.js"></script>
 <style id="ws-style">
