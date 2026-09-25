@@ -29,4 +29,11 @@
       }, 250));
     });
   });
+
+  // Browser back/forward restores the page from bfcache exactly as you
+  // left it, open dropdowns included. Force them shut on that restore.
+  window.addEventListener('pageshow', function (e) {
+    if (!e.persisted) return;
+    dropdowns.forEach(function (dropdown) { dropdown.open = false; });
+  });
 })();
