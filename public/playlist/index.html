@@ -310,6 +310,8 @@
     list-style:none;
   }
   .nav-dropdown summary::-webkit-details-marker{ display:none; }
+  /* Safari 15.4+ dropped ::-webkit-details-marker for the standard ::marker */
+  .nav-dropdown summary::marker{ content:""; display:none; }
   .nav-dropdown summary:focus{
     outline:2px solid var(--font-color-dark);
     outline-offset:4px;
