@@ -10,6 +10,16 @@
     return m + ':' + s;
   }
 
+  // For a playlist total, which can run past an hour
+  function fmtTimeLong(sec) {
+    if (!isFinite(sec) || sec <= 0) return null;
+    var h = Math.floor(sec / 3600);
+    var m = Math.floor((sec % 3600) / 60);
+    var s = Math.floor(sec % 60).toString().padStart(2, '0');
+    if (h > 0) return h + ':' + String(m).padStart(2, '0') + ':' + s;
+    return m + ':' + s;
+  }
+
   function fmtBytes(bytes) {
     if (!bytes) return '';
     var mb = bytes / (1024 * 1024);
@@ -146,6 +156,65 @@
     });
 
     initPlayer(token, tracks, coverUrl || null, coverStyle);
+    probeDurations(token, tracks);
+  }
+
+  // Fills in each track's real duration (replacing its file size) and the
+  // header's total length, one track at a time — not all at once. Firing
+  // many simultaneous requests at the Nextcloud server behind this reads as
+  // burst traffic and has caused real 503s before; sequential is slower but
+  // safe regardless of how many tracks are in the folder.
+  function probeOne(token, track) {
+    return new Promise(function (resolve) {
+      var probe = new Audio();
+      probe.preload = 'metadata';
+      var settled = false;
+
+      function done(duration) {
+        if (settled) return;
+        settled = true;
+        resolve(isFinite(duration) ? duration : null);
+      }
+
+      probe.addEventListener('loadedmetadata', function () {
+        if (isFinite(probe.duration)) { done(probe.duration); return; }
+        // Chrome/streamed-audio quirk: duration reads Infinity until you
+        // seek near the end, which forces it to resolve the real length.
+        probe.addEventListener('durationchange', function onChange() {
+          if (!isFinite(probe.duration)) return;
+          probe.removeEventListener('durationchange', onChange);
+          done(probe.duration);
+        });
+        probe.currentTime = 1e101;
+      });
+      probe.addEventListener('error', function () { done(NaN); });
+      probe.src = fileUrl(token, track.name);
+    });
+  }
+
+  async function probeDurations(token, tracks) {
+    var list = document.getElementById('pl-track-list');
+    var rows = list.children;
+    var totalKnown = 0;
+    var anyKnown = false;
+
+    for (var i = 0; i < tracks.length; i++) {
+      var duration = await probeOne(token, tracks[i]);
+      if (duration !== null) {
+        anyKnown = true;
+        totalKnown += duration;
+        rows[i].querySelector('.pl-track-duration').textContent = fmtTime(duration);
+      }
+    }
+
+    if (!anyKnown) return;
+    var durationLabel = fmtTimeLong(totalKnown);
+    if (!durationLabel) return;
+    var summary = document.getElementById('pl-summary');
+    var totalBytes = tracks.reduce(function (sum, t) { return sum + t.bytes; }, 0);
+    var parts = [tracks.length + ' track' + (tracks.length === 1 ? '' : 's'), durationLabel];
+    if (totalBytes) parts.push(fmtBytes(totalBytes));
+    summary.textContent = parts.join(' · ');
   }
 
   function initPlayer(token, tracks, coverUrl, coverStyle) {
@@ -190,6 +259,10 @@
       var li = e.target.closest('.pl-track');
       if (!li) return;
       load(Number(li.dataset.index), true);
+      // Mobile Safari can grant :focus-visible on a tap, which then has no
+      // mouseout/blur equivalent to clear it — the row stays visually
+      // "stuck" highlighted alongside whichever one is actually .playing.
+      li.blur();
     });
     listEl.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter' && e.key !== ' ') return;
