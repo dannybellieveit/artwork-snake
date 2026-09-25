@@ -61,7 +61,6 @@
     var responses = [...doc.getElementsByTagName('*')].filter(function (n) { return n.localName === 'response'; });
 
     var folderName = null;
-    var downloadsEnabled = true;
     var root = responses.find(function (r) {
       var href = r.getElementsByTagNameNS('*', 'href')[0]?.textContent || '';
       return href.endsWith('/webdav/');
@@ -69,15 +68,6 @@
     if (root) {
       var nameNode = root.getElementsByTagNameNS('*', 'displayname')[0];
       if (nameNode && nameNode.textContent) folderName = nameNode.textContent;
-
-      var attrsNode = root.getElementsByTagNameNS('*', 'share-attributes')[0];
-      if (attrsNode && attrsNode.textContent) {
-        try {
-          var attrs = JSON.parse(attrsNode.textContent);
-          var downloadAttr = attrs.find(function (a) { return a.scope === 'permissions' && a.key === 'download'; });
-          if (downloadAttr && downloadAttr.value === false) downloadsEnabled = false;
-        } catch (e) { /* malformed/unexpected shape — default to enabled */ }
-      }
     }
 
     var entries = responses
@@ -92,13 +82,21 @@
         return { name: name, bytes: lenNode ? Number(lenNode.textContent || 0) : 0 };
       });
 
-    return { entries: entries, folderName: folderName, downloadsEnabled: downloadsEnabled };
+    return { entries: entries, folderName: folderName };
   }
 
-  function render(token, entries, folderName, downloadsEnabled) {
+  // Soft toggle only — not real access control. Nextcloud's own "hide
+  // download" doesn't block WebDAV GET either, so this just hides the
+  // button for people who wouldn't otherwise think to look.
+  function downloadsRequested() {
+    return !new URLSearchParams(location.search).has('nd');
+  }
+
+  function render(token, entries, folderName) {
     var app = document.getElementById('playlist-app');
     var tracks = entries.filter(function (e) { return AUDIO_EXT.test(e.name); });
     var images = entries.filter(function (e) { return IMAGE_EXT.test(e.name); });
+    var downloadsEnabled = downloadsRequested();
 
     if (tracks.length === 0) {
       app.innerHTML = '<div id="playlist-state">No audio files found in this folder.</div>';
@@ -252,7 +250,7 @@
     }
     try {
       var result = await fetchEntries(token);
-      render(token, result.entries, result.folderName, result.downloadsEnabled);
+      render(token, result.entries, result.folderName);
     } catch (err) {
       console.error(err);
       app.innerHTML = '<div id="playlist-state">Error loading playlist.</div>';
