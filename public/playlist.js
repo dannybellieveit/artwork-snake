@@ -311,8 +311,32 @@
       setMediaSessionHandler('seekbackward', null);
       setMediaSessionHandler('seekforward', null);
     }
+
+    function setMediaSessionMetadata() {
+      if (!('mediaSession' in navigator)) return;
+      var track = tracks[current];
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: stripExt(track.name),
+        artist: albumTitle,
+        album: albumTitle,
+        artwork: coverUrl ? [{ src: coverUrl, sizes: '512x512', type: '' }] : []
+      });
+    }
+
+    // The very first track's metadata must be set AFTER handler
+    // registration, not before — setting it first (as load() does for
+    // every later track) reset iOS's lock-screen title/artwork back to
+    // blank even though handlers were only ever registered once. Once
+    // this first-time setup has run, later load() calls set metadata
+    // directly with no ordering constraint.
+    var mediaSessionReady = false;
     if ('mediaSession' in navigator) {
-      audio.addEventListener('loadedmetadata', setupMediaSessionHandlers, { once: true });
+      audio.addEventListener('loadedmetadata', function once() {
+        audio.removeEventListener('loadedmetadata', once);
+        setupMediaSessionHandlers();
+        mediaSessionReady = true;
+        setMediaSessionMetadata();
+      });
     }
 
     // Created lazily on first load(), after the bar is made visible — the
@@ -402,14 +426,9 @@
       var absoluteUrl = audio.src;
       if (autoplay) audio.play().catch(function () {});
 
-      if ('mediaSession' in navigator) {
-        navigator.mediaSession.metadata = new MediaMetadata({
-          title: stripExt(track.name),
-          artist: albumTitle,
-          album: albumTitle,
-          artwork: coverUrl ? [{ src: coverUrl, sizes: '512x512', type: '' }] : []
-        });
-      }
+      // For the very first track, metadata is set inside the one-time
+      // loadedmetadata listener above instead (after handlers register).
+      if (mediaSessionReady) setMediaSessionMetadata();
 
       if (instance) {
         computePeaks(absoluteUrl).then(function (result) {
