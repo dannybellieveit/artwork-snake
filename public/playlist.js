@@ -129,7 +129,9 @@
     html += '  <div class="pl-cover" style="' + coverStyle + '"></div>';
     html += '  <div class="pl-title-block">';
     html += '    <h1>' + escapeHtml(title) + '</h1>';
-    html += '    <p id="pl-summary">' + tracks.length + ' track' + (tracks.length === 1 ? '' : 's') + (totalBytes ? ' · ' + fmtBytes(totalBytes) : '') + '</p>';
+    html += '    <p id="pl-summary">' + tracks.length + ' track' + (tracks.length === 1 ? '' : 's') +
+      '<span id="pl-total-duration-group"> · <span id="pl-total-duration">0:00</span></span>' +
+      (totalBytes ? ' · ' + fmtBytes(totalBytes) : '') + '</p>';
     if (downloadsEnabled) {
       html += '    <a class="pl-download-all" href="https://transfer.dannycasio.com/s/' + token + '/download?accept=zip">Download all (ZIP)</a>';
     }
@@ -213,7 +215,8 @@
   // Counts a duration span up from 0:00 to its real value instead of just
   // snapping in — a blank cell popping straight to "4:36" reads as a
   // layout glitch, a quick tick-up reads as the number arriving.
-  function animateDuration(span, targetSeconds) {
+  function animateDuration(span, targetSeconds, formatFn) {
+    formatFn = formatFn || fmtTime;
     var durationMs = 600;
     var start = null;
     function step(ts) {
@@ -223,7 +226,7 @@
       // Don't stomp on the file-size text if the download button happens
       // to be hovered/focused right as this probe resolves or mid-count.
       if (span.dataset.showingSize !== 'true') {
-        span.textContent = fmtTime(targetSeconds * eased);
+        span.textContent = formatFn(targetSeconds * eased) || '0:00';
       }
       if (progress < 1) requestAnimationFrame(step);
     }
@@ -244,16 +247,16 @@
       animateDuration(span, duration);
     }));
 
+    var totalDurationGroup = document.getElementById('pl-total-duration-group');
     var anyKnown = durations.some(function (d) { return d !== null; });
-    if (!anyKnown) return;
+    if (!anyKnown) {
+      // Nothing probed successfully — drop the "· 0:00" placeholder rather
+      // than leave a permanently-wrong total sitting there.
+      if (totalDurationGroup) totalDurationGroup.remove();
+      return;
+    }
     var totalKnown = durations.reduce(function (sum, d) { return sum + (d || 0); }, 0);
-    var durationLabel = fmtTimeLong(totalKnown);
-    if (!durationLabel) return;
-    var summary = document.getElementById('pl-summary');
-    var totalBytes = tracks.reduce(function (sum, t) { return sum + t.bytes; }, 0);
-    var parts = [tracks.length + ' track' + (tracks.length === 1 ? '' : 's'), durationLabel];
-    if (totalBytes) parts.push(fmtBytes(totalBytes));
-    summary.textContent = parts.join(' · ');
+    animateDuration(document.getElementById('pl-total-duration'), totalKnown, fmtTimeLong);
   }
 
   function initPlayer(token, tracks, coverUrl, coverStyle) {
