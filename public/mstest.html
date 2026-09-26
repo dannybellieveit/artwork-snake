@@ -46,7 +46,7 @@
 
 <script>
 (function () {
-  var CONFIGS = [1, 2, 3, 4];
+  var CONFIGS = [1, 2, 3, 4, 5];
   var qs = new URLSearchParams(location.search);
   var cfg = Number(qs.get('cfg')) || 1;
 
@@ -63,7 +63,8 @@
     1: 'Baseline/control: handlers registered ONCE at page load, before any track is ever loaded. No seek-null. (Known from the real site: title/artwork work, but skip buttons stay ±30s.)',
     2: 'NEW: on every track change, handlers are (re-)registered FIRST, then metadata is set SECOND — every single track, not just once.',
     3: 'NEW: same as Config 2, plus seekbackward/seekforward explicitly set to null (also re-done every track, before metadata).',
-    4: 'NEW: metadata set as normal, then handlers set (like the broken real-site attempts), then metadata is set AGAIN immediately after, so metadata is always the very last write even though handlers were just touched.'
+    4: 'NEW: metadata set as normal, then handlers set (like the broken real-site attempts), then metadata is set AGAIN immediately after, so metadata is always the very last write even though handlers were just touched.',
+    5: 'NEW: handlers registered exactly ONCE — but delayed until the FIRST track has actually loaded (real media context exists), then never touched again. Metadata is set on every track as normal, with no handler calls after the first one.'
   };
 
   var tracks = [
@@ -122,6 +123,8 @@
     log.push('metadata set: ' + tracks[current].title);
   }
 
+  var handlersRegisteredOnce = false;
+
   function load(index, autoplay) {
     current = (index + tracks.length) % tracks.length;
     audio.src = tracks[current].src;
@@ -139,6 +142,21 @@
       setMetadata();
       registerHandlers(true);
       setMetadata(); // redundant re-assert, so metadata is the last write
+    } else if (cfg === 5) {
+      // Register handlers exactly once, but delayed until AFTER the first
+      // track's audio has actually loaded (real media context exists) —
+      // then never touch handlers again for later tracks. Metadata is set
+      // on every track as normal.
+      if (!handlersRegisteredOnce) {
+        handlersRegisteredOnce = true;
+        audio.addEventListener('loadedmetadata', function once() {
+          audio.removeEventListener('loadedmetadata', once);
+          registerHandlers(true);
+          setMetadata();
+        });
+      } else {
+        setMetadata();
+      }
     }
 
     if (autoplay) audio.play().catch(function () {});
