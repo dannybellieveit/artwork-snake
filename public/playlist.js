@@ -148,7 +148,7 @@
         '<span class="pl-track-index">' + (i + 1) + '</span>' +
         '<span class="pl-track-playing-icon" aria-hidden="true">♪</span>' +
         '<span class="pl-track-name">' + escapeHtml(stripExt(track.name)) + '</span>' +
-        '<span class="pl-track-duration"></span>' +
+        '<span class="pl-track-duration">0:00</span>' +
         (downloadsEnabled
           ? '<a class="pl-track-download" href="' + fileUrl(token, track.name) + '" aria-label="Download ' + escapeHtml(stripExt(track.name)) + '">⬇</a>'
           : '');
