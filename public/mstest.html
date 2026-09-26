@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Media Session test</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 1.5rem 1rem 3rem; background:#f2f2f2; }
+  h1 { font-size: 1.2rem; }
+  .cfg-list a { display: block; margin: .3rem 0; }
+  .cfg-list a.active { font-weight: bold; }
+  #status { background:#fff; border-radius:8px; padding:1rem; margin:1rem 0; font-size:.9rem; line-height:1.5; }
+  #status b { display:inline-block; min-width:90px; }
+  .controls { display:flex; gap:.6rem; margin:1rem 0; }
+  button { font-size:1rem; padding:.6rem 1rem; border-radius:8px; border:1px solid #ccc; background:#fff; }
+  button:active { background:#eee; }
+  ol { font-size:.9rem; padding-left:1.2rem; }
+  .instructions { background:#fff; border-radius:8px; padding:1rem; }
+</style>
+</head>
+<body>
+  <h1>Media Session config test</h1>
+
+  <div class="instructions">
+    <p><b>How to test each config:</b></p>
+    <ol>
+      <li>Tap "Play" below.</li>
+      <li>Lock the phone (or swipe to Control Center / Now Playing widget).</li>
+      <li>Check: does it show the <b>track title</b> and <b>artwork</b>? Are the skip buttons <b>⏮ ⏭ track-skip icons</b> or <b>±10/30s circular arrows</b>?</li>
+      <li>Try tapping the lock-screen skip buttons — do they actually change track?</li>
+      <li>Come back, tap a different config link below, and repeat.</li>
+    </ol>
+  </div>
+
+  <p class="cfg-list" id="cfg-list"></p>
+
+  <div id="status"></div>
+
+  <div class="controls">
+    <button id="prev">⏮ Prev</button>
+    <button id="play">▶ Play</button>
+    <button id="next">⏭ Next</button>
+  </div>
+
+  <audio id="audio" preload="metadata"></audio>
+
+<script>
+(function () {
+  var CONFIGS = [1, 2, 3, 4];
+  var qs = new URLSearchParams(location.search);
+  var cfg = Number(qs.get('cfg')) || 1;
+
+  var cfgList = document.getElementById('cfg-list');
+  CONFIGS.forEach(function (n) {
+    var a = document.createElement('a');
+    a.href = '?cfg=' + n;
+    a.textContent = 'Config ' + n + (n === cfg ? ' (current)' : '');
+    if (n === cfg) a.className = 'active';
+    cfgList.appendChild(a);
+  });
+
+  var CFG_DESCRIPTIONS = {
+    1: 'Baseline/control: handlers registered ONCE at page load, before any track is ever loaded. No seek-null. (Known from the real site: title/artwork work, but skip buttons stay ±30s.)',
+    2: 'NEW: on every track change, handlers are (re-)registered FIRST, then metadata is set SECOND — every single track, not just once.',
+    3: 'NEW: same as Config 2, plus seekbackward/seekforward explicitly set to null (also re-done every track, before metadata).',
+    4: 'NEW: metadata set as normal, then handlers set (like the broken real-site attempts), then metadata is set AGAIN immediately after, so metadata is always the very last write even though handlers were just touched.'
+  };
+
+  var tracks = [
+    { title: 'Track One — T-Rex Roar', src: 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3' },
+    { title: 'Track Two — SoundHelix Song', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' }
+  ];
+  var artworkUrl = 'https://placehold.co/512x512.png';
+  var albumTitle = 'Media Session Test Album';
+
+  var audio = document.getElementById('audio');
+  var playBtn = document.getElementById('play');
+  var prevBtn = document.getElementById('prev');
+  var nextBtn = document.getElementById('next');
+  var statusEl = document.getElementById('status');
+  var current = 0;
+  var log = [];
+
+  function updateStatus() {
+    statusEl.innerHTML =
+      '<div><b>Config:</b> ' + cfg + '</div>' +
+      '<div><b>Description:</b> ' + CFG_DESCRIPTIONS[cfg] + '</div>' +
+      '<div><b>Track:</b> ' + tracks[current].title + '</div>' +
+      '<div><b>Playing:</b> ' + (!audio.paused) + '</div>' +
+      '<div><b>Log:</b><br>' + log.slice(-6).join('<br>') + '</div>';
+  }
+
+  function setHandler(action, handler) {
+    if (!('mediaSession' in navigator)) return;
+    try {
+      navigator.mediaSession.setActionHandler(action, handler);
+      log.push(action + ': set ok');
+    } catch (e) {
+      log.push(action + ': THREW ' + e.message);
+    }
+  }
+
+  function registerHandlers(withSeekNull) {
+    setHandler('play', function () { audio.play().catch(function () {}); });
+    setHandler('pause', function () { audio.pause(); });
+    setHandler('previoustrack', function () { load(current - 1, true); });
+    setHandler('nexttrack', function () { load(current + 1, true); });
+    if (withSeekNull) {
+      setHandler('seekbackward', null);
+      setHandler('seekforward', null);
+    }
+  }
+
+  function setMetadata() {
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: tracks[current].title,
+      artist: albumTitle,
+      album: albumTitle,
+      artwork: [{ src: artworkUrl, sizes: '512x512', type: 'image/png' }]
+    });
+    log.push('metadata set: ' + tracks[current].title);
+  }
+
+  function load(index, autoplay) {
+    current = (index + tracks.length) % tracks.length;
+    audio.src = tracks[current].src;
+
+    if (cfg === 1) {
+      // handlers already registered once, at the bottom of this file — just set metadata
+      setMetadata();
+    } else if (cfg === 2) {
+      registerHandlers(false);
+      setMetadata();
+    } else if (cfg === 3) {
+      registerHandlers(true);
+      setMetadata();
+    } else if (cfg === 4) {
+      setMetadata();
+      registerHandlers(true);
+      setMetadata(); // redundant re-assert, so metadata is the last write
+    }
+
+    if (autoplay) audio.play().catch(function () {});
+    updateStatus();
+  }
+
+  playBtn.addEventListener('click', function () {
+    if (!audio.src) { load(0, true); return; }
+    if (audio.paused) audio.play().catch(function () {}); else audio.pause();
+  });
+  prevBtn.addEventListener('click', function () { load(current - 1, true); });
+  nextBtn.addEventListener('click', function () { load(current + 1, true); });
+
+  audio.addEventListener('play', function () {
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+    updateStatus();
+  });
+  audio.addEventListener('pause', function () {
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+    updateStatus();
+  });
+  audio.addEventListener('ended', function () { load(current + 1, true); });
+
+  // Config 1's handlers are registered exactly once, here, before any
+  // track/metadata has ever been set — matching the real site's reverted
+  // (working-title, wrong-buttons) baseline.
+  if (cfg === 1) registerHandlers(false);
+
+  updateStatus();
+})();
+</script>
+</body>
+</html>
