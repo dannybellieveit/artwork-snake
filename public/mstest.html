@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Media Session test (wavesurfer)</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 1.5rem 1rem 3rem; background:#f2f2f2; }
+  h1 { font-size: 1.2rem; }
+  .cfg-list a { display: block; margin: .3rem 0; }
+  .cfg-list a.active { font-weight: bold; }
+  #status { background:#fff; border-radius:8px; padding:1rem; margin:1rem 0; font-size:.9rem; line-height:1.5; }
+  #status b { display:inline-block; min-width:90px; }
+  .controls { display:flex; gap:.6rem; margin:1rem 0; }
+  button { font-size:1rem; padding:.6rem 1rem; border-radius:8px; border:1px solid #ccc; background:#fff; }
+  button:active { background:#eee; }
+  ol { font-size:.9rem; padding-left:1.2rem; }
+  .instructions { background:#fff; border-radius:8px; padding:1rem; }
+  #wave { height:40px; background:#333; border-radius:6px; margin:.5rem 0; }
+</style>
+</head>
+<body>
+  <h1>Media Session test — WITH wavesurfer</h1>
+
+  <div class="instructions">
+    <p>Same as before, but this time using wavesurfer.js's <code>ws.load()</code> to swap tracks instead of <code>audio.src</code> — matching the real playlist player exactly.</p>
+    <p><b>How to test each config:</b></p>
+    <ol>
+      <li>Tap "Play" below.</li>
+      <li>Lock the phone (or swipe to Control Center / Now Playing widget).</li>
+      <li>Check: track title, artwork, and skip button type (⏮⏭ vs ±10/30s).</li>
+      <li>Try the lock-screen skip buttons.</li>
+      <li>Come back, tap a different config link, repeat.</li>
+    </ol>
+  </div>
+
+  <p class="cfg-list" id="cfg-list"></p>
+
+  <div id="wave"></div>
+  <div id="status"></div>
+
+  <div class="controls">
+    <button id="prev">⏮ Prev</button>
+    <button id="play">▶ Play</button>
+    <button id="next">⏭ Next</button>
+  </div>
+
+  <audio id="audio" preload="metadata"></audio>
+
+<script src="https://unpkg.com/wavesurfer.js@7.9.9/dist/wavesurfer.min.js"></script>
+<script>
+(function () {
+  var CONFIGS = [1, 5, 6, 7];
+  var qs = new URLSearchParams(location.search);
+  var cfg = Number(qs.get('cfg')) || 5;
+
+  var cfgList = document.getElementById('cfg-list');
+  CONFIGS.forEach(function (n) {
+    var a = document.createElement('a');
+    a.href = '?cfg=' + n;
+    a.textContent = 'Config ' + n + (n === cfg ? ' (current)' : '');
+    if (n === cfg) a.className = 'active';
+    cfgList.appendChild(a);
+  });
+
+  var CFG_DESCRIPTIONS = {
+    1: 'Baseline: handlers registered ONCE at page load, before any track is ever loaded. No seek-null.',
+    5: 'The config that worked in the plain-<audio> test: handlers registered ONCE, delayed until the first loadedmetadata event fires on the real <audio> element, then never touched again. Now with wavesurfer wrapping that same element via ws.load().',
+    6: 'Like Config 5, but the one-time handler registration is deferred to wavesurfer\'s own "ready" event instead of the underlying audio element\'s loadedmetadata (in case wavesurfer/the audio element fire loadedmetadata at an unexpected time under ws.load()).',
+    7: 'Like Config 5, but registered once after the FIRST ws.load(url) promise resolves (after the .then()), instead of via any event listener.'
+  };
+
+  var tracks = [
+    { title: 'Track One — T-Rex Roar', src: 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3' },
+    { title: 'Track Two — SoundHelix Song', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' }
+  ];
+  var artworkUrl = 'https://placehold.co/512x512.png';
+  var albumTitle = 'Media Session Test Album';
+
+  var audio = document.getElementById('audio');
+  var waveEl = document.getElementById('wave');
+  var playBtn = document.getElementById('play');
+  var prevBtn = document.getElementById('prev');
+  var nextBtn = document.getElementById('next');
+  var statusEl = document.getElementById('status');
+  var current = 0;
+  var log = [];
+  var ws = null;
+  var handlersRegisteredOnce = false;
+
+  function updateStatus() {
+    statusEl.innerHTML =
+      '<div><b>Config:</b> ' + cfg + '</div>' +
+      '<div><b>Description:</b> ' + CFG_DESCRIPTIONS[cfg] + '</div>' +
+      '<div><b>Track:</b> ' + tracks[current].title + '</div>' +
+      '<div><b>Playing:</b> ' + (!audio.paused) + '</div>' +
+      '<div><b>Log:</b><br>' + log.slice(-8).join('<br>') + '</div>';
+  }
+
+  function setHandler(action, handler) {
+    if (!('mediaSession' in navigator)) return;
+    try {
+      navigator.mediaSession.setActionHandler(action, handler);
+      log.push(action + ': set ok');
+    } catch (e) {
+      log.push(action + ': THREW ' + e.message);
+    }
+  }
+
+  function registerHandlers() {
+    setHandler('play', function () { audio.play().catch(function () {}); });
+    setHandler('pause', function () { audio.pause(); });
+    setHandler('previoustrack', function () { load(current - 1, true); });
+    setHandler('nexttrack', function () { load(current + 1, true); });
+    setHandler('seekbackward', null);
+    setHandler('seekforward', null);
+  }
+
+  function setMetadata() {
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: tracks[current].title,
+      artist: albumTitle,
+      album: albumTitle,
+      artwork: [{ src: artworkUrl, sizes: '512x512', type: 'image/png' }]
+    });
+    log.push('metadata set: ' + tracks[current].title);
+  }
+
+  function ensureWaveSurfer() {
+    if (ws || typeof WaveSurfer === 'undefined') return ws;
+    ws = WaveSurfer.create({
+      container: waveEl,
+      media: audio,
+      height: 40,
+      waveColor: '#8ab4f8',
+      progressColor: '#4285f4'
+    });
+    return ws;
+  }
+
+  function load(index, autoplay) {
+    current = (index + tracks.length) % tracks.length;
+    var url = tracks[current].src;
+    var instance = ensureWaveSurfer();
+
+    if (cfg === 1) {
+      setMetadata();
+    } else if (cfg === 5) {
+      if (!handlersRegisteredOnce) {
+        handlersRegisteredOnce = true;
+        audio.addEventListener('loadedmetadata', function once() {
+          audio.removeEventListener('loadedmetadata', once);
+          log.push('(loadedmetadata fired)');
+          registerHandlers();
+          setMetadata();
+          updateStatus();
+        });
+      } else {
+        setMetadata();
+      }
+    } else if (cfg === 6) {
+      if (!handlersRegisteredOnce && instance) {
+        handlersRegisteredOnce = true;
+        instance.once('ready', function () {
+          log.push('(wavesurfer ready fired)');
+          registerHandlers();
+          setMetadata();
+          updateStatus();
+        });
+      } else {
+        setMetadata();
+      }
+    }
+    // cfg 7 handled after ws.load() below, since it needs the promise
+
+    if (instance) {
+      instance.load(url).then(function () {
+        log.push('(ws.load resolved)');
+        if (cfg === 7 && !handlersRegisteredOnce) {
+          handlersRegisteredOnce = true;
+          registerHandlers();
+          setMetadata();
+        } else if (cfg === 7) {
+          setMetadata();
+        }
+        if (autoplay) audio.play().catch(function () {});
+        updateStatus();
+      }).catch(function (e) { log.push('ws.load error: ' + e); updateStatus(); });
+    } else {
+      audio.src = url;
+      if (autoplay) audio.play().catch(function () {});
+    }
+    updateStatus();
+  }
+
+  var started = false;
+  playBtn.addEventListener('click', function () {
+    if (!started) { started = true; load(0, true); return; }
+    if (audio.paused) audio.play().catch(function () {}); else audio.pause();
+  });
+  prevBtn.addEventListener('click', function () { load(current - 1, true); });
+  nextBtn.addEventListener('click', function () { load(current + 1, true); });
+
+  audio.addEventListener('play', function () {
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+    updateStatus();
+  });
+  audio.addEventListener('pause', function () {
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+    updateStatus();
+  });
+  audio.addEventListener('ended', function () { load(current + 1, true); });
+
+  if (cfg === 1) registerHandlers();
+
+  updateStatus();
+})();
+</script>
+</body>
+</html>
