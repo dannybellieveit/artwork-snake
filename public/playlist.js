@@ -317,7 +317,10 @@
 
     // Created lazily on first load(), after the bar is made visible — the
     // waveform container has zero width while #pl-player is display:none,
-    // and wavesurfer needs a real width to render into.
+    // and wavesurfer needs a real width to render into. Created BEFORE
+    // audio.src is ever set: wavesurfer's constructor auto-loads whatever
+    // src the media element already has, and we need that to not happen
+    // (see the comment on computePeaks below for why).
     function ensureWaveSurfer() {
       if (ws || typeof WaveSurfer === 'undefined') return ws;
       try {
@@ -331,8 +334,8 @@
           waveColor: 'rgba(255,255,255,0.3)',
           progressColor: (styles.getPropertyValue('--btn') || '#5AB4E5').trim()
         });
-        // Degrade to a blank waveform strip (not a broken player) if the
-        // CDN script failed to load, or wavesurfer can't decode a track.
+        // Degrade to a blank waveform strip (not a broken player) if
+        // wavesurfer can't decode a track.
         ws.on('error', function () { waveformEl.innerHTML = ''; });
       } catch (e) {
         ws = null;
@@ -340,13 +343,55 @@
       return ws;
     }
 
+    // wavesurfer.load(url) normally fetches the file itself and replaces
+    // audio.src with a blob: URL (that's how it avoids a second download
+    // for decoding) — but a blob: URL has no real origin, which is why
+    // iOS never populated the lock-screen title/artwork with it. Passing
+    // wavesurfer our OWN precomputed peaks + duration makes it skip that
+    // internal fetch entirely and leave audio.src (a real https:// URL)
+    // untouched — confirmed by reading wavesurfer's own source. Decoding
+    // here costs the same one full-file fetch wavesurfer's own internal
+    // decode already did; nothing new, just relocated.
+    function computePeaks(url) {
+      return fetch(url)
+        .then(function (res) { return res.arrayBuffer(); })
+        .then(function (buf) {
+          var ctx = new (window.AudioContext || window.webkitAudioContext)();
+          return ctx.decodeAudioData(buf).finally(function () { ctx.close(); });
+        })
+        .then(function (audioBuffer) {
+          var channel = audioBuffer.getChannelData(0);
+          var peakCount = 600;
+          var blockSize = Math.floor(channel.length / peakCount) || 1;
+          var peaks = new Array(peakCount);
+          for (var i = 0; i < peakCount; i++) {
+            var max = 0;
+            var start = i * blockSize;
+            for (var j = 0; j < blockSize; j++) {
+              var v = Math.abs(channel[start + j] || 0);
+              if (v > max) max = v;
+            }
+            peaks[i] = max;
+          }
+          return { peaks: [peaks], duration: audioBuffer.duration };
+        });
+    }
+
+    var loadToken = 0;
+
     function load(index, autoplay) {
       current = (index + tracks.length) % tracks.length;
       var track = tracks[current];
       var url = fileUrl(token, track.name);
+      var thisLoad = ++loadToken;
       nameEl.textContent = stripExt(track.name);
       bar.classList.add('visible');
       highlight();
+
+      var instance = ensureWaveSurfer();
+
+      audio.src = url;
+      if (autoplay) audio.play().catch(function () {});
 
       if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
@@ -357,14 +402,16 @@
         });
       }
 
-      var instance = ensureWaveSurfer();
       if (instance) {
-        instance.load(url).then(function () {
-          if (autoplay) audio.play().catch(function () {});
-        }).catch(function () {}); // AbortError from rapid next/prev clicks
-      } else {
-        audio.src = url;
-        if (autoplay) audio.play().catch(function () {});
+        computePeaks(url).then(function (result) {
+          // A newer load() ran while this one was decoding — drop it.
+          if (thisLoad !== loadToken) return;
+          instance.load(url, result.peaks, result.duration).catch(function () {});
+        }).catch(function () {
+          // Decoding failed (unsupported format, etc.) — audio still
+          // plays fine via the native element either way, just no
+          // waveform visualization for this track.
+        });
       }
     }
 
