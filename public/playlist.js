@@ -319,7 +319,12 @@
         title: stripExt(track.name),
         artist: albumTitle,
         album: albumTitle,
-        artwork: coverUrl ? [{ src: coverUrl, sizes: '512x512', type: '' }] : []
+        // sizes/type are optional per spec — omit rather than guess, since
+        // a fabricated '512x512' doesn't match the real photo's actual
+        // dimensions. That mismatch showed up in the wild: artwork
+        // rendered fine in Control Center but was silently dropped by the
+        // lock screen's stricter validation.
+        artwork: coverUrl ? [{ src: coverUrl }] : []
       });
     }
 
