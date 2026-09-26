@@ -290,33 +290,27 @@
 
     // Without explicit previoustrack/nexttrack handlers, iOS's lock-screen
     // and Control Center controls default to podcast-style ±10/±30s skip
-    // buttons instead of track-skip buttons. Registering these switches
-    // the OS controls over to track mode — but registering them at
-    // initPlayer time (before any track has ever loaded) doesn't reliably
-    // take effect, and re-registering them on every track change turned
-    // out to reset iOS's lock-screen title/artist display (tried both
-    // synchronously in load() and deferred to loadedmetadata — same
-    // result either way). So this only runs once, the first time a track's
-    // metadata actually loads — a real media session exists by then, and
-    // it's never touched again after that. Explicitly nulling the seek
+    // buttons instead of track-skip buttons; explicitly nulling the seek
     // handlers stops iOS falling back to them if it prioritizes them when
-    // present. Safari can throw on an unsupported action name, so each
-    // call is wrapped individually.
+    // present. This has to run exactly once, here, BEFORE any track's
+    // mediaSession.metadata is ever assigned (metadata gets set later, per
+    // track, inside load()) — every attempt at calling setActionHandler
+    // again after metadata had already been set (synchronously in load(),
+    // deferred to loadedmetadata, on every track, or only once) reset
+    // iOS's lock-screen title/artist display back to blank. Whatever last
+    // touches the session wins, so metadata needs to be the last thing set,
+    // never action handlers. Safari can throw on an unsupported action
+    // name, so each call is wrapped individually.
     function setMediaSessionHandler(action, handler) {
       if (!('mediaSession' in navigator)) return;
       try { navigator.mediaSession.setActionHandler(action, handler); } catch (e) {}
     }
-    function setupMediaSessionHandlers() {
-      setMediaSessionHandler('play', function () { audio.play().catch(function () {}); });
-      setMediaSessionHandler('pause', function () { audio.pause(); });
-      setMediaSessionHandler('previoustrack', function () { load(current - 1, true); });
-      setMediaSessionHandler('nexttrack', function () { load(current + 1, true); });
-      setMediaSessionHandler('seekbackward', null);
-      setMediaSessionHandler('seekforward', null);
-    }
-    if ('mediaSession' in navigator) {
-      audio.addEventListener('loadedmetadata', setupMediaSessionHandlers, { once: true });
-    }
+    setMediaSessionHandler('play', function () { audio.play().catch(function () {}); });
+    setMediaSessionHandler('pause', function () { audio.pause(); });
+    setMediaSessionHandler('previoustrack', function () { load(current - 1, true); });
+    setMediaSessionHandler('nexttrack', function () { load(current + 1, true); });
+    setMediaSessionHandler('seekbackward', null);
+    setMediaSessionHandler('seekforward', null);
 
     // Created lazily on first load(), after the bar is made visible — the
     // waveform container has zero width while #pl-player is display:none,
@@ -356,7 +350,10 @@
           title: stripExt(track.name),
           artist: albumTitle,
           album: albumTitle,
-          artwork: coverUrl ? [{ src: coverUrl, sizes: '512x512', type: '' }] : []
+          // sizes/type are optional per spec — only src is required, and a
+          // fabricated size or empty type string is worse than omitting
+          // them, since the real cover's dimensions vary per playlist.
+          artwork: coverUrl ? [{ src: coverUrl }] : []
         });
       }
 
