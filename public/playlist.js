@@ -289,26 +289,31 @@
     }
 
     // Without explicit previoustrack/nexttrack handlers, iOS's lock-screen
-    // and Control Center controls default to podcast-style ±30s skip
-    // buttons instead of track-skip buttons. Registering these (even
-    // though prev/next already work via the on-page buttons) switches the
-    // OS controls over to track mode. Safari can throw on an unsupported
-    // action name, so each call is wrapped individually.
-    //
-    // This is deliberately back to the original, simplest version: every
-    // attempt to also fix the button type (re-registering per track, at
-    // various points, nulling the seek handlers) ended up breaking the
-    // lock-screen title/artwork instead, which is worse than the ±30s
-    // buttons this leaves in place. Revisit the button fix separately,
-    // tested standalone before touching this file again.
+    // and Control Center controls default to podcast-style ±10/±30s skip
+    // buttons instead of track-skip buttons. Confirmed via an isolated
+    // test page (mstest.html) against real iPhone hardware: handlers must
+    // be registered AFTER the first track's audio has actually loaded, not
+    // before (registering too early doesn't reliably take effect for the
+    // button type) — but registering them more than once, ever, resets
+    // iOS's lock-screen title/artwork back to blank. So this runs exactly
+    // once, the first time a track's metadata loads, and never again.
+    // Safari can throw on an unsupported action name, so each call is
+    // wrapped individually.
     function setMediaSessionHandler(action, handler) {
       if (!('mediaSession' in navigator)) return;
       try { navigator.mediaSession.setActionHandler(action, handler); } catch (e) {}
     }
-    setMediaSessionHandler('play', function () { audio.play().catch(function () {}); });
-    setMediaSessionHandler('pause', function () { audio.pause(); });
-    setMediaSessionHandler('previoustrack', function () { load(current - 1, true); });
-    setMediaSessionHandler('nexttrack', function () { load(current + 1, true); });
+    function setupMediaSessionHandlers() {
+      setMediaSessionHandler('play', function () { audio.play().catch(function () {}); });
+      setMediaSessionHandler('pause', function () { audio.pause(); });
+      setMediaSessionHandler('previoustrack', function () { load(current - 1, true); });
+      setMediaSessionHandler('nexttrack', function () { load(current + 1, true); });
+      setMediaSessionHandler('seekbackward', null);
+      setMediaSessionHandler('seekforward', null);
+    }
+    if ('mediaSession' in navigator) {
+      audio.addEventListener('loadedmetadata', setupMediaSessionHandlers, { once: true });
+    }
 
     // Created lazily on first load(), after the bar is made visible — the
     // waveform container has zero width while #pl-player is display:none,
