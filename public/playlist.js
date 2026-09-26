@@ -391,6 +391,15 @@
       var instance = ensureWaveSurfer();
 
       audio.src = url;
+      // Wavesurfer's setSrc() compares the URL passed to load() against
+      // audio.src as plain strings to decide whether the source already
+      // matches (and if so, leave it alone). audio.src always reads back
+      // as an absolute URL once assigned, so passing the original
+      // relative `url` here would never match — wavesurfer would think
+      // the source changed, clear the src attribute, and reset playback
+      // right when the waveform decode below finished. Use the resolved
+      // absolute form everywhere from here on so that comparison holds.
+      var absoluteUrl = audio.src;
       if (autoplay) audio.play().catch(function () {});
 
       if ('mediaSession' in navigator) {
@@ -403,10 +412,10 @@
       }
 
       if (instance) {
-        computePeaks(url).then(function (result) {
+        computePeaks(absoluteUrl).then(function (result) {
           // A newer load() ran while this one was decoding — drop it.
           if (thisLoad !== loadToken) return;
-          instance.load(url, result.peaks, result.duration).catch(function () {});
+          instance.load(absoluteUrl, result.peaks, result.duration).catch(function () {});
         }).catch(function () {
           // Decoding failed (unsupported format, etc.) — audio still
           // plays fine via the native element either way, just no
