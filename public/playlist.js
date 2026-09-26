@@ -290,19 +290,18 @@
 
     // Without explicit previoustrack/nexttrack handlers, iOS's lock-screen
     // and Control Center controls default to podcast-style ±10/±30s skip
-    // buttons instead of track-skip buttons. Registering these (even
-    // though prev/next already work via the on-page buttons) switches the
-    // OS controls over to track mode — but iOS can silently drop these
-    // handlers whenever the underlying <audio> element's source changes
-    // (which every track change does), so this needs re-registering on
-    // every track, not just once at setup (see the loadedmetadata listener
-    // below — doing it there, once the new source is actually ready,
-    // rather than synchronously in load() right after setting
-    // mediaSession.metadata, avoids an iOS bug where doing it too early
-    // clobbers the lock-screen title/artist text). Explicitly nulling the
-    // seek handlers stops iOS falling back to them if it prioritizes them
-    // when present. Safari can throw on an unsupported action name, so
-    // each call is wrapped individually.
+    // buttons instead of track-skip buttons. Registering these switches
+    // the OS controls over to track mode — but registering them at
+    // initPlayer time (before any track has ever loaded) doesn't reliably
+    // take effect, and re-registering them on every track change turned
+    // out to reset iOS's lock-screen title/artist display (tried both
+    // synchronously in load() and deferred to loadedmetadata — same
+    // result either way). So this only runs once, the first time a track's
+    // metadata actually loads — a real media session exists by then, and
+    // it's never touched again after that. Explicitly nulling the seek
+    // handlers stops iOS falling back to them if it prioritizes them when
+    // present. Safari can throw on an unsupported action name, so each
+    // call is wrapped individually.
     function setMediaSessionHandler(action, handler) {
       if (!('mediaSession' in navigator)) return;
       try { navigator.mediaSession.setActionHandler(action, handler); } catch (e) {}
@@ -315,7 +314,9 @@
       setMediaSessionHandler('seekbackward', null);
       setMediaSessionHandler('seekforward', null);
     }
-    setupMediaSessionHandlers();
+    if ('mediaSession' in navigator) {
+      audio.addEventListener('loadedmetadata', setupMediaSessionHandlers, { once: true });
+    }
 
     // Created lazily on first load(), after the bar is made visible — the
     // waveform container has zero width while #pl-player is display:none,
@@ -414,11 +415,6 @@
 
     audio.addEventListener('loadedmetadata', function () {
       if (isFinite(audio.duration)) applyKnownDuration(audio.duration);
-      // Re-registering handlers right when the new track's metadata is set
-      // (before the source has actually loaded) was clobbering iOS's
-      // lock-screen title/artist display. Doing it here instead, once the
-      // new source is actually ready, avoids that.
-      setupMediaSessionHandlers();
     });
     // Chrome/streamed-audio quirk: duration can read Infinity at first and
     // only resolve once enough of the file has loaded — no forced seek here
