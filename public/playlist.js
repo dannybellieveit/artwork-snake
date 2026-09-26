@@ -289,18 +289,18 @@
     }
 
     // Without explicit previoustrack/nexttrack handlers, iOS's lock-screen
-    // and Control Center controls default to podcast-style ±10/±30s skip
-    // buttons instead of track-skip buttons; explicitly nulling the seek
-    // handlers stops iOS falling back to them if it prioritizes them when
-    // present. This has to run exactly once, here, BEFORE any track's
-    // mediaSession.metadata is ever assigned (metadata gets set later, per
-    // track, inside load()) — every attempt at calling setActionHandler
-    // again after metadata had already been set (synchronously in load(),
-    // deferred to loadedmetadata, on every track, or only once) reset
-    // iOS's lock-screen title/artist display back to blank. Whatever last
-    // touches the session wins, so metadata needs to be the last thing set,
-    // never action handlers. Safari can throw on an unsupported action
-    // name, so each call is wrapped individually.
+    // and Control Center controls default to podcast-style ±30s skip
+    // buttons instead of track-skip buttons. Registering these (even
+    // though prev/next already work via the on-page buttons) switches the
+    // OS controls over to track mode. Safari can throw on an unsupported
+    // action name, so each call is wrapped individually.
+    //
+    // This is deliberately back to the original, simplest version: every
+    // attempt to also fix the button type (re-registering per track, at
+    // various points, nulling the seek handlers) ended up breaking the
+    // lock-screen title/artwork instead, which is worse than the ±30s
+    // buttons this leaves in place. Revisit the button fix separately,
+    // tested standalone before touching this file again.
     function setMediaSessionHandler(action, handler) {
       if (!('mediaSession' in navigator)) return;
       try { navigator.mediaSession.setActionHandler(action, handler); } catch (e) {}
@@ -309,8 +309,6 @@
     setMediaSessionHandler('pause', function () { audio.pause(); });
     setMediaSessionHandler('previoustrack', function () { load(current - 1, true); });
     setMediaSessionHandler('nexttrack', function () { load(current + 1, true); });
-    setMediaSessionHandler('seekbackward', null);
-    setMediaSessionHandler('seekforward', null);
 
     // Created lazily on first load(), after the bar is made visible — the
     // waveform container has zero width while #pl-player is display:none,
@@ -350,10 +348,7 @@
           title: stripExt(track.name),
           artist: albumTitle,
           album: albumTitle,
-          // sizes/type are optional per spec — only src is required, and a
-          // fabricated size or empty type string is worse than omitting
-          // them, since the real cover's dimensions vary per playlist.
-          artwork: coverUrl ? [{ src: coverUrl }] : []
+          artwork: coverUrl ? [{ src: coverUrl, sizes: '512x512', type: '' }] : []
         });
       }
 
