@@ -294,11 +294,15 @@
     // though prev/next already work via the on-page buttons) switches the
     // OS controls over to track mode — but iOS can silently drop these
     // handlers whenever the underlying <audio> element's source changes
-    // (which every track change does), so this has to run again on every
-    // load(), not just once at setup. Explicitly nulling the seek handlers
-    // stops iOS falling back to them if it prioritizes them when present.
-    // Safari can throw on an unsupported action name, so each call is
-    // wrapped individually.
+    // (which every track change does), so this needs re-registering on
+    // every track, not just once at setup (see the loadedmetadata listener
+    // below — doing it there, once the new source is actually ready,
+    // rather than synchronously in load() right after setting
+    // mediaSession.metadata, avoids an iOS bug where doing it too early
+    // clobbers the lock-screen title/artist text). Explicitly nulling the
+    // seek handlers stops iOS falling back to them if it prioritizes them
+    // when present. Safari can throw on an unsupported action name, so
+    // each call is wrapped individually.
     function setMediaSessionHandler(action, handler) {
       if (!('mediaSession' in navigator)) return;
       try { navigator.mediaSession.setActionHandler(action, handler); } catch (e) {}
@@ -353,7 +357,6 @@
           album: albumTitle,
           artwork: coverUrl ? [{ src: coverUrl, sizes: '512x512', type: '' }] : []
         });
-        setupMediaSessionHandlers();
       }
 
       var instance = ensureWaveSurfer();
@@ -411,6 +414,11 @@
 
     audio.addEventListener('loadedmetadata', function () {
       if (isFinite(audio.duration)) applyKnownDuration(audio.duration);
+      // Re-registering handlers right when the new track's metadata is set
+      // (before the source has actually loaded) was clobbering iOS's
+      // lock-screen title/artist display. Doing it here instead, once the
+      // new source is actually ready, avoids that.
+      setupMediaSessionHandlers();
     });
     // Chrome/streamed-audio quirk: duration can read Infinity at first and
     // only resolve once enough of the file has loaded — no forced seek here
