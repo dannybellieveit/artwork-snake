@@ -282,6 +282,42 @@
       artEl.style.background = coverStyle.replace('background:', '');
     }
 
+    // The lock screen's compact widget accepts any image, but its full-
+    // screen "big" Now Playing view apparently won't render a non-square
+    // photo there (real phone photos are never square) — it just shows
+    // blank instead of cropping or stretching it. Center-crop to a square
+    // ourselves, entirely client-side via canvas: nothing here uploads or
+    // stores anything anywhere, the result is a data: URI that lives only
+    // in this tab's memory for as long as the page is open.
+    var squareArtworkUrl = null;
+    if (coverUrl) {
+      (function () {
+        var img = new Image();
+        img.onload = function () {
+          var side = Math.min(img.naturalWidth, img.naturalHeight);
+          var outSize = 512;
+          var canvas = document.createElement('canvas');
+          canvas.width = outSize;
+          canvas.height = outSize;
+          canvas.getContext('2d').drawImage(
+            img,
+            (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side,
+            0, 0, outSize, outSize
+          );
+          try {
+            squareArtworkUrl = canvas.toDataURL('image/jpeg', 0.85);
+          } catch (e) {
+            return; // canvas tainted — shouldn't happen, share-proxy is same-origin
+          }
+          // Refresh whatever's currently showing now that the square crop
+          // is ready. This only ever touches metadata, never the action
+          // handlers, so it's safe to call at any point.
+          if (mediaSessionReady) setMediaSessionMetadata();
+        };
+        img.src = coverUrl;
+      })();
+    }
+
     function highlight() {
       [...listEl.children].forEach(function (li, i) {
         li.classList.toggle('playing', i === current);
@@ -319,12 +355,15 @@
         title: stripExt(track.name),
         artist: albumTitle,
         album: albumTitle,
-        // sizes/type are optional per spec — omit rather than guess, since
-        // a fabricated '512x512' doesn't match the real photo's actual
-        // dimensions. That mismatch showed up in the wild: artwork
-        // rendered fine in Control Center but was silently dropped by the
-        // lock screen's stricter validation.
-        artwork: coverUrl ? [{ src: coverUrl }] : []
+        // Prefer the square-cropped version once it's ready — a fabricated
+        // sizes claim on the raw (non-square) photo rendered fine in
+        // Control Center but was silently dropped by the lock screen's
+        // stricter full-screen view. The crop's dimensions are real, so
+        // sizes/type are safe to declare accurately here; before it's
+        // ready, fall back to the raw photo with no sizes/type guessed.
+        artwork: squareArtworkUrl
+          ? [{ src: squareArtworkUrl, sizes: '512x512', type: 'image/jpeg' }]
+          : (coverUrl ? [{ src: coverUrl }] : [])
       });
     }
 
