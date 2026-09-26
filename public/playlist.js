@@ -282,13 +282,11 @@
       artEl.style.background = coverStyle.replace('background:', '');
     }
 
-    // The lock screen's compact widget accepts any image, but its full-
-    // screen "big" Now Playing view apparently won't render a non-square
-    // photo there (real phone photos are never square) — it just shows
-    // blank instead of cropping or stretching it. Center-crop to a square
-    // ourselves, entirely client-side via canvas: nothing here uploads or
-    // stores anything anywhere, the result is a data: URI that lives only
-    // in this tab's memory for as long as the page is open.
+    // The lock screen's full-screen "big" Now Playing view won't render a
+    // non-square photo (real cover photos never are), unlike the compact
+    // widget. Center-crop to a square via canvas, entirely client-side —
+    // the result is a data: URI held only in this tab's memory, nothing
+    // is uploaded or stored anywhere.
     var squareArtworkUrl = null;
     if (coverUrl) {
       (function () {
@@ -324,15 +322,10 @@
       });
     }
 
-    // Without explicit previoustrack/nexttrack handlers, iOS's lock-screen
-    // and Control Center controls default to podcast-style ±10/±30s skip
-    // buttons instead of track-skip buttons. Confirmed via an isolated
-    // test page (mstest.html) against real iPhone hardware: handlers must
-    // be registered AFTER the first track's audio has actually loaded, not
-    // before (registering too early doesn't reliably take effect for the
-    // button type) — but registering them more than once, ever, resets
-    // iOS's lock-screen title/artwork back to blank. So this runs exactly
-    // once, the first time a track's metadata loads, and never again.
+    // Registering previoustrack/nexttrack switches iOS's lock-screen and
+    // Control Center controls from generic ±10/30s seek buttons to real
+    // track-skip buttons. This must run exactly once — repeated
+    // registration resets the lock-screen title/artwork back to blank.
     // Safari can throw on an unsupported action name, so each call is
     // wrapped individually.
     function setMediaSessionHandler(action, handler) {
@@ -355,24 +348,19 @@
         title: stripExt(track.name),
         artist: albumTitle,
         album: albumTitle,
-        // Prefer the square-cropped version once it's ready — a fabricated
-        // sizes claim on the raw (non-square) photo rendered fine in
-        // Control Center but was silently dropped by the lock screen's
-        // stricter full-screen view. The crop's dimensions are real, so
-        // sizes/type are safe to declare accurately here; before it's
-        // ready, fall back to the raw photo with no sizes/type guessed.
+        // Prefer the square crop once ready — its dimensions are real, so
+        // sizes/type are safe to declare (a fabricated size on the raw
+        // photo was silently dropped by the lock screen's validation).
         artwork: squareArtworkUrl
           ? [{ src: squareArtworkUrl, sizes: '512x512', type: 'image/jpeg' }]
           : (coverUrl ? [{ src: coverUrl }] : [])
       });
     }
 
-    // The very first track's metadata must be set AFTER handler
-    // registration, not before — setting it first (as load() does for
-    // every later track) reset iOS's lock-screen title/artwork back to
-    // blank even though handlers were only ever registered once. Once
-    // this first-time setup has run, later load() calls set metadata
-    // directly with no ordering constraint.
+    // The first track's metadata must be set after handler registration,
+    // not before — setting it first reset the lock-screen title/artwork
+    // even though handlers were only ever registered once. Later tracks
+    // have no such ordering constraint.
     var mediaSessionReady = false;
     if ('mediaSession' in navigator) {
       audio.addEventListener('loadedmetadata', function once() {
@@ -459,14 +447,12 @@
       var instance = ensureWaveSurfer();
 
       audio.src = url;
-      // Wavesurfer's setSrc() compares the URL passed to load() against
-      // audio.src as plain strings to decide whether the source already
-      // matches (and if so, leave it alone). audio.src always reads back
-      // as an absolute URL once assigned, so passing the original
-      // relative `url` here would never match — wavesurfer would think
-      // the source changed, clear the src attribute, and reset playback
-      // right when the waveform decode below finished. Use the resolved
-      // absolute form everywhere from here on so that comparison holds.
+      // Wavesurfer compares the URL given to load() against audio.src as
+      // plain strings to detect an unchanged source. audio.src always
+      // reads back absolute, so the relative `url` above would never
+      // match — it would reset the src (interrupting playback) right as
+      // the waveform decode below finishes. Use the resolved absolute
+      // form everywhere downstream instead.
       var absoluteUrl = audio.src;
       if (autoplay) audio.play().catch(function () {});
 
