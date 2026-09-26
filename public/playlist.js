@@ -210,6 +210,26 @@
     });
   }
 
+  // Counts a duration span up from 0:00 to its real value instead of just
+  // snapping in — a blank cell popping straight to "4:36" reads as a
+  // layout glitch, a quick tick-up reads as the number arriving.
+  function animateDuration(span, targetSeconds) {
+    var durationMs = 600;
+    var start = null;
+    function step(ts) {
+      if (start === null) start = ts;
+      var progress = Math.min((ts - start) / durationMs, 1);
+      var eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      // Don't stomp on the file-size text if the download button happens
+      // to be hovered/focused right as this probe resolves or mid-count.
+      if (span.dataset.showingSize !== 'true') {
+        span.textContent = fmtTime(targetSeconds * eased);
+      }
+      if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
   async function probeDurations(token, tracks) {
     var list = document.getElementById('pl-track-list');
     var rows = list.children;
@@ -220,11 +240,8 @@
       if (duration === null) return;
       durations[i] = duration;
       var span = rows[i].querySelector('.pl-track-duration');
-      var text = fmtTime(duration);
-      span.dataset.durationText = text;
-      // Don't stomp on the file-size text if the download button happens
-      // to be hovered/focused right as this probe resolves.
-      if (span.dataset.showingSize !== 'true') span.textContent = text;
+      span.dataset.durationText = fmtTime(duration);
+      animateDuration(span, duration);
     }));
 
     var anyKnown = durations.some(function (d) { return d !== null; });
