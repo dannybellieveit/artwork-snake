@@ -289,19 +289,29 @@
     }
 
     // Without explicit previoustrack/nexttrack handlers, iOS's lock-screen
-    // and Control Center controls default to podcast-style ±30s skip
+    // and Control Center controls default to podcast-style ±10/±30s skip
     // buttons instead of track-skip buttons. Registering these (even
     // though prev/next already work via the on-page buttons) switches the
-    // OS controls over to track mode. Safari can throw on an unsupported
-    // action name, so each call is wrapped individually.
+    // OS controls over to track mode — but iOS can silently drop these
+    // handlers whenever the underlying <audio> element's source changes
+    // (which every track change does), so this has to run again on every
+    // load(), not just once at setup. Explicitly nulling the seek handlers
+    // stops iOS falling back to them if it prioritizes them when present.
+    // Safari can throw on an unsupported action name, so each call is
+    // wrapped individually.
     function setMediaSessionHandler(action, handler) {
       if (!('mediaSession' in navigator)) return;
       try { navigator.mediaSession.setActionHandler(action, handler); } catch (e) {}
     }
-    setMediaSessionHandler('play', function () { audio.play().catch(function () {}); });
-    setMediaSessionHandler('pause', function () { audio.pause(); });
-    setMediaSessionHandler('previoustrack', function () { load(current - 1, true); });
-    setMediaSessionHandler('nexttrack', function () { load(current + 1, true); });
+    function setupMediaSessionHandlers() {
+      setMediaSessionHandler('play', function () { audio.play().catch(function () {}); });
+      setMediaSessionHandler('pause', function () { audio.pause(); });
+      setMediaSessionHandler('previoustrack', function () { load(current - 1, true); });
+      setMediaSessionHandler('nexttrack', function () { load(current + 1, true); });
+      setMediaSessionHandler('seekbackward', null);
+      setMediaSessionHandler('seekforward', null);
+    }
+    setupMediaSessionHandlers();
 
     // Created lazily on first load(), after the bar is made visible — the
     // waveform container has zero width while #pl-player is display:none,
@@ -343,6 +353,7 @@
           album: albumTitle,
           artwork: coverUrl ? [{ src: coverUrl, sizes: '512x512', type: '' }] : []
         });
+        setupMediaSessionHandlers();
       }
 
       var instance = ensureWaveSurfer();
