@@ -148,22 +148,40 @@
         '<span class="pl-track-index">' + (i + 1) + '</span>' +
         '<span class="pl-track-playing-icon" aria-hidden="true">♪</span>' +
         '<span class="pl-track-name">' + escapeHtml(stripExt(track.name)) + '</span>' +
-        '<span class="pl-track-duration">' + fmtBytes(track.bytes) + '</span>' +
+        '<span class="pl-track-duration"></span>' +
         (downloadsEnabled
           ? '<a class="pl-track-download" href="' + fileUrl(token, track.name) + '" aria-label="Download ' + escapeHtml(stripExt(track.name)) + '">⬇</a>'
           : '');
       list.appendChild(li);
+
+      // Duration column shows length by default; swap to file size only
+      // while the download button is hovered/focused, then swap back.
+      if (downloadsEnabled) {
+        var downloadLink = li.querySelector('.pl-track-download');
+        var durationEl = li.querySelector('.pl-track-duration');
+        var showSize = function () {
+          durationEl.dataset.showingSize = 'true';
+          durationEl.textContent = fmtBytes(track.bytes);
+        };
+        var showDuration = function () {
+          durationEl.dataset.showingSize = 'false';
+          durationEl.textContent = durationEl.dataset.durationText || '';
+        };
+        downloadLink.addEventListener('mouseenter', showSize);
+        downloadLink.addEventListener('mouseleave', showDuration);
+        downloadLink.addEventListener('focus', showSize);
+        downloadLink.addEventListener('blur', showDuration);
+      }
     });
 
     initPlayer(token, tracks, coverUrl || null, coverStyle);
     probeDurations(token, tracks);
   }
 
-  // Fills in each track's real duration (replacing its file size) and the
-  // header's total length, one track at a time — not all at once. Firing
-  // many simultaneous requests at the Nextcloud server behind this reads as
-  // burst traffic and has caused real 503s before; sequential is slower but
-  // safe regardless of how many tracks are in the folder.
+  // Fills in each track's real duration and the header's total length. All
+  // tracks are probed in parallel — a live concurrency test against the
+  // share-proxy confirmed the server handles a full playlist's worth of
+  // simultaneous requests fine now, so this no longer needs to be sequential.
   function probeOne(token, track) {
     return new Promise(function (resolve) {
       var probe = new Audio();
@@ -195,19 +213,23 @@
   async function probeDurations(token, tracks) {
     var list = document.getElementById('pl-track-list');
     var rows = list.children;
-    var totalKnown = 0;
-    var anyKnown = false;
+    var durations = new Array(tracks.length).fill(null);
 
-    for (var i = 0; i < tracks.length; i++) {
-      var duration = await probeOne(token, tracks[i]);
-      if (duration !== null) {
-        anyKnown = true;
-        totalKnown += duration;
-        rows[i].querySelector('.pl-track-duration').textContent = fmtTime(duration);
-      }
-    }
+    await Promise.all(tracks.map(async function (track, i) {
+      var duration = await probeOne(token, track);
+      if (duration === null) return;
+      durations[i] = duration;
+      var span = rows[i].querySelector('.pl-track-duration');
+      var text = fmtTime(duration);
+      span.dataset.durationText = text;
+      // Don't stomp on the file-size text if the download button happens
+      // to be hovered/focused right as this probe resolves.
+      if (span.dataset.showingSize !== 'true') span.textContent = text;
+    }));
 
+    var anyKnown = durations.some(function (d) { return d !== null; });
     if (!anyKnown) return;
+    var totalKnown = durations.reduce(function (sum, d) { return sum + (d || 0); }, 0);
     var durationLabel = fmtTimeLong(totalKnown);
     if (!durationLabel) return;
     var summary = document.getElementById('pl-summary');
