@@ -152,7 +152,7 @@
         '<span class="pl-track-name">' + escapeHtml(stripExt(track.name)) + '</span>' +
         '<span class="pl-track-duration">0:00</span>' +
         (downloadsEnabled
-          ? '<a class="pl-track-download" href="' + fileUrl(token, track.name) + '" aria-label="Download ' + escapeHtml(stripExt(track.name)) + '">⬇</a>'
+          ? '<a class="pl-track-download" href="' + fileUrl(token, track.name) + '" aria-label="Download ' + escapeHtml(stripExt(track.name)) + '"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></a>'
           : '');
       list.appendChild(li);
 
