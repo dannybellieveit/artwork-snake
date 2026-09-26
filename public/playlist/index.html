@@ -17,6 +17,9 @@
     --card-bg : #ffffff;
     --btn     : #5AB4E5;
     --btn-dk  : #3F93C8;
+    --player-bg     : rgba(20,22,26,0.72);
+    --player-fg     : #fff;
+    --player-fg-dim : rgba(255,255,255,0.65);
   }
 
   html,body{
@@ -164,22 +167,26 @@
     display:none;
     align-items:center;
     gap:1rem;
-    padding:.7rem 1.2rem;
-    padding-bottom:calc(.7rem + env(safe-area-inset-bottom, 0px));
-    background:var(--card-bg);
-    box-shadow:0 -2px 10px rgba(0,0,0,0.12);
+    padding:.9rem 1.4rem;
+    padding-bottom:calc(.9rem + env(safe-area-inset-bottom, 0px));
+    background:var(--player-bg);
+    -webkit-backdrop-filter:blur(16px) saturate(160%);
+    backdrop-filter:blur(16px) saturate(160%);
+    border-top:1px solid rgba(255,255,255,0.08);
+    box-shadow:0 -4px 24px rgba(0,0,0,0.35);
     min-width:0;
   }
 
   #pl-player.visible{ display:flex; }
 
   .pl-player-art{
-    width:44px;
-    height:44px;
+    width:60px;
+    height:60px;
     flex:none;
-    border-radius:6px;
+    border-radius:8px;
     background-size:cover;
     background-position:center;
+    box-shadow:0 2px 8px rgba(0,0,0,0.4);
   }
 
   .pl-player-meta{
@@ -194,6 +201,7 @@
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
+    color:var(--player-fg);
   }
 
   .pl-player-controls{
@@ -207,10 +215,16 @@
     background:none;
     border:none;
     cursor:pointer;
-    font-size:1.1rem;
     line-height:1;
     padding:.3rem;
-    color:#000;
+    color:var(--player-fg);
+  }
+
+  .pl-player-controls button svg{
+    width:1.1rem;
+    height:1.1rem;
+    display:block;
+    fill:currentColor;
   }
 
   .pl-player-controls .play-btn{
@@ -222,10 +236,18 @@
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size:1rem;
+  }
+
+  .pl-player-controls .play-btn svg{
+    width:1rem;
+    height:1rem;
   }
 
   .pl-player-controls .play-btn:hover{ background:var(--btn-dk); }
+
+  #pl-play .icon-pause{ display:none; }
+  #pl-play[data-playing="true"] .icon-play{ display:none; }
+  #pl-play[data-playing="true"] .icon-pause{ display:block; }
 
   .pl-player-scrub{
     flex:1;
@@ -235,54 +257,17 @@
     min-width:0;
   }
 
-  .pl-player-scrub input[type="range"]{
+  .pl-waveform{
     flex:1;
     min-width:0;
-    accent-color:var(--btn);
-    -webkit-appearance:none;
-    appearance:none;
-    height:4px;
-    background:#ddd;
-    border-radius:2px;
-    outline:none;
-  }
-
-  .pl-player-scrub input[type="range"]::-webkit-slider-runnable-track{
-    height:4px;
-    background:#ddd;
-    border-radius:2px;
-  }
-
-  .pl-player-scrub input[type="range"]::-webkit-slider-thumb{
-    -webkit-appearance:none;
-    appearance:none;
-    width:14px;
-    height:14px;
-    margin-top:-5px;
-    border-radius:50%;
-    background:var(--btn);
-    cursor:pointer;
-  }
-
-  .pl-player-scrub input[type="range"]::-moz-range-track{
-    height:4px;
-    background:#ddd;
-    border-radius:2px;
-  }
-
-  .pl-player-scrub input[type="range"]::-moz-range-thumb{
-    width:14px;
-    height:14px;
-    border:none;
-    border-radius:50%;
-    background:var(--btn);
+    height:40px;
     cursor:pointer;
   }
 
   .pl-player-scrub .time{
     font-size:.8rem;
     font-variant-numeric:tabular-nums;
-    opacity:.7;
+    color:var(--player-fg-dim);
     flex:none;
   }
 
@@ -375,13 +360,20 @@
       <div class="name" id="pl-player-name">—</div>
     </div>
     <div class="pl-player-controls">
-      <button id="pl-prev" aria-label="Previous track">⏮</button>
-      <button id="pl-play" class="play-btn" aria-label="Play">▶</button>
-      <button id="pl-next" aria-label="Next track">⏭</button>
+      <button id="pl-prev" aria-label="Previous track">
+        <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zM20 6L9 12l11 6z"/></svg>
+      </button>
+      <button id="pl-play" class="play-btn" aria-label="Play" data-playing="false">
+        <svg class="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        <svg class="icon-pause" viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+      </button>
+      <button id="pl-next" aria-label="Next track">
+        <svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM4 6l11 6-11 6z"/></svg>
+      </button>
     </div>
     <div class="pl-player-scrub">
       <span class="time" id="pl-time-current">0:00</span>
-      <input type="range" id="pl-seek" min="0" max="100" value="0" step="0.1">
+      <div class="pl-waveform" id="pl-waveform"></div>
       <span class="time" id="pl-time-total">0:00</span>
     </div>
   </div>
@@ -429,6 +421,7 @@
       });
     })();
   </script>
+  <script src="https://unpkg.com/wavesurfer.js@7.9.9/dist/wavesurfer.min.js" defer></script>
   <script src="/playlist.js" defer></script>
 </body>
 </html>

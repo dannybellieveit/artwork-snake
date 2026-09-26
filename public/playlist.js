@@ -223,7 +223,7 @@
     var playBtn = document.getElementById('pl-play');
     var prevBtn = document.getElementById('pl-prev');
     var nextBtn = document.getElementById('pl-next');
-    var seek = document.getElementById('pl-seek');
+    var waveformEl = document.getElementById('pl-waveform');
     var timeCurrent = document.getElementById('pl-time-current');
     var timeTotal = document.getElementById('pl-time-total');
     var nameEl = document.getElementById('pl-player-name');
@@ -231,7 +231,8 @@
     var listEl = document.getElementById('pl-track-list');
 
     var current = -1;
-    var seeking = false;
+    var ws = null;
+    var albumTitle = document.title;
 
     if (coverUrl) {
       artEl.style.backgroundImage = "url('" + coverUrl + "')";
@@ -245,14 +246,72 @@
       });
     }
 
+    // Without explicit previoustrack/nexttrack handlers, iOS's lock-screen
+    // and Control Center controls default to podcast-style ±30s skip
+    // buttons instead of track-skip buttons. Registering these (even
+    // though prev/next already work via the on-page buttons) switches the
+    // OS controls over to track mode. Safari can throw on an unsupported
+    // action name, so each call is wrapped individually.
+    function setMediaSessionHandler(action, handler) {
+      if (!('mediaSession' in navigator)) return;
+      try { navigator.mediaSession.setActionHandler(action, handler); } catch (e) {}
+    }
+    setMediaSessionHandler('play', function () { audio.play().catch(function () {}); });
+    setMediaSessionHandler('pause', function () { audio.pause(); });
+    setMediaSessionHandler('previoustrack', function () { load(current - 1, true); });
+    setMediaSessionHandler('nexttrack', function () { load(current + 1, true); });
+
+    // Created lazily on first load(), after the bar is made visible — the
+    // waveform container has zero width while #pl-player is display:none,
+    // and wavesurfer needs a real width to render into.
+    function ensureWaveSurfer() {
+      if (ws || typeof WaveSurfer === 'undefined') return ws;
+      try {
+        var styles = getComputedStyle(document.documentElement);
+        ws = WaveSurfer.create({
+          container: waveformEl,
+          media: audio,
+          height: 40,
+          barWidth: 2,
+          barGap: 2,
+          waveColor: 'rgba(255,255,255,0.3)',
+          progressColor: (styles.getPropertyValue('--btn') || '#5AB4E5').trim()
+        });
+        // Degrade to a blank waveform strip (not a broken player) if the
+        // CDN script failed to load, or wavesurfer can't decode a track.
+        ws.on('error', function () { waveformEl.innerHTML = ''; });
+      } catch (e) {
+        ws = null;
+      }
+      return ws;
+    }
+
     function load(index, autoplay) {
       current = (index + tracks.length) % tracks.length;
       var track = tracks[current];
-      audio.src = fileUrl(token, track.name);
+      var url = fileUrl(token, track.name);
       nameEl.textContent = stripExt(track.name);
       bar.classList.add('visible');
       highlight();
-      if (autoplay) audio.play();
+
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: stripExt(track.name),
+          artist: albumTitle,
+          album: albumTitle,
+          artwork: coverUrl ? [{ src: coverUrl, sizes: '512x512', type: '' }] : []
+        });
+      }
+
+      var instance = ensureWaveSurfer();
+      if (instance) {
+        instance.load(url).then(function () {
+          if (autoplay) audio.play().catch(function () {});
+        }).catch(function () {}); // AbortError from rapid next/prev clicks
+      } else {
+        audio.src = url;
+        if (autoplay) audio.play().catch(function () {});
+      }
     }
 
     listEl.addEventListener('click', function (e) {
@@ -274,17 +333,24 @@
 
     playBtn.addEventListener('click', function () {
       if (current === -1) { load(0, true); return; }
-      if (audio.paused) audio.play(); else audio.pause();
+      if (audio.paused) audio.play().catch(function () {}); else audio.pause();
     });
     prevBtn.addEventListener('click', function () { load(current - 1, true); });
     nextBtn.addEventListener('click', function () { load(current + 1, true); });
 
-    audio.addEventListener('play', function () { playBtn.textContent = '❚❚'; });
-    audio.addEventListener('pause', function () { playBtn.textContent = '▶'; });
+    audio.addEventListener('play', function () {
+      playBtn.dataset.playing = 'true';
+      playBtn.setAttribute('aria-label', 'Pause');
+      if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+    });
+    audio.addEventListener('pause', function () {
+      playBtn.dataset.playing = 'false';
+      playBtn.setAttribute('aria-label', 'Play');
+      if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+    });
     audio.addEventListener('ended', function () { load(current + 1, true); });
 
     function applyKnownDuration(duration) {
-      seek.max = duration;
       timeTotal.textContent = fmtTime(duration);
       var row = listEl.children[current];
       if (row) row.querySelector('.pl-track-duration').textContent = fmtTime(duration);
@@ -300,17 +366,22 @@
       if (isFinite(audio.duration)) applyKnownDuration(audio.duration);
     });
     audio.addEventListener('timeupdate', function () {
-      if (seeking) return;
-      seek.value = audio.currentTime;
       timeCurrent.textContent = fmtTime(audio.currentTime);
     });
-    seek.addEventListener('input', function () {
-      seeking = true;
-      timeCurrent.textContent = fmtTime(Number(seek.value));
-    });
-    seek.addEventListener('change', function () {
-      audio.currentTime = Number(seek.value);
-      seeking = false;
+
+    // Space toggles play/pause anywhere on the page, except where the
+    // browser already synthesizes its own click on Space (buttons, links,
+    // the footer's <summary> dropdowns) or where the track-list keydown
+    // handler above already handled it (it calls preventDefault()).
+    document.addEventListener('keydown', function (e) {
+      if (e.code !== 'Space') return;
+      if (e.repeat || e.defaultPrevented) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      var tag = (e.target.tagName || '').toLowerCase();
+      if (['input', 'textarea', 'select', 'button', 'a', 'summary'].indexOf(tag) !== -1) return;
+      if (e.target.isContentEditable) return;
+      e.preventDefault();
+      playBtn.click();
     });
   }
 
