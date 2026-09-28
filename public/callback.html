@@ -3,15 +3,15 @@
 <head><meta charset="utf-8"></head>
 <body>
 <script>
-  // grab token from hash
-  const hash = window.location.hash.substring(1).split('&')
-    .reduce((res, kv) => { 
-      const [k,v] = kv.split('='); res[k] = v; 
-      return res;
-    }, {});
-  // store token then go home
-  localStorage.setItem('spotify_token', hash.access_token);
-  window.location = '/';
+const hash = window.location.hash.substring(1).split("&").reduce((res, kv) => {
+    const [k, v] = kv.split("=");
+    res[k] = v;
+    return res;
+}, {});
+
+localStorage.setItem("spotify_token", hash.access_token);
+
+window.location = "/";
 </script>
 </body>
 </html>

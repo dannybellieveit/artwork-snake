@@ -1,749 +1,581 @@
-(function () {
-  var AUDIO_EXT = /\.(mp3|wav|flac|ogg|m4a|aac)$/i;
-  var IMAGE_EXT = /\.(jpe?g|png|webp|gif)$/i;
-  var COVER_NAME = /^(cover|folder|artwork)\./i;
-  // macOS's "internet shortcut" file — dropped in automatically when you
-  // drag a link (e.g. from the Spotify app or Safari's address bar) into a
-  // Finder window. It's a plist with a <key>URL</key>/<string> pair.
-  var WEBLOC_EXT = /\.webloc$/i;
-
-  function fmtTime(sec) {
-    if (!isFinite(sec) || sec < 0) return '0:00';
-    var m = Math.floor(sec / 60);
-    var s = Math.floor(sec % 60).toString().padStart(2, '0');
-    return m + ':' + s;
-  }
-
-  // For a playlist total, which can run past an hour
-  function fmtTimeLong(sec) {
-    if (!isFinite(sec) || sec <= 0) return null;
-    var h = Math.floor(sec / 3600);
-    var m = Math.floor((sec % 3600) / 60);
-    var s = Math.floor(sec % 60).toString().padStart(2, '0');
-    if (h > 0) return h + ':' + String(m).padStart(2, '0') + ':' + s;
-    return m + ':' + s;
-  }
-
-  function fmtBytes(bytes) {
-    if (!bytes) return '';
-    var mb = bytes / (1024 * 1024);
-    if (mb < 1) return Math.round(bytes / 1024) + ' KB';
-    return mb.toFixed(1) + ' MB';
-  }
-
-  function stripExt(name) {
-    return name.replace(/\.[^.]+$/, '');
-  }
-
-  // A leading number in the filename (e.g. "03 - Song.mp3", "12 - Song.webloc")
-  // is treated as an explicit position — this is what lets a released
-  // Spotify track slot in at a specific point among the demos. Plain
-  // alphabetical WebDAV order sorts "10" before "2" and can't order an
-  // unprefixed file at all, so this sorts by the number's actual value
-  // instead; unprefixed files fall in after all numbered ones, sorted
-  // alphabetically among themselves.
-  var ORDER_PREFIX = /^\s*(\d+)\s*[-–—:]?\s*/;
-
-  function orderKey(name) {
-    var match = name.match(ORDER_PREFIX);
-    return match ? Number(match[1]) : Infinity;
-  }
-
-  function sortTracks(tracks) {
-    tracks.sort(function (a, b) {
-      var keyA = orderKey(a.name);
-      var keyB = orderKey(b.name);
-      if (keyA !== keyB) return keyA - keyB;
-      return a.name.localeCompare(b.name);
-    });
-  }
-
-  // The ordering number is bookkeeping, not part of the song's name —
-  // strip it back off before displaying the title anywhere.
-  function trackTitle(track) {
-    return stripExt(track.name).replace(ORDER_PREFIX, '');
-  }
-
-  function escapeHtml(str) {
-    var div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
-  // Deterministic gradient from the token, so a given playlist always looks the same
-  function gradientFor(seed) {
-    var hash = 0;
-    for (var i = 0; i < seed.length; i++) {
-      hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+(function() {
+    var AUDIO_EXT = /\.(mp3|wav|flac|ogg|m4a|aac)$/i;
+    var IMAGE_EXT = /\.(jpe?g|png|webp|gif)$/i;
+    var COVER_NAME = /^(cover|folder|artwork)\./i;
+    var WEBLOC_EXT = /\.webloc$/i;
+    function fmtTime(sec) {
+        if (!isFinite(sec) || sec < 0) return "0:00";
+        var m = Math.floor(sec / 60);
+        var s = Math.floor(sec % 60).toString().padStart(2, "0");
+        return m + ":" + s;
     }
-    var hue1 = hash % 360;
-    var hue2 = (hue1 + 40 + (hash % 60)) % 360;
-    return 'linear-gradient(135deg, hsl(' + hue1 + ',70%,65%) 0%, hsl(' + hue2 + ',70%,55%) 100%)';
-  }
-
-  // Same-origin proxy (the live share-proxy Worker) that does an
-  // authenticated WebDAV GET server-side. Chrome blocks embedded
-  // user:pass@ credentials in URLs for subresource loads like <audio>/
-  // <img> src, so the auth has to happen on the server, not in the URL.
-  function fileUrl(token, name) {
-    return '/share-proxy/' + token + '?file=' + encodeURIComponent(name);
-  }
-
-  function getToken() {
-    var qs = new URLSearchParams(location.search);
-    return qs.get('token') || (location.pathname.match(/^\/playlist\/([^/]+)$/) || [])[1];
-  }
-
-  function weblocUrl(xmlText) {
-    var doc = new DOMParser().parseFromString(xmlText, 'application/xml');
-    var keys = doc.getElementsByTagName('key');
-    for (var i = 0; i < keys.length; i++) {
-      if (keys[i].textContent === 'URL') {
-        var value = keys[i].nextElementSibling;
-        return value ? value.textContent : null;
-      }
+    function fmtTimeLong(sec) {
+        if (!isFinite(sec) || sec <= 0) return null;
+        var h = Math.floor(sec / 3600);
+        var m = Math.floor(sec % 3600 / 60);
+        var s = Math.floor(sec % 60).toString().padStart(2, "0");
+        if (h > 0) return h + ":" + String(m).padStart(2, "0") + ":" + s;
+        return m + ":" + s;
     }
-    return null;
-  }
-
-  function spotifyTrackId(url) {
-    var match = (url || '').match(/track\/(\w+)/);
-    return match ? match[1] : null;
-  }
-
-  // Resolves each .webloc to a Spotify track ID by fetching its plist
-  // content through the same share-proxy used for audio/images (a plain
-  // WebDAV GET, format-agnostic). A webloc that fails to fetch, parse, or
-  // isn't a Spotify track link is dropped rather than rendered broken.
-  function resolveWeblocs(token, weblocs) {
-    return Promise.all(weblocs.map(function (w) {
-      return fetch(fileUrl(token, w.name))
-        .then(function (res) {
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          return res.text();
-        })
-        .then(function (xmlText) {
-          var id = spotifyTrackId(weblocUrl(xmlText));
-          if (!id) throw new Error('not a Spotify track link');
-          return { name: w.name, type: 'spotify', spotifyId: id };
-        })
-        .catch(function (err) {
-          console.warn('Skipping webloc "' + w.name + '": ' + err.message);
-          return null;
+    function fmtBytes(bytes) {
+        if (!bytes) return "";
+        var mb = bytes / (1024 * 1024);
+        if (mb < 1) return Math.round(bytes / 1024) + " KB";
+        return mb.toFixed(1) + " MB";
+    }
+    function stripExt(name) {
+        return name.replace(/\.[^.]+$/, "");
+    }
+    var ORDER_PREFIX = /^\s*(\d+)\s*[-–—:]?\s*/;
+    function orderKey(name) {
+        var match = name.match(ORDER_PREFIX);
+        return match ? Number(match[1]) : Infinity;
+    }
+    function sortTracks(tracks) {
+        tracks.sort(function(a, b) {
+            var keyA = orderKey(a.name);
+            var keyB = orderKey(b.name);
+            if (keyA !== keyB) return keyA - keyB;
+            return a.name.localeCompare(b.name);
         });
-    })).then(function (results) { return results.filter(Boolean); });
-  }
-
-  async function fetchEntries(token) {
-    // The real, already-live listing endpoint (a Cloudflare Worker route),
-    // not part of this repo's dead pages/api code.
-    var res = await fetch('/list-proxy/' + token);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    var xmlText = await res.text();
-    var doc = new DOMParser().parseFromString(xmlText, 'application/xml');
-    var responses = [...doc.getElementsByTagName('*')].filter(function (n) { return n.localName === 'response'; });
-
-    // A collection (folder) has a <resourcetype><collection/></resourcetype>;
-    // a plain file's resourcetype is empty. Sharing a single file directly
-    // (rather than a folder) makes the share root itself a non-collection
-    // response — href alone can't tell the two shapes apart, since the
-    // root's href always ends in '/webdav/' either way.
-    function isCollection(r) {
-      var rt = r.getElementsByTagNameNS('*', 'resourcetype')[0];
-      return !!(rt && rt.getElementsByTagNameNS('*', 'collection')[0]);
     }
-
-    var folderName = null;
-    var root = responses.find(function (r) {
-      var href = r.getElementsByTagNameNS('*', 'href')[0]?.textContent || '';
-      return href.endsWith('/webdav/');
-    });
-    if (root && isCollection(root)) {
-      var nameNode = root.getElementsByTagNameNS('*', 'displayname')[0];
-      if (nameNode && nameNode.textContent) folderName = nameNode.textContent;
+    function trackTitle(track) {
+        return stripExt(track.name).replace(ORDER_PREFIX, "");
     }
-
-    var entries = responses
-      .filter(function (r) { return !isCollection(r); })
-      .map(function (r) {
-        var href = r.getElementsByTagNameNS('*', 'href')[0]?.textContent || '';
-        var displayNode = r.getElementsByTagNameNS('*', 'displayname')[0];
-        // The single-shared-file case has no filename in its href (it's
-        // just the share root), so displayname is the only source of truth
-        // there. Folder children have both; href is used for consistency.
-        var name = (href && !href.endsWith('/webdav/'))
-          ? decodeURIComponent(href.split('/').filter(Boolean).pop())
-          : (displayNode && displayNode.textContent) || '';
-        var lenNode = r.getElementsByTagNameNS('*', 'getcontentlength')[0];
-        return { name: name, bytes: lenNode ? Number(lenNode.textContent || 0) : 0 };
-      })
-      .filter(function (e) { return e.name; });
-
-    return { entries: entries, folderName: folderName };
-  }
-
-  // Soft toggle only — not real access control. Nextcloud's own "hide
-  // download" doesn't block WebDAV GET either, so this just hides the
-  // button for people who wouldn't otherwise think to look.
-  function downloadsRequested() {
-    return !new URLSearchParams(location.search).has('nd');
-  }
-
-  // Same soft-toggle pattern as downloadsRequested — lets a share link
-  // aimed at someone outside Danny's own circle (a label, a collaborator)
-  // drop the "Discography" footer link rather than pointing them at the
-  // rest of the site.
-  function discographyRequested() {
-    return !new URLSearchParams(location.search).has('ndis');
-  }
-
-  async function render(token, entries, folderName) {
-    var app = document.getElementById('playlist-app');
-    var audioEntries = entries.filter(function (e) { return AUDIO_EXT.test(e.name); });
-    var weblocEntries = entries.filter(function (e) { return WEBLOC_EXT.test(e.name); });
-    var images = entries.filter(function (e) { return IMAGE_EXT.test(e.name); });
-    var downloadsEnabled = downloadsRequested();
-
-    var spotifyTracks = await resolveWeblocs(token, weblocEntries);
-    var audioTracks = audioEntries.map(function (e) {
-      return { name: e.name, bytes: e.bytes, type: 'audio' };
-    });
-
-    var tracks = audioTracks.concat(spotifyTracks);
-    sortTracks(tracks);
-
-    if (tracks.length === 0) {
-      app.innerHTML = '<div id="playlist-state">No audio files found in this folder.</div>';
-      return;
+    function escapeHtml(str) {
+        var div = document.createElement("div");
+        div.textContent = str;
+        return div.innerHTML;
     }
-
-    // A single-file share has no folder name to fall back on — use the
-    // track's own name instead of the generic "Danny Casio" default.
-    var title = folderName || (tracks.length === 1 ? trackTitle(tracks[0]) : 'Danny Casio');
-    document.title = title;
-
-    var cover = images.find(function (i) { return COVER_NAME.test(i.name); }) || images[0];
-    var coverUrl = cover ? fileUrl(token, cover.name) : null;
-    var coverStyle = coverUrl
-      ? 'background-image:url(\'' + coverUrl + '\')'
-      : 'background:' + gradientFor(token);
-
-    var totalBytes = tracks.reduce(function (sum, t) { return sum + (t.bytes || 0); }, 0);
-
-    var html = '';
-    html += '<div class="pl-header">';
-    html += '  <div class="pl-cover" style="' + coverStyle + '"></div>';
-    html += '  <div class="pl-title-block">';
-    html += '    <h1>' + escapeHtml(title) + '</h1>';
-    html += '    <p id="pl-summary">' + tracks.length + ' track' + (tracks.length === 1 ? '' : 's') +
-      '<span id="pl-total-duration-group"> · <span id="pl-total-duration">0:00</span></span>' +
-      (downloadsEnabled && totalBytes ? ' · ' + fmtBytes(totalBytes) : '') + '</p>';
-    if (downloadsEnabled) {
-      html += '    <a class="pl-download-all" href="https://transfer.dannycasio.com/s/' + token + '/download?accept=zip">Download all (ZIP)</a>';
+    function gradientFor(seed) {
+        var hash = 0;
+        for (var i = 0; i < seed.length; i++) {
+            hash = hash * 31 + seed.charCodeAt(i) >>> 0;
+        }
+        var hue1 = hash % 360;
+        var hue2 = (hue1 + 40 + hash % 60) % 360;
+        return "linear-gradient(135deg, hsl(" + hue1 + ",70%,65%) 0%, hsl(" + hue2 + ",70%,55%) 100%)";
     }
-    html += '  </div>';
-    html += '</div>';
-    html += '<ul class="pl-tracks" id="pl-track-list"></ul>';
-    app.innerHTML = html;
-
-    var list = document.getElementById('pl-track-list');
-    tracks.forEach(function (track, i) {
-      var li = document.createElement('li');
-      li.className = 'pl-track';
-      li.tabIndex = 0;
-      li.dataset.index = i;
-      var isSpotify = track.type === 'spotify';
-      var title = trackTitle(track);
-      li.innerHTML =
-        '<span class="pl-track-index">' + (i + 1) + '</span>' +
-        '<span class="pl-track-playing-icon" aria-hidden="true">♪</span>' +
-        '<span class="pl-track-name">' + escapeHtml(title) + '</span>' +
-        (isSpotify
-          ? '<span class="pl-track-tag">Spotify</span>' +
-            '<a class="pl-track-download" href="https://open.spotify.com/track/' + track.spotifyId + '" target="_blank" rel="noopener" aria-label="Open ' + escapeHtml(title) + ' on Spotify"><svg viewBox="0 0 24 24"><path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14zm5 16H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2z"/></svg></a>'
-          : '<span class="pl-track-duration">0:00</span>' +
-            (downloadsEnabled
-              ? '<a class="pl-track-download" href="' + fileUrl(token, track.name) + '" aria-label="Download ' + escapeHtml(title) + '"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></a>'
-              : ''));
-      list.appendChild(li);
-
-      // Duration column shows length by default; swap to file size only
-      // while the download button is hovered/focused, then swap back.
-      if (downloadsEnabled && !isSpotify) {
-        var downloadLink = li.querySelector('.pl-track-download');
-        var durationEl = li.querySelector('.pl-track-duration');
-        var showSize = function () {
-          durationEl.dataset.showingSize = 'true';
-          durationEl.textContent = fmtBytes(track.bytes);
-        };
-        var showDuration = function () {
-          durationEl.dataset.showingSize = 'false';
-          durationEl.textContent = durationEl.dataset.durationText || '';
-        };
-        downloadLink.addEventListener('mouseenter', showSize);
-        downloadLink.addEventListener('mouseleave', showDuration);
-        downloadLink.addEventListener('focus', showSize);
-        downloadLink.addEventListener('blur', showDuration);
-      }
-    });
-
-    initPlayer(token, tracks, coverUrl || null, coverStyle);
-    probeDurations(token, tracks);
-  }
-
-  // Fills in each track's real duration and the header's total length. All
-  // tracks are probed in parallel — a live concurrency test against the
-  // share-proxy confirmed the server handles a full playlist's worth of
-  // simultaneous requests fine now, so this no longer needs to be sequential.
-  function probeOne(token, track) {
-    return new Promise(function (resolve) {
-      var probe = new Audio();
-      probe.preload = 'metadata';
-      var settled = false;
-
-      function done(duration) {
-        if (settled) return;
-        settled = true;
-        resolve(isFinite(duration) ? duration : null);
-      }
-
-      probe.addEventListener('loadedmetadata', function () {
-        if (isFinite(probe.duration)) { done(probe.duration); return; }
-        // Chrome/streamed-audio quirk: duration reads Infinity until you
-        // seek near the end, which forces it to resolve the real length.
-        probe.addEventListener('durationchange', function onChange() {
-          if (!isFinite(probe.duration)) return;
-          probe.removeEventListener('durationchange', onChange);
-          done(probe.duration);
-        });
-        probe.currentTime = 1e101;
-      });
-      probe.addEventListener('error', function () { done(NaN); });
-      probe.src = fileUrl(token, track.name);
-    });
-  }
-
-  // Counts a duration span up from 0:00 to its real value instead of just
-  // snapping in — a blank cell popping straight to "4:36" reads as a
-  // layout glitch, a quick tick-up reads as the number arriving.
-  function animateDuration(span, targetSeconds, formatFn) {
-    formatFn = formatFn || fmtTime;
-    var durationMs = 600;
-    var start = null;
-    function step(ts) {
-      if (start === null) start = ts;
-      var progress = Math.min((ts - start) / durationMs, 1);
-      var eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
-      // Don't stomp on the file-size text if the download button happens
-      // to be hovered/focused right as this probe resolves or mid-count.
-      if (span.dataset.showingSize !== 'true') {
-        span.textContent = formatFn(targetSeconds * eased) || '0:00';
-      }
-      if (progress < 1) requestAnimationFrame(step);
+    function fileUrl(token, name) {
+        return "/share-proxy/" + token + "?file=" + encodeURIComponent(name);
     }
-    requestAnimationFrame(step);
-  }
-
-  async function probeDurations(token, tracks) {
-    var list = document.getElementById('pl-track-list');
-    var rows = list.children;
-    var durations = new Array(tracks.length).fill(null);
-
-    await Promise.all(tracks.map(async function (track, i) {
-      if (track.type !== 'audio') return;
-      var duration = await probeOne(token, track);
-      if (duration === null) return;
-      durations[i] = duration;
-      var span = rows[i].querySelector('.pl-track-duration');
-      span.dataset.durationText = fmtTime(duration);
-      animateDuration(span, duration);
-    }));
-
-    var totalDurationGroup = document.getElementById('pl-total-duration-group');
-    var anyKnown = durations.some(function (d) { return d !== null; });
-    if (!anyKnown) {
-      // Nothing probed successfully — drop the "· 0:00" placeholder rather
-      // than leave a permanently-wrong total sitting there.
-      if (totalDurationGroup) totalDurationGroup.remove();
-      return;
+    function getToken() {
+        var qs = new URLSearchParams(location.search);
+        return qs.get("token") || (location.pathname.match(/^\/playlist\/([^/]+)$/) || [])[1];
     }
-    var totalKnown = durations.reduce(function (sum, d) { return sum + (d || 0); }, 0);
-    animateDuration(document.getElementById('pl-total-duration'), totalKnown, fmtTimeLong);
-  }
-
-  function initPlayer(token, tracks, coverUrl, coverStyle) {
-    var audio = document.getElementById('pl-audio');
-    var bar = document.getElementById('pl-player');
-    var playBtn = document.getElementById('pl-play');
-    var prevBtn = document.getElementById('pl-prev');
-    var nextBtn = document.getElementById('pl-next');
-    var waveformEl = document.getElementById('pl-waveform');
-    var timeCurrent = document.getElementById('pl-time-current');
-    var timeTotal = document.getElementById('pl-time-total');
-    var nameEl = document.getElementById('pl-player-name');
-    var artEl = document.getElementById('pl-player-art');
-    var listEl = document.getElementById('pl-track-list');
-
-    var current = -1;
-    var ws = null;
-    var albumTitle = document.title;
-    var single = tracks.length <= 1;
-
-    if (single) {
-      prevBtn.style.display = 'none';
-      nextBtn.style.display = 'none';
-    }
-
-    if (coverUrl) {
-      artEl.style.backgroundImage = "url('" + coverUrl + "')";
-    } else {
-      artEl.style.background = coverStyle.replace('background:', '');
-    }
-
-    // The lock screen's full-screen "big" Now Playing view won't render a
-    // non-square photo (real cover photos never are), unlike the compact
-    // widget. Center-crop to a square via canvas, entirely client-side —
-    // the result is a data: URI held only in this tab's memory, nothing
-    // is uploaded or stored anywhere.
-    var squareArtworkUrl = null;
-    if (coverUrl) {
-      (function () {
-        var img = new Image();
-        img.onload = function () {
-          var side = Math.min(img.naturalWidth, img.naturalHeight);
-          var outSize = 512;
-          var canvas = document.createElement('canvas');
-          canvas.width = outSize;
-          canvas.height = outSize;
-          canvas.getContext('2d').drawImage(
-            img,
-            (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side,
-            0, 0, outSize, outSize
-          );
-          try {
-            squareArtworkUrl = canvas.toDataURL('image/jpeg', 0.85);
-          } catch (e) {
-            return; // canvas tainted — shouldn't happen, share-proxy is same-origin
-          }
-          // Refresh whatever's currently showing now that the square crop
-          // is ready. This only ever touches metadata, never the action
-          // handlers, so it's safe to call at any point.
-          if (mediaSessionReady) setMediaSessionMetadata();
-        };
-        img.src = coverUrl;
-      })();
-    }
-
-    function highlight() {
-      [...listEl.children].forEach(function (li, i) {
-        li.classList.toggle('playing', i === current);
-      });
-    }
-
-    // Registering previoustrack/nexttrack switches iOS's lock-screen and
-    // Control Center controls from generic ±10/30s seek buttons to real
-    // track-skip buttons. This must run exactly once — repeated
-    // registration resets the lock-screen title/artwork back to blank.
-    // Safari can throw on an unsupported action name, so each call is
-    // wrapped individually.
-    function setMediaSessionHandler(action, handler) {
-      if (!('mediaSession' in navigator)) return;
-      try { navigator.mediaSession.setActionHandler(action, handler); } catch (e) {}
-    }
-    function setupMediaSessionHandlers() {
-      setMediaSessionHandler('play', function () { audio.play().catch(function () {}); });
-      setMediaSessionHandler('pause', function () { audio.pause(); });
-      if (!single) {
-        setMediaSessionHandler('previoustrack', function () {
-          var idx = nextAudioIndex(current, -1);
-          if (idx !== null) load(idx, true);
-        });
-        setMediaSessionHandler('nexttrack', function () {
-          var idx = nextAudioIndex(current, 1);
-          if (idx !== null) load(idx, true);
-        });
-      }
-      setMediaSessionHandler('seekbackward', null);
-      setMediaSessionHandler('seekforward', null);
-    }
-
-    function setMediaSessionMetadata() {
-      if (!('mediaSession' in navigator)) return;
-      var track = tracks[current];
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: trackTitle(track),
-        artist: albumTitle,
-        album: albumTitle,
-        // Prefer the square crop once ready — its dimensions are real, so
-        // sizes/type are safe to declare (a fabricated size on the raw
-        // photo was silently dropped by the lock screen's validation).
-        artwork: squareArtworkUrl
-          ? [{ src: squareArtworkUrl, sizes: '512x512', type: 'image/jpeg' }]
-          : (coverUrl ? [{ src: coverUrl }] : [])
-      });
-    }
-
-    // The first track's metadata must be set after handler registration,
-    // not before — setting it first reset the lock-screen title/artwork
-    // even though handlers were only ever registered once. Later tracks
-    // have no such ordering constraint.
-    var mediaSessionReady = false;
-    if ('mediaSession' in navigator) {
-      audio.addEventListener('loadedmetadata', function once() {
-        audio.removeEventListener('loadedmetadata', once);
-        setupMediaSessionHandlers();
-        mediaSessionReady = true;
-        setMediaSessionMetadata();
-      });
-    }
-
-    // Created lazily on first load(), after the bar is made visible — the
-    // waveform container has zero width while #pl-player is display:none,
-    // and wavesurfer needs a real width to render into. Created BEFORE
-    // audio.src is ever set: wavesurfer's constructor auto-loads whatever
-    // src the media element already has, and we need that to not happen
-    // (see the comment on computePeaks below for why).
-    function ensureWaveSurfer() {
-      if (ws || typeof WaveSurfer === 'undefined') return ws;
-      try {
-        var styles = getComputedStyle(document.documentElement);
-        ws = WaveSurfer.create({
-          container: waveformEl,
-          media: audio,
-          height: 40,
-          barWidth: 2,
-          barGap: 2,
-          waveColor: 'rgba(255,255,255,0.3)',
-          progressColor: (styles.getPropertyValue('--btn') || '#5AB4E5').trim()
-        });
-        // Degrade to a blank waveform strip (not a broken player) if
-        // wavesurfer can't decode a track.
-        ws.on('error', function () { waveformEl.innerHTML = ''; });
-      } catch (e) {
-        ws = null;
-      }
-      return ws;
-    }
-
-    // wavesurfer.load(url) normally fetches the file itself and replaces
-    // audio.src with a blob: URL (that's how it avoids a second download
-    // for decoding) — but a blob: URL has no real origin, which is why
-    // iOS never populated the lock-screen title/artwork with it. Passing
-    // wavesurfer our OWN precomputed peaks + duration makes it skip that
-    // internal fetch entirely and leave audio.src (a real https:// URL)
-    // untouched — confirmed by reading wavesurfer's own source. Decoding
-    // here costs the same one full-file fetch wavesurfer's own internal
-    // decode already did; nothing new, just relocated.
-    function computePeaks(url) {
-      return fetch(url)
-        .then(function (res) { return res.arrayBuffer(); })
-        .then(function (buf) {
-          var ctx = new (window.AudioContext || window.webkitAudioContext)();
-          return ctx.decodeAudioData(buf).finally(function () { ctx.close(); });
-        })
-        .then(function (audioBuffer) {
-          var channel = audioBuffer.getChannelData(0);
-          var peakCount = 600;
-          var blockSize = Math.floor(channel.length / peakCount) || 1;
-          var peaks = new Array(peakCount);
-          for (var i = 0; i < peakCount; i++) {
-            var max = 0;
-            var start = i * blockSize;
-            for (var j = 0; j < blockSize; j++) {
-              var v = Math.abs(channel[start + j] || 0);
-              if (v > max) max = v;
+    function weblocUrl(xmlText) {
+        var doc = (new DOMParser).parseFromString(xmlText, "application/xml");
+        var keys = doc.getElementsByTagName("key");
+        for (var i = 0; i < keys.length; i++) {
+            if (keys[i].textContent === "URL") {
+                var value = keys[i].nextElementSibling;
+                return value ? value.textContent : null;
             }
-            peaks[i] = max;
-          }
-          return { peaks: [peaks], duration: audioBuffer.duration };
+        }
+        return null;
+    }
+    function spotifyTrackId(url) {
+        var match = (url || "").match(/track\/(\w+)/);
+        return match ? match[1] : null;
+    }
+    function resolveWeblocs(token, weblocs) {
+        return Promise.all(weblocs.map(function(w) {
+            return fetch(fileUrl(token, w.name)).then(function(res) {
+                if (!res.ok) throw new Error("HTTP " + res.status);
+                return res.text();
+            }).then(function(xmlText) {
+                var id = spotifyTrackId(weblocUrl(xmlText));
+                if (!id) throw new Error("not a Spotify track link");
+                return {
+                    name: w.name,
+                    type: "spotify",
+                    spotifyId: id
+                };
+            }).catch(function(err) {
+                console.warn('Skipping webloc "' + w.name + '": ' + err.message);
+                return null;
+            });
+        })).then(function(results) {
+            return results.filter(Boolean);
         });
     }
-
-    var loadToken = 0;
-    var spotifyFrame = document.getElementById('pl-spotify-embed');
-
-    function load(index, autoplay) {
-      current = (index + tracks.length) % tracks.length;
-      var track = tracks[current];
-      nameEl.textContent = trackTitle(track);
-      bar.classList.add('visible');
-      highlight();
-
-      if (track.type === 'spotify') {
-        loadSpotify(track);
-      } else {
-        loadAudio(track, autoplay);
-      }
-    }
-
-    // Spotify's embed can't reliably start playing without a direct,
-    // foreground tap on its own play button — it won't autoplay from a
-    // backgrounded/locked-screen media-key press, and pausing the native
-    // <audio> element to point at it there just stalls playback with
-    // nothing to resume it. So OS-level transport controls (lock screen,
-    // media keys, a paired headset) and auto-advance-on-finish skip past
-    // Spotify entries to the next real audio track instead of landing on
-    // them — a direct tap on a Spotify row, or the on-screen prev/next
-    // buttons, still goes straight to it as normal.
-    function nextAudioIndex(from, step) {
-      var i = from;
-      for (var n = 0; n < tracks.length; n++) {
-        i = (i + step + tracks.length) % tracks.length;
-        if (tracks[i].type === 'audio') return i;
-      }
-      return null; // no audio tracks in this playlist at all
-    }
-
-    // Spotify's stream is DRM-protected — there's no raw file to decode
-    // into a waveform or hand to <audio>, so the only playback surface is
-    // their own embed widget (same pattern as the site's game.js easter
-    // egg). It gets its own play/pause/scrub UI; the native player pauses
-    // and steps aside while it's showing.
-    function loadSpotify(track) {
-      ++loadToken; // invalidate any in-flight audio waveform decode
-      audio.pause();
-      bar.classList.add('spotify-mode');
-      if (spotifyFrame) {
-        spotifyFrame.src = 'https://open.spotify.com/embed/track/' + track.spotifyId + '?utm_source=generator&autoplay=1';
-      }
-    }
-
-    function loadAudio(track, autoplay) {
-      bar.classList.remove('spotify-mode');
-      if (spotifyFrame) spotifyFrame.src = '';
-
-      var url = fileUrl(token, track.name);
-      var thisLoad = ++loadToken;
-
-      var instance = ensureWaveSurfer();
-
-      audio.src = url;
-      // Wavesurfer compares the URL given to load() against audio.src as
-      // plain strings to detect an unchanged source. audio.src always
-      // reads back absolute, so the relative `url` above would never
-      // match — it would reset the src (interrupting playback) right as
-      // the waveform decode below finishes. Use the resolved absolute
-      // form everywhere downstream instead.
-      var absoluteUrl = audio.src;
-      if (autoplay) audio.play().catch(function () {});
-
-      // For the very first track, metadata is set inside the one-time
-      // loadedmetadata listener above instead (after handlers register).
-      if (mediaSessionReady) setMediaSessionMetadata();
-
-      if (instance) {
-        computePeaks(absoluteUrl).then(function (result) {
-          // A newer load() ran while this one was decoding — drop it.
-          if (thisLoad !== loadToken) return;
-          instance.load(absoluteUrl, result.peaks, result.duration).catch(function () {});
-        }).catch(function () {
-          // Decoding failed (unsupported format, etc.) — audio still
-          // plays fine via the native element either way, just no
-          // waveform visualization for this track.
+    async function fetchEntries(token) {
+        var res = await fetch("/list-proxy/" + token);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        var xmlText = await res.text();
+        var doc = (new DOMParser).parseFromString(xmlText, "application/xml");
+        var responses = [ ...doc.getElementsByTagName("*") ].filter(function(n) {
+            return n.localName === "response";
         });
-      }
+        function isCollection(r) {
+            var rt = r.getElementsByTagNameNS("*", "resourcetype")[0];
+            return !!(rt && rt.getElementsByTagNameNS("*", "collection")[0]);
+        }
+        var folderName = null;
+        var root = responses.find(function(r) {
+            var href = r.getElementsByTagNameNS("*", "href")[0]?.textContent || "";
+            return href.endsWith("/webdav/");
+        });
+        if (root && isCollection(root)) {
+            var nameNode = root.getElementsByTagNameNS("*", "displayname")[0];
+            if (nameNode && nameNode.textContent) folderName = nameNode.textContent;
+        }
+        var entries = responses.filter(function(r) {
+            return !isCollection(r);
+        }).map(function(r) {
+            var href = r.getElementsByTagNameNS("*", "href")[0]?.textContent || "";
+            var displayNode = r.getElementsByTagNameNS("*", "displayname")[0];
+            var name = href && !href.endsWith("/webdav/") ? decodeURIComponent(href.split("/").filter(Boolean).pop()) : displayNode && displayNode.textContent || "";
+            var lenNode = r.getElementsByTagNameNS("*", "getcontentlength")[0];
+            return {
+                name: name,
+                bytes: lenNode ? Number(lenNode.textContent || 0) : 0
+            };
+        }).filter(function(e) {
+            return e.name;
+        });
+        return {
+            entries: entries,
+            folderName: folderName
+        };
     }
-
-    listEl.addEventListener('click', function (e) {
-      var li = e.target.closest('.pl-track');
-      if (!li) return;
-      load(Number(li.dataset.index), true);
-      // Mobile Safari can grant :focus-visible on a tap, which then has no
-      // mouseout/blur equivalent to clear it — the row stays visually
-      // "stuck" highlighted alongside whichever one is actually .playing.
-      li.blur();
-    });
-    listEl.addEventListener('keydown', function (e) {
-      if (e.key !== 'Enter' && e.key !== ' ') return;
-      var li = e.target.closest('.pl-track');
-      if (!li) return;
-      e.preventDefault();
-      load(Number(li.dataset.index), true);
-    });
-
-    playBtn.addEventListener('click', function () {
-      if (current === -1) { load(0, true); return; }
-      // Hidden via CSS while a Spotify track is loaded (it has its own
-      // play/pause) — this guard just covers stray keyboard activation.
-      if (tracks[current].type === 'spotify') return;
-      if (audio.paused) audio.play().catch(function () {}); else audio.pause();
-    });
-    prevBtn.addEventListener('click', function () { load(current - 1, true); });
-    nextBtn.addEventListener('click', function () { load(current + 1, true); });
-
-    audio.addEventListener('play', function () {
-      playBtn.dataset.playing = 'true';
-      playBtn.setAttribute('aria-label', 'Pause');
-      if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
-    });
-    audio.addEventListener('pause', function () {
-      playBtn.dataset.playing = 'false';
-      playBtn.setAttribute('aria-label', 'Play');
-      if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
-    });
-    // Auto-advancing on a single-track playlist would just reload and
-    // replay the same file forever — let it stop naturally instead.
-    audio.addEventListener('ended', function () {
-      if (single) return;
-      var idx = nextAudioIndex(current, 1);
-      if (idx !== null) load(idx, true);
-    });
-
-    function applyKnownDuration(duration) {
-      timeTotal.textContent = fmtTime(duration);
-      var row = listEl.children[current];
-      if (row) row.querySelector('.pl-track-duration').textContent = fmtTime(duration);
+    function downloadsRequested() {
+        return !new URLSearchParams(location.search).has("nd");
     }
-
-    audio.addEventListener('loadedmetadata', function () {
-      if (isFinite(audio.duration)) applyKnownDuration(audio.duration);
-    });
-    // Chrome/streamed-audio quirk: duration can read Infinity at first and
-    // only resolve once enough of the file has loaded — no forced seek here
-    // (that causes an audible jump), just pick it up if it naturally settles.
-    audio.addEventListener('durationchange', function () {
-      if (isFinite(audio.duration)) applyKnownDuration(audio.duration);
-    });
-    audio.addEventListener('timeupdate', function () {
-      timeCurrent.textContent = fmtTime(audio.currentTime);
-    });
-
-    // Space toggles play/pause anywhere on the page, except where the
-    // browser already synthesizes its own click on Space (buttons, links,
-    // the footer's <summary> dropdowns) or where the track-list keydown
-    // handler above already handled it (it calls preventDefault()).
-    document.addEventListener('keydown', function (e) {
-      if (e.code !== 'Space') return;
-      if (e.repeat || e.defaultPrevented) return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      var tag = (e.target.tagName || '').toLowerCase();
-      if (['input', 'textarea', 'select', 'button', 'a', 'summary'].indexOf(tag) !== -1) return;
-      if (e.target.isContentEditable) return;
-      e.preventDefault();
-      playBtn.click();
-    });
-  }
-
-  async function main() {
-    if (!discographyRequested()) {
-      var discographyLink = document.getElementById('pl-discography-link');
-      if (discographyLink) discographyLink.remove();
+    function discographyRequested() {
+        return !new URLSearchParams(location.search).has("ndis");
     }
-
-    var token = getToken();
-    var app = document.getElementById('playlist-app');
-    if (!token) {
-      app.innerHTML = '<div id="playlist-state">No playlist token provided.</div>';
-      return;
+    async function render(token, entries, folderName) {
+        var app = document.getElementById("playlist-app");
+        var audioEntries = entries.filter(function(e) {
+            return AUDIO_EXT.test(e.name);
+        });
+        var weblocEntries = entries.filter(function(e) {
+            return WEBLOC_EXT.test(e.name);
+        });
+        var images = entries.filter(function(e) {
+            return IMAGE_EXT.test(e.name);
+        });
+        var downloadsEnabled = downloadsRequested();
+        var spotifyTracks = await resolveWeblocs(token, weblocEntries);
+        var audioTracks = audioEntries.map(function(e) {
+            return {
+                name: e.name,
+                bytes: e.bytes,
+                type: "audio"
+            };
+        });
+        var tracks = audioTracks.concat(spotifyTracks);
+        sortTracks(tracks);
+        if (tracks.length === 0) {
+            app.innerHTML = '<div id="playlist-state">No audio files found in this folder.</div>';
+            return;
+        }
+        var title = folderName || (tracks.length === 1 ? trackTitle(tracks[0]) : "Danny Casio");
+        document.title = title;
+        var cover = images.find(function(i) {
+            return COVER_NAME.test(i.name);
+        }) || images[0];
+        var coverUrl = cover ? fileUrl(token, cover.name) : null;
+        var coverStyle = coverUrl ? "background-image:url('" + coverUrl + "')" : "background:" + gradientFor(token);
+        var totalBytes = tracks.reduce(function(sum, t) {
+            return sum + (t.bytes || 0);
+        }, 0);
+        var html = "";
+        html += '<div class="pl-header">';
+        html += '  <div class="pl-cover" style="' + coverStyle + '"></div>';
+        html += '  <div class="pl-title-block">';
+        html += "    <h1>" + escapeHtml(title) + "</h1>";
+        html += '    <p id="pl-summary">' + tracks.length + " track" + (tracks.length === 1 ? "" : "s") + '<span id="pl-total-duration-group"> · <span id="pl-total-duration">0:00</span></span>' + (downloadsEnabled && totalBytes ? " · " + fmtBytes(totalBytes) : "") + "</p>";
+        if (downloadsEnabled) {
+            html += '    <a class="pl-download-all" href="https://transfer.dannycasio.com/s/' + token + '/download?accept=zip">Download all (ZIP)</a>';
+        }
+        html += "  </div>";
+        html += "</div>";
+        html += '<ul class="pl-tracks" id="pl-track-list"></ul>';
+        app.innerHTML = html;
+        var list = document.getElementById("pl-track-list");
+        tracks.forEach(function(track, i) {
+            var li = document.createElement("li");
+            li.className = "pl-track";
+            li.tabIndex = 0;
+            li.dataset.index = i;
+            var isSpotify = track.type === "spotify";
+            var title = trackTitle(track);
+            li.innerHTML = '<span class="pl-track-index">' + (i + 1) + "</span>" + '<span class="pl-track-playing-icon" aria-hidden="true">♪</span>' + '<span class="pl-track-name">' + escapeHtml(title) + "</span>" + (isSpotify ? '<span class="pl-track-tag">Spotify</span>' + '<a class="pl-track-download" href="https://open.spotify.com/track/' + track.spotifyId + '" target="_blank" rel="noopener" aria-label="Open ' + escapeHtml(title) + ' on Spotify"><svg viewBox="0 0 24 24"><path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14zm5 16H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2z"/></svg></a>' : '<span class="pl-track-duration">0:00</span>' + (downloadsEnabled ? '<a class="pl-track-download" href="' + fileUrl(token, track.name) + '" aria-label="Download ' + escapeHtml(title) + '"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></a>' : ""));
+            list.appendChild(li);
+            if (downloadsEnabled && !isSpotify) {
+                var downloadLink = li.querySelector(".pl-track-download");
+                var durationEl = li.querySelector(".pl-track-duration");
+                var showSize = function() {
+                    durationEl.dataset.showingSize = "true";
+                    durationEl.textContent = fmtBytes(track.bytes);
+                };
+                var showDuration = function() {
+                    durationEl.dataset.showingSize = "false";
+                    durationEl.textContent = durationEl.dataset.durationText || "";
+                };
+                downloadLink.addEventListener("mouseenter", showSize);
+                downloadLink.addEventListener("mouseleave", showDuration);
+                downloadLink.addEventListener("focus", showSize);
+                downloadLink.addEventListener("blur", showDuration);
+            }
+        });
+        initPlayer(token, tracks, coverUrl || null, coverStyle);
+        probeDurations(token, tracks);
     }
-    try {
-      var result = await fetchEntries(token);
-      await render(token, result.entries, result.folderName);
-    } catch (err) {
-      console.error(err);
-      app.innerHTML = '<div id="playlist-state">Error loading playlist.</div>';
+    function probeOne(token, track) {
+        return new Promise(function(resolve) {
+            var probe = new Audio;
+            probe.preload = "metadata";
+            var settled = false;
+            function done(duration) {
+                if (settled) return;
+                settled = true;
+                resolve(isFinite(duration) ? duration : null);
+            }
+            probe.addEventListener("loadedmetadata", function() {
+                if (isFinite(probe.duration)) {
+                    done(probe.duration);
+                    return;
+                }
+                probe.addEventListener("durationchange", function onChange() {
+                    if (!isFinite(probe.duration)) return;
+                    probe.removeEventListener("durationchange", onChange);
+                    done(probe.duration);
+                });
+                probe.currentTime = 1e101;
+            });
+            probe.addEventListener("error", function() {
+                done(NaN);
+            });
+            probe.src = fileUrl(token, track.name);
+        });
     }
-  }
-
-  document.addEventListener('DOMContentLoaded', main);
+    function animateDuration(span, targetSeconds, formatFn) {
+        formatFn = formatFn || fmtTime;
+        var durationMs = 600;
+        var start = null;
+        function step(ts) {
+            if (start === null) start = ts;
+            var progress = Math.min((ts - start) / durationMs, 1);
+            var eased = 1 - Math.pow(1 - progress, 3);
+            if (span.dataset.showingSize !== "true") {
+                span.textContent = formatFn(targetSeconds * eased) || "0:00";
+            }
+            if (progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    }
+    async function probeDurations(token, tracks) {
+        var list = document.getElementById("pl-track-list");
+        var rows = list.children;
+        var durations = new Array(tracks.length).fill(null);
+        await Promise.all(tracks.map(async function(track, i) {
+            if (track.type !== "audio") return;
+            var duration = await probeOne(token, track);
+            if (duration === null) return;
+            durations[i] = duration;
+            var span = rows[i].querySelector(".pl-track-duration");
+            span.dataset.durationText = fmtTime(duration);
+            animateDuration(span, duration);
+        }));
+        var totalDurationGroup = document.getElementById("pl-total-duration-group");
+        var anyKnown = durations.some(function(d) {
+            return d !== null;
+        });
+        if (!anyKnown) {
+            if (totalDurationGroup) totalDurationGroup.remove();
+            return;
+        }
+        var totalKnown = durations.reduce(function(sum, d) {
+            return sum + (d || 0);
+        }, 0);
+        animateDuration(document.getElementById("pl-total-duration"), totalKnown, fmtTimeLong);
+    }
+    function initPlayer(token, tracks, coverUrl, coverStyle) {
+        var audio = document.getElementById("pl-audio");
+        var bar = document.getElementById("pl-player");
+        var playBtn = document.getElementById("pl-play");
+        var prevBtn = document.getElementById("pl-prev");
+        var nextBtn = document.getElementById("pl-next");
+        var waveformEl = document.getElementById("pl-waveform");
+        var timeCurrent = document.getElementById("pl-time-current");
+        var timeTotal = document.getElementById("pl-time-total");
+        var nameEl = document.getElementById("pl-player-name");
+        var artEl = document.getElementById("pl-player-art");
+        var listEl = document.getElementById("pl-track-list");
+        var current = -1;
+        var ws = null;
+        var albumTitle = document.title;
+        var single = tracks.length <= 1;
+        if (single) {
+            prevBtn.style.display = "none";
+            nextBtn.style.display = "none";
+        }
+        if (coverUrl) {
+            artEl.style.backgroundImage = "url('" + coverUrl + "')";
+        } else {
+            artEl.style.background = coverStyle.replace("background:", "");
+        }
+        var squareArtworkUrl = null;
+        if (coverUrl) {
+            (function() {
+                var img = new Image;
+                img.onload = function() {
+                    var side = Math.min(img.naturalWidth, img.naturalHeight);
+                    var outSize = 512;
+                    var canvas = document.createElement("canvas");
+                    canvas.width = outSize;
+                    canvas.height = outSize;
+                    canvas.getContext("2d").drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, outSize, outSize);
+                    try {
+                        squareArtworkUrl = canvas.toDataURL("image/jpeg", .85);
+                    } catch (e) {
+                        return;
+                    }
+                    if (mediaSessionReady) setMediaSessionMetadata();
+                };
+                img.src = coverUrl;
+            })();
+        }
+        function highlight() {
+            [ ...listEl.children ].forEach(function(li, i) {
+                li.classList.toggle("playing", i === current);
+            });
+        }
+        function setMediaSessionHandler(action, handler) {
+            if (!("mediaSession" in navigator)) return;
+            try {
+                navigator.mediaSession.setActionHandler(action, handler);
+            } catch (e) {}
+        }
+        function setupMediaSessionHandlers() {
+            setMediaSessionHandler("play", function() {
+                audio.play().catch(function() {});
+            });
+            setMediaSessionHandler("pause", function() {
+                audio.pause();
+            });
+            if (!single) {
+                setMediaSessionHandler("previoustrack", function() {
+                    var idx = nextAudioIndex(current, -1);
+                    if (idx !== null) load(idx, true);
+                });
+                setMediaSessionHandler("nexttrack", function() {
+                    var idx = nextAudioIndex(current, 1);
+                    if (idx !== null) load(idx, true);
+                });
+            }
+            setMediaSessionHandler("seekbackward", null);
+            setMediaSessionHandler("seekforward", null);
+        }
+        function setMediaSessionMetadata() {
+            if (!("mediaSession" in navigator)) return;
+            var track = tracks[current];
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: trackTitle(track),
+                artist: albumTitle,
+                album: albumTitle,
+                artwork: squareArtworkUrl ? [ {
+                    src: squareArtworkUrl,
+                    sizes: "512x512",
+                    type: "image/jpeg"
+                } ] : coverUrl ? [ {
+                    src: coverUrl
+                } ] : []
+            });
+        }
+        var mediaSessionReady = false;
+        if ("mediaSession" in navigator) {
+            audio.addEventListener("loadedmetadata", function once() {
+                audio.removeEventListener("loadedmetadata", once);
+                setupMediaSessionHandlers();
+                mediaSessionReady = true;
+                setMediaSessionMetadata();
+            });
+        }
+        function ensureWaveSurfer() {
+            if (ws || typeof WaveSurfer === "undefined") return ws;
+            try {
+                var styles = getComputedStyle(document.documentElement);
+                ws = WaveSurfer.create({
+                    container: waveformEl,
+                    media: audio,
+                    height: 40,
+                    barWidth: 2,
+                    barGap: 2,
+                    waveColor: "rgba(255,255,255,0.3)",
+                    progressColor: (styles.getPropertyValue("--btn") || "#5AB4E5").trim()
+                });
+                ws.on("error", function() {
+                    waveformEl.innerHTML = "";
+                });
+            } catch (e) {
+                ws = null;
+            }
+            return ws;
+        }
+        function computePeaks(url) {
+            return fetch(url).then(function(res) {
+                return res.arrayBuffer();
+            }).then(function(buf) {
+                var ctx = new (window.AudioContext || window.webkitAudioContext);
+                return ctx.decodeAudioData(buf).finally(function() {
+                    ctx.close();
+                });
+            }).then(function(audioBuffer) {
+                var channel = audioBuffer.getChannelData(0);
+                var peakCount = 600;
+                var blockSize = Math.floor(channel.length / peakCount) || 1;
+                var peaks = new Array(peakCount);
+                for (var i = 0; i < peakCount; i++) {
+                    var max = 0;
+                    var start = i * blockSize;
+                    for (var j = 0; j < blockSize; j++) {
+                        var v = Math.abs(channel[start + j] || 0);
+                        if (v > max) max = v;
+                    }
+                    peaks[i] = max;
+                }
+                return {
+                    peaks: [ peaks ],
+                    duration: audioBuffer.duration
+                };
+            });
+        }
+        var loadToken = 0;
+        var spotifyFrame = document.getElementById("pl-spotify-embed");
+        function load(index, autoplay) {
+            current = (index + tracks.length) % tracks.length;
+            var track = tracks[current];
+            nameEl.textContent = trackTitle(track);
+            bar.classList.add("visible");
+            highlight();
+            if (track.type === "spotify") {
+                loadSpotify(track);
+            } else {
+                loadAudio(track, autoplay);
+            }
+        }
+        function nextAudioIndex(from, step) {
+            var i = from;
+            for (var n = 0; n < tracks.length; n++) {
+                i = (i + step + tracks.length) % tracks.length;
+                if (tracks[i].type === "audio") return i;
+            }
+            return null;
+        }
+        function loadSpotify(track) {
+            ++loadToken;
+            audio.pause();
+            bar.classList.add("spotify-mode");
+            if (spotifyFrame) {
+                spotifyFrame.src = "https://open.spotify.com/embed/track/" + track.spotifyId + "?utm_source=generator&autoplay=1";
+            }
+        }
+        function loadAudio(track, autoplay) {
+            bar.classList.remove("spotify-mode");
+            if (spotifyFrame) spotifyFrame.src = "";
+            var url = fileUrl(token, track.name);
+            var thisLoad = ++loadToken;
+            var instance = ensureWaveSurfer();
+            audio.src = url;
+            var absoluteUrl = audio.src;
+            if (autoplay) audio.play().catch(function() {});
+            if (mediaSessionReady) setMediaSessionMetadata();
+            if (instance) {
+                computePeaks(absoluteUrl).then(function(result) {
+                    if (thisLoad !== loadToken) return;
+                    instance.load(absoluteUrl, result.peaks, result.duration).catch(function() {});
+                }).catch(function() {});
+            }
+        }
+        listEl.addEventListener("click", function(e) {
+            var li = e.target.closest(".pl-track");
+            if (!li) return;
+            load(Number(li.dataset.index), true);
+            li.blur();
+        });
+        listEl.addEventListener("keydown", function(e) {
+            if (e.key !== "Enter" && e.key !== " ") return;
+            var li = e.target.closest(".pl-track");
+            if (!li) return;
+            e.preventDefault();
+            load(Number(li.dataset.index), true);
+        });
+        playBtn.addEventListener("click", function() {
+            if (current === -1) {
+                load(0, true);
+                return;
+            }
+            if (tracks[current].type === "spotify") return;
+            if (audio.paused) audio.play().catch(function() {}); else audio.pause();
+        });
+        prevBtn.addEventListener("click", function() {
+            load(current - 1, true);
+        });
+        nextBtn.addEventListener("click", function() {
+            load(current + 1, true);
+        });
+        audio.addEventListener("play", function() {
+            playBtn.dataset.playing = "true";
+            playBtn.setAttribute("aria-label", "Pause");
+            if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing";
+        });
+        audio.addEventListener("pause", function() {
+            playBtn.dataset.playing = "false";
+            playBtn.setAttribute("aria-label", "Play");
+            if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused";
+        });
+        audio.addEventListener("ended", function() {
+            if (single) return;
+            var idx = nextAudioIndex(current, 1);
+            if (idx !== null) load(idx, true);
+        });
+        function applyKnownDuration(duration) {
+            timeTotal.textContent = fmtTime(duration);
+            var row = listEl.children[current];
+            if (row) row.querySelector(".pl-track-duration").textContent = fmtTime(duration);
+        }
+        audio.addEventListener("loadedmetadata", function() {
+            if (isFinite(audio.duration)) applyKnownDuration(audio.duration);
+        });
+        audio.addEventListener("durationchange", function() {
+            if (isFinite(audio.duration)) applyKnownDuration(audio.duration);
+        });
+        audio.addEventListener("timeupdate", function() {
+            timeCurrent.textContent = fmtTime(audio.currentTime);
+        });
+        document.addEventListener("keydown", function(e) {
+            if (e.code !== "Space") return;
+            if (e.repeat || e.defaultPrevented) return;
+            if (e.metaKey || e.ctrlKey || e.altKey) return;
+            var tag = (e.target.tagName || "").toLowerCase();
+            if ([ "input", "textarea", "select", "button", "a", "summary" ].indexOf(tag) !== -1) return;
+            if (e.target.isContentEditable) return;
+            e.preventDefault();
+            playBtn.click();
+        });
+    }
+    async function main() {
+        if (!discographyRequested()) {
+            var discographyLink = document.getElementById("pl-discography-link");
+            if (discographyLink) discographyLink.remove();
+        }
+        var token = getToken();
+        var app = document.getElementById("playlist-app");
+        if (!token) {
+            app.innerHTML = '<div id="playlist-state">No playlist token provided.</div>';
+            return;
+        }
+        try {
+            var result = await fetchEntries(token);
+            await render(token, result.entries, result.folderName);
+        } catch (err) {
+            console.error(err);
+            app.innerHTML = '<div id="playlist-state">Error loading playlist.</div>';
+        }
+    }
+    document.addEventListener("DOMContentLoaded", main);
 })();

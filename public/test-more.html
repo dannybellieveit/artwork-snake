@@ -35,15 +35,14 @@
   <script src="images-data.js"></script>
   <script src="discography.js"></script>
   <script>
-    // Set up back button from sessionStorage (set by the referring page)
-    function setupBackButton() {
-      const from = sessionStorage.getItem('discographyReferrer');
-      if (from === 'index') {
-        document.getElementById('back-button').href = '/';
-      }
+function setupBackButton() {
+    const from = sessionStorage.getItem("discographyReferrer");
+    if (from === "index") {
+        document.getElementById("back-button").href = "/";
     }
+}
 
-    setupBackButton();
-  </script>
+setupBackButton();
+</script>
 </body>
 </html>

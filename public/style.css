@@ -1,20 +1,10 @@
-/* base styles */
 
-/* font test */
 
-/*@font-face {
-  font-family: 'Guardian Text Sans Web';
-  src: url('https://assets.guim.co.uk/static/frontend/fonts/guardian-textsans/noalts-not-hinted/GuardianTextSans-Regular.woff2') format('woff2');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
 
-.guardian-text-sans-web {
-  font-family: 'Guardian Text Sans Web', -apple-system, BlinkMacSystemFont, sans-serif;
-}*/
 
-/* variables */
+
+
+
 :root {
   --primary-bg-color: skyblue;
   --border-color: black;
@@ -100,7 +90,7 @@ canvas {
   text-align: right;
 }
 
-/* SPOTIFY EMBED Container */
+
 #spotify-embed-container {
   display: none;
   width: var(--container-width);
@@ -134,13 +124,13 @@ footer {
   font-weight: bold;
 }
 
-/* Add Accessibility Features */
+
 .contacts a:focus {
   outline: 2px solid var(--font-color-dark);
   outline-offset: 4px;
 }
 
-/* Footer nav dropdowns (Contact, Other, ...) */
+
 .nav-dropdown {
   position: relative;
 }
@@ -156,7 +146,7 @@ footer {
   display: none;
 }
 
-/* Safari 15.4+ dropped ::-webkit-details-marker for the standard ::marker */
+
 .nav-dropdown summary::marker {
   content: "";
   display: none;
@@ -184,7 +174,7 @@ footer {
   white-space: nowrap;
 }
 
-/* Desktop: open on hover instead of requiring a click */
+
 @media (hover: hover) and (pointer: fine) {
   .nav-dropdown summary {
     pointer-events: none;
@@ -214,9 +204,9 @@ footer {
   }
 }
 
-/* Remove unused or commented-out code for clarity */
 
-/* Styles for the More page */
+
+
 .songs-container {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));

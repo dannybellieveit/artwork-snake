@@ -41,7 +41,7 @@
     font-size:1.05rem;
   }
 
-  /* header: cover art + title/byline */
+  
   .pl-header{
     display:flex;
     gap:1.75rem;
@@ -72,7 +72,7 @@
     font-size:.95rem;
   }
 
-  /* track list */
+  
   .pl-tracks{
     list-style:none;
     margin:0;
@@ -97,9 +97,7 @@
   .pl-track:focus-visible{ background:rgba(90,180,229,0.12); outline:none; }
   .pl-track.playing{ background:rgba(90,180,229,0.18); }
 
-  /* Only apply hover tint on devices with a real pointer — touch devices
-     can't un-hover after a tap, so it otherwise sticks on the last-tapped
-     row forever, alongside whichever row is actually playing. */
+  
   @media (hover: hover) and (pointer: fine) {
     .pl-track:hover{ background:rgba(90,180,229,0.12); outline:none; }
   }
@@ -168,7 +166,7 @@
 
   .pl-download-all:hover{ text-decoration:underline; }
 
-  /* sticky player bar */
+  
   #pl-player{
     position:fixed;
     left:0; right:0; bottom:0;
@@ -289,9 +287,7 @@
     opacity:.85;
   }
 
-  /* Spotify's stream can't be decoded into our waveform or handed to
-     <audio> — a Spotify row swaps the sticky bar's scrub area for their
-     own embed widget instead, in the same slot. */
+  
   .pl-player-spotify{
     flex:1;
     min-width:0;
@@ -309,8 +305,7 @@
   #pl-player.spotify-mode .pl-player-scrub{ display:none; }
   #pl-player.spotify-mode .pl-player-spotify{ display:block; }
   #pl-player.spotify-mode .play-btn{ display:none; }
-  /* Spotify's own embed already shows art + title — ours would be a
-     duplicate sitting right next to it. */
+  
   #pl-player.spotify-mode .pl-player-art,
   #pl-player.spotify-mode .pl-player-meta{ display:none; }
 
@@ -329,7 +324,7 @@
     text-align:center;
   }
 
-  /* Footer nav dropdowns (self-contained: not shared with other pages yet) */
+  
   .nav-dropdown{ position:relative; }
   .nav-dropdown summary{
     cursor:pointer;
@@ -338,7 +333,7 @@
     list-style:none;
   }
   .nav-dropdown summary::-webkit-details-marker{ display:none; }
-  /* Safari 15.4+ dropped ::-webkit-details-marker for the standard ::marker */
+  
   .nav-dropdown summary::marker{ content:""; display:none; }
   .nav-dropdown summary:focus{
     outline:2px solid var(--font-color-dark);
@@ -419,46 +414,37 @@
   <audio id="pl-audio" preload="metadata"></audio>
 
   <script>
-    // Desktop with a real mouse: open/close footer dropdowns on hover.
-    // Touch devices (no hover) keep the native tap-to-toggle <details>
-    // behaviour — but native <details> doesn't close its siblings on its
-    // own, so two could end up open (and overlapping) at once on mobile.
-    // The 'toggle' event fires for both hover-driven and tap-driven opens,
-    // so closing siblings there covers both input types with one listener.
-    (function () {
-      var hoverQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
-      var dropdowns = document.querySelectorAll('.nav-dropdown');
-      var closeTimers = new Map();
-
-      dropdowns.forEach(function (dropdown) {
-        dropdown.addEventListener('toggle', function () {
-          if (!dropdown.open) return;
-          dropdowns.forEach(function (other) {
-            if (other !== dropdown) other.open = false;
-          });
+(function() {
+    var hoverQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
+    var dropdowns = document.querySelectorAll(".nav-dropdown");
+    var closeTimers = new Map;
+    dropdowns.forEach(function(dropdown) {
+        dropdown.addEventListener("toggle", function() {
+            if (!dropdown.open) return;
+            dropdowns.forEach(function(other) {
+                if (other !== dropdown) other.open = false;
+            });
         });
-
-        dropdown.addEventListener('mouseenter', function () {
-          if (!hoverQuery.matches) return;
-          clearTimeout(closeTimers.get(dropdown));
-          dropdown.open = true;
+        dropdown.addEventListener("mouseenter", function() {
+            if (!hoverQuery.matches) return;
+            clearTimeout(closeTimers.get(dropdown));
+            dropdown.open = true;
         });
-        dropdown.addEventListener('mouseleave', function () {
-          if (!hoverQuery.matches) return;
-          closeTimers.set(dropdown, setTimeout(function () {
-            dropdown.open = false;
-          }, 250));
+        dropdown.addEventListener("mouseleave", function() {
+            if (!hoverQuery.matches) return;
+            closeTimers.set(dropdown, setTimeout(function() {
+                dropdown.open = false;
+            }, 250));
         });
-      });
-
-      // Browser back/forward restores the page from bfcache exactly as
-      // you left it, open dropdowns included. Force them shut on that restore.
-      window.addEventListener('pageshow', function (e) {
+    });
+    window.addEventListener("pageshow", function(e) {
         if (!e.persisted) return;
-        dropdowns.forEach(function (dropdown) { dropdown.open = false; });
-      });
-    })();
-  </script>
+        dropdowns.forEach(function(dropdown) {
+            dropdown.open = false;
+        });
+    });
+})();
+</script>
   <script src="https://unpkg.com/wavesurfer.js@7.9.9/dist/wavesurfer.min.js" defer></script>
   <script src="/playlist.js" defer></script>
 </body>

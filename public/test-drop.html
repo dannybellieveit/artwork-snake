@@ -101,59 +101,49 @@
 
   <script src="/shared-player.js"></script>
   <script>
-    document.getElementById('more-link').addEventListener('click', () => {
-      sessionStorage.setItem('discographyReferrer', 'test-drop');
-    });
-  </script>
+document.getElementById("more-link").addEventListener("click", () => {
+    sessionStorage.setItem("discographyReferrer", "test-drop");
+});
+</script>
 
   <script>
-  (() => {
-    const box = document.getElementById('drop-content');
-
-    const demoTracks = [
-      {
-        name: 'Demo Track 1',
-        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-        mime: 'audio/mpeg'
-      },
-      {
-        name: 'Demo Track 2',
-        url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3',
-        mime: 'audio/mpeg'
-      }
-    ];
-
-    function render(name, url, mime=''){
-      const wrap = document.createElement('section');
-      wrap.className = 'file-item';
-
-      const title = document.createElement('h2');
-      title.textContent = name;
-      wrap.appendChild(title);
-
-      if (/^audio\//.test(mime) || /\.(mp3|wav|ogg)$/i.test(name)) {
-        const audio = document.createElement('audio');
-        audio.controls = true;
-        audio.src = url;
-        wrap.appendChild(audio);
-      }
-
-      const downloadBtn = document.createElement('a');
-      downloadBtn.className = 'download';
-      downloadBtn.href = url;
-      downloadBtn.download = name;
-      downloadBtn.textContent = 'Download';
-      wrap.appendChild(downloadBtn);
-
-      box.appendChild(wrap);
+(() => {
+    const box = document.getElementById("drop-content");
+    const demoTracks = [ {
+        name: "Demo Track 1",
+        url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+        mime: "audio/mpeg"
+    }, {
+        name: "Demo Track 2",
+        url: "https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3",
+        mime: "audio/mpeg"
+    } ];
+    function render(name, url, mime = "") {
+        const wrap = document.createElement("section");
+        wrap.className = "file-item";
+        const title = document.createElement("h2");
+        title.textContent = name;
+        wrap.appendChild(title);
+        if (/^audio\//.test(mime) || /\.(mp3|wav|ogg)$/i.test(name)) {
+            const audio = document.createElement("audio");
+            audio.controls = true;
+            audio.src = url;
+            wrap.appendChild(audio);
+        }
+        const downloadBtn = document.createElement("a");
+        downloadBtn.className = "download";
+        downloadBtn.href = url;
+        downloadBtn.download = name;
+        downloadBtn.textContent = "Download";
+        wrap.appendChild(downloadBtn);
+        box.appendChild(wrap);
     }
-
-    box.innerHTML = '';
+    box.innerHTML = "";
     demoTracks.forEach(track => {
-      render(track.name, track.url, track.mime);
+        render(track.name, track.url, track.mime);
     });
-  })();
-  </script>
+})();
+</script>
 
 </body>
 </html>

@@ -15,9 +15,9 @@
 
   
   <base href="/" />
-  <link rel="stylesheet" href="/style.css"><!-- global styles -->
+  <link rel="stylesheet" href="/style.css">
   <style>
-  /* transfer page */
+  
   :root{
     --bg      : #87CEEB;
     --btn     : #5AB4E5;
@@ -30,7 +30,7 @@
     color:#000;
   }
 
-  /* header */
+  
   header{
     position:relative;
     padding:1.2rem 1rem 0;
@@ -47,7 +47,7 @@
     letter-spacing:.02em;
   }
 
-  /* list area */
+  
   #drop-content{
     max-width:1200px;
     width:min(100%,90vw);
@@ -58,7 +58,7 @@
     text-align:center;
   }
 
-  /* items */
+  
   .file-item h2{
     margin:0 0 .7rem;
     font-size:1.15rem;
@@ -73,7 +73,7 @@
     border-radius:8px;
   }
 
-  /* download button */
+  
   .download{
     display:block;
     width:max-content;
@@ -89,16 +89,14 @@
   }
   .download:hover{ background:var(--btn-dk); }
 
-  /* footer links */
+  
   footer{
     text-align:center;
     margin:3rem 0 2rem;
     font-size:.95rem;
   }
 
-  /* Footer sits at the end of a variable-height file list, so the
-     downward-opening default from style.css can clip below the
-     viewport on a long list — open upward here instead. */
+  
   .nav-dropdown-menu{
     top:auto;
     bottom:calc(100% + var(--gap-small));
@@ -115,7 +113,7 @@
 
   <div id="drop-content">Loading…</div>
 
-  <!-- footer -->
+  
   <footer>
     <ul class="contacts">
       <li>
@@ -135,150 +133,113 @@
 
 <script>
 (async () => {
-  console.time('total-load');
-  /* token */
-  const qs  = new URLSearchParams(location.search);
-  let token = qs.get('token') || (location.pathname.match(/^\/drop\/([^/]+)$/)||[])[1];
-  const box = document.getElementById('drop-content');
-  if (!token){ box.textContent = 'No share token provided.'; box.style.textAlign='center'; return; }
-  document.title = 'File Share';
-  /* make a card */
-  function render(name, url, mime='', bytes=0){
-  const wrap = document.createElement('section');
-  wrap.className = 'file-item';
-  wrap.innerHTML =
-    `<h2>${name}</h2>` +
-    (/^audio\//.test(mime) || /\.(mp3|wav|ogg)$/i.test(name)
-       ? `<audio controls crossorigin="anonymous" style="width:100%" src="${url}"></audio>` : '') +
-    `<a class="download" href="${url}" download>Download</a>` +
-    (bytes ? `<div style="font-size:.9rem;margin-top:.4rem">Size: ${(bytes/(1024*1024)).toFixed(1)} MB</div>` : '');
-  box.appendChild(wrap);
-}
-
-
-  /* fetch list */
-  let xmlText = '';
-  try{
-    console.time('fetch-list');
-    const res = await fetch(`/list-proxy/${token}`);
-    if(!res.ok) throw new Error(res.status);
-    xmlText = await res.text();
-    console.timeEnd('fetch-list');
-  }catch(e){
-    box.textContent='Error loading files.';
-    box.style.textAlign='center';
-    console.error(e);
-    console.timeEnd('total-load');
-    return;
-  }
-
-  console.time('parse-xml');
-  const doc  = new DOMParser().parseFromString(xmlText,'application/xml');
-  const all  = [...doc.getElementsByTagName('*')].filter(n=>n.localName==='response');
-  console.timeEnd('parse-xml');
-
-  /* filter files */
-   const files = all.filter(r=>{
-    const href = r.getElementsByTagNameNS('*','href')[0]?.textContent || '';
-    return !href.endsWith('/webdav/') && !href.endsWith('/');
-  });
-
-  if (files.length === 1) {
-    const href = files[0].getElementsByTagNameNS('*','href')[0].textContent;
-    const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
-    document.title = name;
-  }
-
-  box.innerHTML = '';
-
-/* folder share */
-if (files.length) {
-  /* list files and total */
-  const listWrap = document.createElement('section');
-  listWrap.className = 'file-item';
-
-  const ul = document.createElement('ul');
-  ul.style.margin  = '0 0 1.2rem 1.2rem';
-  ul.style.padding = '0';
-
-  let totalBytes = 0;               // total bytes
-
-  files.forEach(r => {
-  /* name + download link */
-  const href = r.getElementsByTagNameNS('*','href')[0].textContent;
-  const name = decodeURIComponent(href.split('/').filter(Boolean).pop());
-  const fileURL = `/share-proxy/${token}?file=${encodeURIComponent(name)}`;
-
-  /* list item */
-  const li = document.createElement('li');
-  li.textContent = name;
-
-  /* add audio player */
-  if (/\.(mp3|wav|ogg|flac)$/i.test(name)) {
-    const player = document.createElement('audio');
-    player.controls = true;
-    player.setAttribute('controls', '');
-    player.crossOrigin = 'anonymous';
-    player.src = fileURL;
-    player.onerror = () => player.style.display = 'none';
-    player.style.display = 'block';
-    player.style.width = '100%';
-    player.style.marginTop = '.4rem';
-    li.appendChild(player);
-  }
-
-  ul.appendChild(li);
-
-  /* total size */
-  const lenNode = r.getElementsByTagNameNS('*','getcontentlength')[0];
-  if (lenNode) totalBytes += Number(lenNode.textContent || 0);
-});
-
-
-  listWrap.appendChild(ul);
-
-  /* zip button */
-  const zipURL = `https://transfer.dannycasio.com/s/${token}/download?accept=zip`;
-  const btn = document.createElement('a');
-  btn.className = 'download';
-  btn.href      = zipURL;
-  btn.textContent = 'Download all (ZIP)';
-  listWrap.appendChild(btn);
-
-  /* size note */
-  if (totalBytes) {
-    const sizeMB = (totalBytes / (1024 * 1024)).toFixed(1);
-    const note   = document.createElement('div');
-    note.style.fontSize  = '.9rem';
-    note.style.marginTop = '.4rem';
-    note.textContent     = `Total size: ${sizeMB} MB`;
-    listWrap.appendChild(note);
-  }
-
-  /* done */
-  box.appendChild(listWrap);
-  console.timeEnd('total-load');
-  return;
-}
-
-
-  /* single file */
-  try{
-    console.time('fetch-head');
-    const meta = await fetch(`/head-proxy/${token}`).then(r=>r.json());
-    console.timeEnd('fetch-head');
-    const name = meta.filename || 'file';
-    const url  = `/share-proxy/${token}?file=${encodeURIComponent(name)}`;
-       if (meta.filename) document.title = meta.filename;
-   render(name, url, meta.mime, meta.size || 0);
-  }catch(err){
-    /* basic link fallback */
-    const url = `/share-proxy/${token}?file=file`;
-    render('file', url);
-  }
-  console.timeEnd('total-load');
+    console.time("total-load");
+    const qs = new URLSearchParams(location.search);
+    let token = qs.get("token") || (location.pathname.match(/^\/drop\/([^/]+)$/) || [])[1];
+    const box = document.getElementById("drop-content");
+    if (!token) {
+        box.textContent = "No share token provided.";
+        box.style.textAlign = "center";
+        return;
+    }
+    document.title = "File Share";
+    function render(name, url, mime = "", bytes = 0) {
+        const wrap = document.createElement("section");
+        wrap.className = "file-item";
+        wrap.innerHTML = `<h2>${name}</h2>` + (/^audio\//.test(mime) || /\.(mp3|wav|ogg)$/i.test(name) ? `<audio controls crossorigin="anonymous" style="width:100%" src="${url}"></audio>` : "") + `<a class="download" href="${url}" download>Download</a>` + (bytes ? `<div style="font-size:.9rem;margin-top:.4rem">Size: ${(bytes / (1024 * 1024)).toFixed(1)} MB</div>` : "");
+        box.appendChild(wrap);
+    }
+    let xmlText = "";
+    try {
+        console.time("fetch-list");
+        const res = await fetch(`/list-proxy/${token}`);
+        if (!res.ok) throw new Error(res.status);
+        xmlText = await res.text();
+        console.timeEnd("fetch-list");
+    } catch (e) {
+        box.textContent = "Error loading files.";
+        box.style.textAlign = "center";
+        console.error(e);
+        console.timeEnd("total-load");
+        return;
+    }
+    console.time("parse-xml");
+    const doc = (new DOMParser).parseFromString(xmlText, "application/xml");
+    const all = [ ...doc.getElementsByTagName("*") ].filter(n => n.localName === "response");
+    console.timeEnd("parse-xml");
+    const files = all.filter(r => {
+        const href = r.getElementsByTagNameNS("*", "href")[0]?.textContent || "";
+        return !href.endsWith("/webdav/") && !href.endsWith("/");
+    });
+    if (files.length === 1) {
+        const href = files[0].getElementsByTagNameNS("*", "href")[0].textContent;
+        const name = decodeURIComponent(href.split("/").filter(Boolean).pop());
+        document.title = name;
+    }
+    box.innerHTML = "";
+    if (files.length) {
+        const listWrap = document.createElement("section");
+        listWrap.className = "file-item";
+        const ul = document.createElement("ul");
+        ul.style.margin = "0 0 1.2rem 1.2rem";
+        ul.style.padding = "0";
+        let totalBytes = 0;
+        files.forEach(r => {
+            const href = r.getElementsByTagNameNS("*", "href")[0].textContent;
+            const name = decodeURIComponent(href.split("/").filter(Boolean).pop());
+            const fileURL = `/share-proxy/${token}?file=${encodeURIComponent(name)}`;
+            const li = document.createElement("li");
+            li.textContent = name;
+            if (/\.(mp3|wav|ogg|flac)$/i.test(name)) {
+                const player = document.createElement("audio");
+                player.controls = true;
+                player.setAttribute("controls", "");
+                player.crossOrigin = "anonymous";
+                player.src = fileURL;
+                player.onerror = () => player.style.display = "none";
+                player.style.display = "block";
+                player.style.width = "100%";
+                player.style.marginTop = ".4rem";
+                li.appendChild(player);
+            }
+            ul.appendChild(li);
+            const lenNode = r.getElementsByTagNameNS("*", "getcontentlength")[0];
+            if (lenNode) totalBytes += Number(lenNode.textContent || 0);
+        });
+        listWrap.appendChild(ul);
+        const zipURL = `https://transfer.dannycasio.com/s/${token}/download?accept=zip`;
+        const btn = document.createElement("a");
+        btn.className = "download";
+        btn.href = zipURL;
+        btn.textContent = "Download all (ZIP)";
+        listWrap.appendChild(btn);
+        if (totalBytes) {
+            const sizeMB = (totalBytes / (1024 * 1024)).toFixed(1);
+            const note = document.createElement("div");
+            note.style.fontSize = ".9rem";
+            note.style.marginTop = ".4rem";
+            note.textContent = `Total size: ${sizeMB} MB`;
+            listWrap.appendChild(note);
+        }
+        box.appendChild(listWrap);
+        console.timeEnd("total-load");
+        return;
+    }
+    try {
+        console.time("fetch-head");
+        const meta = await fetch(`/head-proxy/${token}`).then(r => r.json());
+        console.timeEnd("fetch-head");
+        const name = meta.filename || "file";
+        const url = `/share-proxy/${token}?file=${encodeURIComponent(name)}`;
+        if (meta.filename) document.title = meta.filename;
+        render(name, url, meta.mime, meta.size || 0);
+    } catch (err) {
+        const url = `/share-proxy/${token}?file=file`;
+        render("file", url);
+    }
+    console.timeEnd("total-load");
 })();
-  </script>
+</script>
 
 
 
@@ -295,112 +256,125 @@ if (files.length) {
 </style>
 <script id="ws-init">
 (() => {
-  /* demo flag */
-  const urlParams = new URLSearchParams(location.search);
-  const isDemo = urlParams.get('demo') === '1';
-  const demoSrc = 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3';
-
-  const token = urlParams.get('token') || (location.pathname.match(/^\/drop\/([^/]+)/)||[])[1];
-
-  if(isDemo && !token){
-    const box=document.getElementById('drop-content');
-    if(box && !box.querySelector('audio')){
-      box.innerHTML='';
-      box.insertAdjacentHTML('beforeend',`<section class="file-item"><h2>Demo track</h2><audio controls crossOrigin="anonymous" src="${demoSrc}" style="width:100%"></audio><a class="download" href="${demoSrc}" download>Download</a></section>`);
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    const box = document.getElementById('drop-content');
-    const players = box ? [...box.querySelectorAll('audio')] : [];
-    if(isDemo) players.forEach(a => {a.crossOrigin='anonymous'; a.src=demoSrc; a.load();});
-
-    const handled = new WeakSet();
-
-    const init = audio => {
-      if (handled.has(audio)) return;
-      handled.add(audio);
-      audio.crossOrigin = 'anonymous';
-      if(isDemo && token) audio.src = demoSrc;
-      audio.load();
-      try {
-        audio.controls=false;
-        audio.hidden=true;
-
-        const wrap=document.createElement('div');
-        wrap.className='ws-player';
-        const wave=document.createElement('div');
-        wave.className='ws-wave';
-        const controls=document.createElement('div');
-        controls.className='ws-controls';
-        controls.innerHTML=`<button class="ws-btn" aria-label="Play" type="button">▶</button><span class="ws-time">0:00</span>`;
-
-        audio.parentNode.insertBefore(wrap,audio);
-        wrap.appendChild(wave);
-        wrap.appendChild(controls);
-        wrap.appendChild(audio);
-
-        const btn=controls.querySelector('.ws-btn');
-        const time=controls.querySelector('.ws-time');
-
-        const btnPlayIcon='▶';
-        const btnPauseIcon='❚❚';
-
-        const opts = {
-          container: wave,
-          media: audio,
-          height: 64,
-          barHeight: 2,
-          barGap: 2,
-          waveColor: getComputedStyle(document.documentElement)
-            .getPropertyValue('--btn') || '#5AB4E5',
-          progressColor: getComputedStyle(document.documentElement)
-            .getPropertyValue('--btn-dk') || '#3F93C8',
-          backend: 'MediaElement',
-          xhr: { mode: 'cors' }
-        };
-        if (WaveSurfer.cursor) {
-          opts.plugins = [WaveSurfer.cursor.create({ showTime: true })];
+    const urlParams = new URLSearchParams(location.search);
+    const isDemo = urlParams.get("demo") === "1";
+    const demoSrc = "https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3";
+    const token = urlParams.get("token") || (location.pathname.match(/^\/drop\/([^/]+)/) || [])[1];
+    if (isDemo && !token) {
+        const box = document.getElementById("drop-content");
+        if (box && !box.querySelector("audio")) {
+            box.innerHTML = "";
+            box.insertAdjacentHTML("beforeend", `<section class="file-item"><h2>Demo track</h2><audio controls crossOrigin="anonymous" src="${demoSrc}" style="width:100%"></audio><a class="download" href="${demoSrc}" download>Download</a></section>`);
         }
-        const ws = WaveSurfer.create(opts);
-
-        const fmt=t=>{const m=Math.floor(t/60);const s=Math.floor(t%60).toString().padStart(2,'0');return `${m}:${s}`};
-
-        const update=()=>{time.textContent=`${fmt(ws.getCurrentTime())} / ${fmt(ws.getDuration())}`};
-
-        ws.once('ready',()=>{update();});
-        ws.on('play',()=>{btn.textContent=btnPauseIcon;btn.setAttribute('aria-label','Pause')});
-        ws.on('pause',()=>{btn.textContent=btnPlayIcon;btn.setAttribute('aria-label','Play')});
-        ws.on('timeupdate',update);
-
-        btn.addEventListener('click',()=>{ws.isPlaying()?ws.pause():ws.play()});
-
-        wrap.tabIndex=0;
-        wrap.addEventListener('keydown',e=>{
-          if(e.code==='Space'){e.preventDefault();btn.click();}
-          else if(e.code==='ArrowRight'){ws.seekTo(Math.min(1,(ws.getCurrentTime()+5)/ws.getDuration()));}
-          else if(e.code==='ArrowLeft'){ws.seekTo(Math.max(0,(ws.getCurrentTime()-5)/ws.getDuration()));}
+    }
+    document.addEventListener("DOMContentLoaded", () => {
+        const box = document.getElementById("drop-content");
+        const players = box ? [ ...box.querySelectorAll("audio") ] : [];
+        if (isDemo) players.forEach(a => {
+            a.crossOrigin = "anonymous";
+            a.src = demoSrc;
+            a.load();
         });
-
-        const fallback=()=>{if(wrap.parentNode)wrap.remove();audio.remove();};
-        ws.on('error',fallback);
-        audio.addEventListener('error',fallback);
-      } catch(e){
-        audio.controls = true;
-        audio.hidden = false;
-      }
-    };
-
-    [...box.querySelectorAll('audio')].forEach(init);
-
-    const obs = new MutationObserver(muts => {
-      muts.forEach(m => m.addedNodes.forEach(n => {
-        if(n.tagName==='AUDIO') init(n);
-        else if(n.querySelectorAll) n.querySelectorAll('audio').forEach(init);
-      }));
+        const handled = new WeakSet;
+        const init = audio => {
+            if (handled.has(audio)) return;
+            handled.add(audio);
+            audio.crossOrigin = "anonymous";
+            if (isDemo && token) audio.src = demoSrc;
+            audio.load();
+            try {
+                audio.controls = false;
+                audio.hidden = true;
+                const wrap = document.createElement("div");
+                wrap.className = "ws-player";
+                const wave = document.createElement("div");
+                wave.className = "ws-wave";
+                const controls = document.createElement("div");
+                controls.className = "ws-controls";
+                controls.innerHTML = `<button class="ws-btn" aria-label="Play" type="button">▶</button><span class="ws-time">0:00</span>`;
+                audio.parentNode.insertBefore(wrap, audio);
+                wrap.appendChild(wave);
+                wrap.appendChild(controls);
+                wrap.appendChild(audio);
+                const btn = controls.querySelector(".ws-btn");
+                const time = controls.querySelector(".ws-time");
+                const btnPlayIcon = "▶";
+                const btnPauseIcon = "❚❚";
+                const opts = {
+                    container: wave,
+                    media: audio,
+                    height: 64,
+                    barHeight: 2,
+                    barGap: 2,
+                    waveColor: getComputedStyle(document.documentElement).getPropertyValue("--btn") || "#5AB4E5",
+                    progressColor: getComputedStyle(document.documentElement).getPropertyValue("--btn-dk") || "#3F93C8",
+                    backend: "MediaElement",
+                    xhr: {
+                        mode: "cors"
+                    }
+                };
+                if (WaveSurfer.cursor) {
+                    opts.plugins = [ WaveSurfer.cursor.create({
+                        showTime: true
+                    }) ];
+                }
+                const ws = WaveSurfer.create(opts);
+                const fmt = t => {
+                    const m = Math.floor(t / 60);
+                    const s = Math.floor(t % 60).toString().padStart(2, "0");
+                    return `${m}:${s}`;
+                };
+                const update = () => {
+                    time.textContent = `${fmt(ws.getCurrentTime())} / ${fmt(ws.getDuration())}`;
+                };
+                ws.once("ready", () => {
+                    update();
+                });
+                ws.on("play", () => {
+                    btn.textContent = btnPauseIcon;
+                    btn.setAttribute("aria-label", "Pause");
+                });
+                ws.on("pause", () => {
+                    btn.textContent = btnPlayIcon;
+                    btn.setAttribute("aria-label", "Play");
+                });
+                ws.on("timeupdate", update);
+                btn.addEventListener("click", () => {
+                    ws.isPlaying() ? ws.pause() : ws.play();
+                });
+                wrap.tabIndex = 0;
+                wrap.addEventListener("keydown", e => {
+                    if (e.code === "Space") {
+                        e.preventDefault();
+                        btn.click();
+                    } else if (e.code === "ArrowRight") {
+                        ws.seekTo(Math.min(1, (ws.getCurrentTime() + 5) / ws.getDuration()));
+                    } else if (e.code === "ArrowLeft") {
+                        ws.seekTo(Math.max(0, (ws.getCurrentTime() - 5) / ws.getDuration()));
+                    }
+                });
+                const fallback = () => {
+                    if (wrap.parentNode) wrap.remove();
+                    audio.remove();
+                };
+                ws.on("error", fallback);
+                audio.addEventListener("error", fallback);
+            } catch (e) {
+                audio.controls = true;
+                audio.hidden = false;
+            }
+        };
+        [ ...box.querySelectorAll("audio") ].forEach(init);
+        const obs = new MutationObserver(muts => {
+            muts.forEach(m => m.addedNodes.forEach(n => {
+                if (n.tagName === "AUDIO") init(n); else if (n.querySelectorAll) n.querySelectorAll("audio").forEach(init);
+            }));
+        });
+        obs.observe(box, {
+            childList: true,
+            subtree: true
+        });
     });
-    obs.observe(box,{childList:true,subtree:true});
-  });
 })();
 </script>
 
