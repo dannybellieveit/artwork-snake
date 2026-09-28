@@ -70,27 +70,41 @@
     var doc = new DOMParser().parseFromString(xmlText, 'application/xml');
     var responses = [...doc.getElementsByTagName('*')].filter(function (n) { return n.localName === 'response'; });
 
+    // A collection (folder) has a <resourcetype><collection/></resourcetype>;
+    // a plain file's resourcetype is empty. Sharing a single file directly
+    // (rather than a folder) makes the share root itself a non-collection
+    // response — href alone can't tell the two shapes apart, since the
+    // root's href always ends in '/webdav/' either way.
+    function isCollection(r) {
+      var rt = r.getElementsByTagNameNS('*', 'resourcetype')[0];
+      return !!(rt && rt.getElementsByTagNameNS('*', 'collection')[0]);
+    }
+
     var folderName = null;
     var root = responses.find(function (r) {
       var href = r.getElementsByTagNameNS('*', 'href')[0]?.textContent || '';
       return href.endsWith('/webdav/');
     });
-    if (root) {
+    if (root && isCollection(root)) {
       var nameNode = root.getElementsByTagNameNS('*', 'displayname')[0];
       if (nameNode && nameNode.textContent) folderName = nameNode.textContent;
     }
 
     var entries = responses
+      .filter(function (r) { return !isCollection(r); })
       .map(function (r) {
         var href = r.getElementsByTagNameNS('*', 'href')[0]?.textContent || '';
-        return { href: href, node: r };
-      })
-      .filter(function (e) { return e.href && !e.href.endsWith('/webdav/') && !e.href.endsWith('/'); })
-      .map(function (e) {
-        var name = decodeURIComponent(e.href.split('/').filter(Boolean).pop());
-        var lenNode = e.node.getElementsByTagNameNS('*', 'getcontentlength')[0];
+        var displayNode = r.getElementsByTagNameNS('*', 'displayname')[0];
+        // The single-shared-file case has no filename in its href (it's
+        // just the share root), so displayname is the only source of truth
+        // there. Folder children have both; href is used for consistency.
+        var name = (href && !href.endsWith('/webdav/'))
+          ? decodeURIComponent(href.split('/').filter(Boolean).pop())
+          : (displayNode && displayNode.textContent) || '';
+        var lenNode = r.getElementsByTagNameNS('*', 'getcontentlength')[0];
         return { name: name, bytes: lenNode ? Number(lenNode.textContent || 0) : 0 };
-      });
+      })
+      .filter(function (e) { return e.name; });
 
     return { entries: entries, folderName: folderName };
   }
