@@ -2,6 +2,10 @@
   var AUDIO_EXT = /\.(mp3|wav|flac|ogg|m4a|aac)$/i;
   var IMAGE_EXT = /\.(jpe?g|png|webp|gif)$/i;
   var COVER_NAME = /^(cover|folder|artwork)\./i;
+  // macOS's "internet shortcut" file — dropped in automatically when you
+  // drag a link (e.g. from the Spotify app or Safari's address bar) into a
+  // Finder window. It's a plist with a <key>URL</key>/<string> pair.
+  var WEBLOC_EXT = /\.webloc$/i;
 
   function fmtTime(sec) {
     if (!isFinite(sec) || sec < 0) return '0:00';
@@ -61,6 +65,46 @@
     return qs.get('token') || (location.pathname.match(/^\/playlist\/([^/]+)$/) || [])[1];
   }
 
+  function weblocUrl(xmlText) {
+    var doc = new DOMParser().parseFromString(xmlText, 'application/xml');
+    var keys = doc.getElementsByTagName('key');
+    for (var i = 0; i < keys.length; i++) {
+      if (keys[i].textContent === 'URL') {
+        var value = keys[i].nextElementSibling;
+        return value ? value.textContent : null;
+      }
+    }
+    return null;
+  }
+
+  function spotifyTrackId(url) {
+    var match = (url || '').match(/track\/(\w+)/);
+    return match ? match[1] : null;
+  }
+
+  // Resolves each .webloc to a Spotify track ID by fetching its plist
+  // content through the same share-proxy used for audio/images (a plain
+  // WebDAV GET, format-agnostic). A webloc that fails to fetch, parse, or
+  // isn't a Spotify track link is dropped rather than rendered broken.
+  function resolveWeblocs(token, weblocs) {
+    return Promise.all(weblocs.map(function (w) {
+      return fetch(fileUrl(token, w.name))
+        .then(function (res) {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.text();
+        })
+        .then(function (xmlText) {
+          var id = spotifyTrackId(weblocUrl(xmlText));
+          if (!id) throw new Error('not a Spotify track link');
+          return { name: w.name, type: 'spotify', spotifyId: id };
+        })
+        .catch(function (err) {
+          console.warn('Skipping webloc "' + w.name + '": ' + err.message);
+          return null;
+        });
+    })).then(function (results) { return results.filter(Boolean); });
+  }
+
   async function fetchEntries(token) {
     // The real, already-live listing endpoint (a Cloudflare Worker route),
     // not part of this repo's dead pages/api code.
@@ -116,11 +160,25 @@
     return !new URLSearchParams(location.search).has('nd');
   }
 
-  function render(token, entries, folderName) {
+  async function render(token, entries, folderName) {
     var app = document.getElementById('playlist-app');
-    var tracks = entries.filter(function (e) { return AUDIO_EXT.test(e.name); });
+    var audioEntries = entries.filter(function (e) { return AUDIO_EXT.test(e.name); });
+    var weblocEntries = entries.filter(function (e) { return WEBLOC_EXT.test(e.name); });
     var images = entries.filter(function (e) { return IMAGE_EXT.test(e.name); });
     var downloadsEnabled = downloadsRequested();
+
+    var spotifyTracks = await resolveWeblocs(token, weblocEntries);
+    var audioTracks = audioEntries.map(function (e) {
+      return { name: e.name, bytes: e.bytes, type: 'audio' };
+    });
+
+    // Merge back into the folder's own WebDAV listing order, so a shared
+    // numeric filename prefix (e.g. "03 - Song.mp3", "04 - Song.webloc")
+    // interleaves demos and released tracks exactly as named.
+    var byName = {};
+    audioTracks.forEach(function (t) { byName[t.name] = t; });
+    spotifyTracks.forEach(function (t) { byName[t.name] = t; });
+    var tracks = entries.map(function (e) { return byName[e.name]; }).filter(Boolean);
 
     if (tracks.length === 0) {
       app.innerHTML = '<div id="playlist-state">No audio files found in this folder.</div>';
@@ -138,7 +196,7 @@
       ? 'background-image:url(\'' + coverUrl + '\')'
       : 'background:' + gradientFor(token);
 
-    var totalBytes = tracks.reduce(function (sum, t) { return sum + t.bytes; }, 0);
+    var totalBytes = tracks.reduce(function (sum, t) { return sum + (t.bytes || 0); }, 0);
 
     var html = '';
     html += '<div class="pl-header">';
@@ -162,19 +220,23 @@
       li.className = 'pl-track';
       li.tabIndex = 0;
       li.dataset.index = i;
+      var isSpotify = track.type === 'spotify';
       li.innerHTML =
         '<span class="pl-track-index">' + (i + 1) + '</span>' +
         '<span class="pl-track-playing-icon" aria-hidden="true">♪</span>' +
         '<span class="pl-track-name">' + escapeHtml(stripExt(track.name)) + '</span>' +
-        '<span class="pl-track-duration">0:00</span>' +
-        (downloadsEnabled
-          ? '<a class="pl-track-download" href="' + fileUrl(token, track.name) + '" aria-label="Download ' + escapeHtml(stripExt(track.name)) + '"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></a>'
-          : '');
+        (isSpotify
+          ? '<span class="pl-track-tag">Spotify</span>' +
+            '<a class="pl-track-download" href="https://open.spotify.com/track/' + track.spotifyId + '" target="_blank" rel="noopener" aria-label="Open ' + escapeHtml(stripExt(track.name)) + ' on Spotify"><svg viewBox="0 0 24 24"><path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14zm5 16H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2z"/></svg></a>'
+          : '<span class="pl-track-duration">0:00</span>' +
+            (downloadsEnabled
+              ? '<a class="pl-track-download" href="' + fileUrl(token, track.name) + '" aria-label="Download ' + escapeHtml(stripExt(track.name)) + '"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></a>'
+              : ''));
       list.appendChild(li);
 
       // Duration column shows length by default; swap to file size only
       // while the download button is hovered/focused, then swap back.
-      if (downloadsEnabled) {
+      if (downloadsEnabled && !isSpotify) {
         var downloadLink = li.querySelector('.pl-track-download');
         var durationEl = li.querySelector('.pl-track-duration');
         var showSize = function () {
@@ -255,6 +317,7 @@
     var durations = new Array(tracks.length).fill(null);
 
     await Promise.all(tracks.map(async function (track, i) {
+      if (track.type !== 'audio') return;
       var duration = await probeOne(token, track);
       if (duration === null) return;
       durations[i] = duration;
@@ -458,15 +521,42 @@
     }
 
     var loadToken = 0;
+    var spotifyFrame = document.getElementById('pl-spotify-embed');
 
     function load(index, autoplay) {
       current = (index + tracks.length) % tracks.length;
       var track = tracks[current];
-      var url = fileUrl(token, track.name);
-      var thisLoad = ++loadToken;
       nameEl.textContent = stripExt(track.name);
       bar.classList.add('visible');
       highlight();
+
+      if (track.type === 'spotify') {
+        loadSpotify(track);
+      } else {
+        loadAudio(track, autoplay);
+      }
+    }
+
+    // Spotify's stream is DRM-protected — there's no raw file to decode
+    // into a waveform or hand to <audio>, so the only playback surface is
+    // their own embed widget (same pattern as the site's game.js easter
+    // egg). It gets its own play/pause/scrub UI; the native player pauses
+    // and steps aside while it's showing.
+    function loadSpotify(track) {
+      ++loadToken; // invalidate any in-flight audio waveform decode
+      audio.pause();
+      bar.classList.add('spotify-mode');
+      if (spotifyFrame) {
+        spotifyFrame.src = 'https://open.spotify.com/embed/track/' + track.spotifyId + '?utm_source=generator&autoplay=1';
+      }
+    }
+
+    function loadAudio(track, autoplay) {
+      bar.classList.remove('spotify-mode');
+      if (spotifyFrame) spotifyFrame.src = '';
+
+      var url = fileUrl(token, track.name);
+      var thisLoad = ++loadToken;
 
       var instance = ensureWaveSurfer();
 
@@ -516,6 +606,9 @@
 
     playBtn.addEventListener('click', function () {
       if (current === -1) { load(0, true); return; }
+      // Hidden via CSS while a Spotify track is loaded (it has its own
+      // play/pause) — this guard just covers stray keyboard activation.
+      if (tracks[current].type === 'spotify') return;
       if (audio.paused) audio.play().catch(function () {}); else audio.pause();
     });
     prevBtn.addEventListener('click', function () { load(current - 1, true); });
@@ -579,7 +672,7 @@
     }
     try {
       var result = await fetchEntries(token);
-      render(token, result.entries, result.folderName);
+      await render(token, result.entries, result.folderName);
     } catch (err) {
       console.error(err);
       app.innerHTML = '<div id="playlist-state">Error loading playlist.</div>';
