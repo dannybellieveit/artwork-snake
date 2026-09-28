@@ -35,6 +35,22 @@
     return name.replace(/\.[^.]+$/, '');
   }
 
+  // A leading number in the filename (e.g. "03 - Song.mp3", "12 - Song.webloc")
+  // is treated as an explicit position — this is what lets a released
+  // Spotify track slot in at a specific point among the demos. Plain
+  // alphabetical WebDAV order sorts "10" before "2" and can't order an
+  // unprefixed file at all, so this sorts by the number's actual value
+  // instead and leaves unprefixed files after all numbered ones, in
+  // whatever order the folder listing already had them (stable sort).
+  function orderKey(name) {
+    var match = name.match(/^\s*(\d+)/);
+    return match ? Number(match[1]) : Infinity;
+  }
+
+  function sortTracks(tracks) {
+    tracks.sort(function (a, b) { return orderKey(a.name) - orderKey(b.name); });
+  }
+
   function escapeHtml(str) {
     var div = document.createElement('div');
     div.textContent = str;
@@ -172,13 +188,8 @@
       return { name: e.name, bytes: e.bytes, type: 'audio' };
     });
 
-    // Merge back into the folder's own WebDAV listing order, so a shared
-    // numeric filename prefix (e.g. "03 - Song.mp3", "04 - Song.webloc")
-    // interleaves demos and released tracks exactly as named.
-    var byName = {};
-    audioTracks.forEach(function (t) { byName[t.name] = t; });
-    spotifyTracks.forEach(function (t) { byName[t.name] = t; });
-    var tracks = entries.map(function (e) { return byName[e.name]; }).filter(Boolean);
+    var tracks = audioTracks.concat(spotifyTracks);
+    sortTracks(tracks);
 
     if (tracks.length === 0) {
       app.innerHTML = '<div id="playlist-state">No audio files found in this folder.</div>';
