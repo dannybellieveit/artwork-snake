@@ -194,7 +194,7 @@
   // drop the "Discography" footer link rather than pointing them at the
   // rest of the site.
   function discographyRequested() {
-    return !new URLSearchParams(location.search).has('ndisco');
+    return !new URLSearchParams(location.search).has('ndis');
   }
 
   async function render(token, entries, folderName) {
