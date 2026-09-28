@@ -40,15 +40,28 @@
   // Spotify track slot in at a specific point among the demos. Plain
   // alphabetical WebDAV order sorts "10" before "2" and can't order an
   // unprefixed file at all, so this sorts by the number's actual value
-  // instead and leaves unprefixed files after all numbered ones, in
-  // whatever order the folder listing already had them (stable sort).
+  // instead; unprefixed files fall in after all numbered ones, sorted
+  // alphabetically among themselves.
+  var ORDER_PREFIX = /^\s*(\d+)\s*[-–—:]?\s*/;
+
   function orderKey(name) {
-    var match = name.match(/^\s*(\d+)/);
+    var match = name.match(ORDER_PREFIX);
     return match ? Number(match[1]) : Infinity;
   }
 
   function sortTracks(tracks) {
-    tracks.sort(function (a, b) { return orderKey(a.name) - orderKey(b.name); });
+    tracks.sort(function (a, b) {
+      var keyA = orderKey(a.name);
+      var keyB = orderKey(b.name);
+      if (keyA !== keyB) return keyA - keyB;
+      return a.name.localeCompare(b.name);
+    });
+  }
+
+  // The ordering number is bookkeeping, not part of the song's name —
+  // strip it back off before displaying the title anywhere.
+  function trackTitle(track) {
+    return stripExt(track.name).replace(ORDER_PREFIX, '');
   }
 
   function escapeHtml(str) {
@@ -198,7 +211,7 @@
 
     // A single-file share has no folder name to fall back on — use the
     // track's own name instead of the generic "Danny Casio" default.
-    var title = folderName || (tracks.length === 1 ? stripExt(tracks[0].name) : 'Danny Casio');
+    var title = folderName || (tracks.length === 1 ? trackTitle(tracks[0]) : 'Danny Casio');
     document.title = title;
 
     var cover = images.find(function (i) { return COVER_NAME.test(i.name); }) || images[0];
@@ -232,16 +245,17 @@
       li.tabIndex = 0;
       li.dataset.index = i;
       var isSpotify = track.type === 'spotify';
+      var title = trackTitle(track);
       li.innerHTML =
         '<span class="pl-track-index">' + (i + 1) + '</span>' +
         '<span class="pl-track-playing-icon" aria-hidden="true">♪</span>' +
-        '<span class="pl-track-name">' + escapeHtml(stripExt(track.name)) + '</span>' +
+        '<span class="pl-track-name">' + escapeHtml(title) + '</span>' +
         (isSpotify
           ? '<span class="pl-track-tag">Spotify</span>' +
-            '<a class="pl-track-download" href="https://open.spotify.com/track/' + track.spotifyId + '" target="_blank" rel="noopener" aria-label="Open ' + escapeHtml(stripExt(track.name)) + ' on Spotify"><svg viewBox="0 0 24 24"><path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14zm5 16H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2z"/></svg></a>'
+            '<a class="pl-track-download" href="https://open.spotify.com/track/' + track.spotifyId + '" target="_blank" rel="noopener" aria-label="Open ' + escapeHtml(title) + ' on Spotify"><svg viewBox="0 0 24 24"><path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14zm5 16H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2z"/></svg></a>'
           : '<span class="pl-track-duration">0:00</span>' +
             (downloadsEnabled
-              ? '<a class="pl-track-download" href="' + fileUrl(token, track.name) + '" aria-label="Download ' + escapeHtml(stripExt(track.name)) + '"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></a>'
+              ? '<a class="pl-track-download" href="' + fileUrl(token, track.name) + '" aria-label="Download ' + escapeHtml(title) + '"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></a>'
               : ''));
       list.appendChild(li);
 
@@ -443,7 +457,7 @@
       if (!('mediaSession' in navigator)) return;
       var track = tracks[current];
       navigator.mediaSession.metadata = new MediaMetadata({
-        title: stripExt(track.name),
+        title: trackTitle(track),
         artist: albumTitle,
         album: albumTitle,
         // Prefer the square crop once ready — its dimensions are real, so
@@ -537,7 +551,7 @@
     function load(index, autoplay) {
       current = (index + tracks.length) % tracks.length;
       var track = tracks[current];
-      nameEl.textContent = stripExt(track.name);
+      nameEl.textContent = trackTitle(track);
       bar.classList.add('visible');
       highlight();
 

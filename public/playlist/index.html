@@ -309,6 +309,10 @@
   #pl-player.spotify-mode .pl-player-scrub{ display:none; }
   #pl-player.spotify-mode .pl-player-spotify{ display:block; }
   #pl-player.spotify-mode .play-btn{ display:none; }
+  /* Spotify's own embed already shows art + title — ours would be a
+     duplicate sitting right next to it. */
+  #pl-player.spotify-mode .pl-player-art,
+  #pl-player.spotify-mode .pl-player-meta{ display:none; }
 
   @media(max-width:640px){
     .pl-header{ flex-direction:column; align-items:center; text-align:center; }
