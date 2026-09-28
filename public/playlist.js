@@ -127,7 +127,9 @@
       return;
     }
 
-    var title = folderName || 'Danny Casio';
+    // A single-file share has no folder name to fall back on — use the
+    // track's own name instead of the generic "Danny Casio" default.
+    var title = folderName || (tracks.length === 1 ? stripExt(tracks[0].name) : 'Danny Casio');
     document.title = title;
 
     var cover = images.find(function (i) { return COVER_NAME.test(i.name); }) || images[0];
