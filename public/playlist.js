@@ -275,6 +275,12 @@
     var current = -1;
     var ws = null;
     var albumTitle = document.title;
+    var single = tracks.length <= 1;
+
+    if (single) {
+      prevBtn.style.display = 'none';
+      nextBtn.style.display = 'none';
+    }
 
     if (coverUrl) {
       artEl.style.backgroundImage = "url('" + coverUrl + "')";
@@ -335,8 +341,10 @@
     function setupMediaSessionHandlers() {
       setMediaSessionHandler('play', function () { audio.play().catch(function () {}); });
       setMediaSessionHandler('pause', function () { audio.pause(); });
-      setMediaSessionHandler('previoustrack', function () { load(current - 1, true); });
-      setMediaSessionHandler('nexttrack', function () { load(current + 1, true); });
+      if (!single) {
+        setMediaSessionHandler('previoustrack', function () { load(current - 1, true); });
+        setMediaSessionHandler('nexttrack', function () { load(current + 1, true); });
+      }
       setMediaSessionHandler('seekbackward', null);
       setMediaSessionHandler('seekforward', null);
     }
@@ -507,7 +515,9 @@
       playBtn.setAttribute('aria-label', 'Play');
       if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
     });
-    audio.addEventListener('ended', function () { load(current + 1, true); });
+    // Auto-advancing on a single-track playlist would just reload and
+    // replay the same file forever — let it stop naturally instead.
+    audio.addEventListener('ended', function () { if (!single) load(current + 1, true); });
 
     function applyKnownDuration(duration) {
       timeTotal.textContent = fmtTime(duration);
