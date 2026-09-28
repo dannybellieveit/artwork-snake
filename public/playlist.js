@@ -446,8 +446,14 @@
       setMediaSessionHandler('play', function () { audio.play().catch(function () {}); });
       setMediaSessionHandler('pause', function () { audio.pause(); });
       if (!single) {
-        setMediaSessionHandler('previoustrack', function () { load(current - 1, true); });
-        setMediaSessionHandler('nexttrack', function () { load(current + 1, true); });
+        setMediaSessionHandler('previoustrack', function () {
+          var idx = nextAudioIndex(current, -1);
+          if (idx !== null) load(idx, true);
+        });
+        setMediaSessionHandler('nexttrack', function () {
+          var idx = nextAudioIndex(current, 1);
+          if (idx !== null) load(idx, true);
+        });
       }
       setMediaSessionHandler('seekbackward', null);
       setMediaSessionHandler('seekforward', null);
@@ -562,6 +568,24 @@
       }
     }
 
+    // Spotify's embed can't reliably start playing without a direct,
+    // foreground tap on its own play button — it won't autoplay from a
+    // backgrounded/locked-screen media-key press, and pausing the native
+    // <audio> element to point at it there just stalls playback with
+    // nothing to resume it. So OS-level transport controls (lock screen,
+    // media keys, a paired headset) and auto-advance-on-finish skip past
+    // Spotify entries to the next real audio track instead of landing on
+    // them — a direct tap on a Spotify row, or the on-screen prev/next
+    // buttons, still goes straight to it as normal.
+    function nextAudioIndex(from, step) {
+      var i = from;
+      for (var n = 0; n < tracks.length; n++) {
+        i = (i + step + tracks.length) % tracks.length;
+        if (tracks[i].type === 'audio') return i;
+      }
+      return null; // no audio tracks in this playlist at all
+    }
+
     // Spotify's stream is DRM-protected — there's no raw file to decode
     // into a waveform or hand to <audio>, so the only playback surface is
     // their own embed widget (same pattern as the site's game.js easter
@@ -651,7 +675,11 @@
     });
     // Auto-advancing on a single-track playlist would just reload and
     // replay the same file forever — let it stop naturally instead.
-    audio.addEventListener('ended', function () { if (!single) load(current + 1, true); });
+    audio.addEventListener('ended', function () {
+      if (single) return;
+      var idx = nextAudioIndex(current, 1);
+      if (idx !== null) load(idx, true);
+    });
 
     function applyKnownDuration(duration) {
       timeTotal.textContent = fmtTime(duration);
