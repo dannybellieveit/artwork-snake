@@ -189,6 +189,14 @@
     return !new URLSearchParams(location.search).has('nd');
   }
 
+  // Same soft-toggle pattern as downloadsRequested — lets a share link
+  // aimed at someone outside Danny's own circle (a label, a collaborator)
+  // drop the "Discography" footer link rather than pointing them at the
+  // rest of the site.
+  function discographyRequested() {
+    return !new URLSearchParams(location.search).has('ndisco');
+  }
+
   async function render(token, entries, folderName) {
     var app = document.getElementById('playlist-app');
     var audioEntries = entries.filter(function (e) { return AUDIO_EXT.test(e.name); });
@@ -717,6 +725,11 @@
   }
 
   async function main() {
+    if (!discographyRequested()) {
+      var discographyLink = document.getElementById('pl-discography-link');
+      if (discographyLink) discographyLink.remove();
+    }
+
     var token = getToken();
     var app = document.getElementById('playlist-app');
     if (!token) {
