@@ -131,7 +131,7 @@
     html += '    <h1>' + escapeHtml(title) + '</h1>';
     html += '    <p id="pl-summary">' + tracks.length + ' track' + (tracks.length === 1 ? '' : 's') +
       '<span id="pl-total-duration-group"> · <span id="pl-total-duration">0:00</span></span>' +
-      (totalBytes ? ' · ' + fmtBytes(totalBytes) : '') + '</p>';
+      (downloadsEnabled && totalBytes ? ' · ' + fmtBytes(totalBytes) : '') + '</p>';
     if (downloadsEnabled) {
       html += '    <a class="pl-download-all" href="https://transfer.dannycasio.com/s/' + token + '/download?accept=zip">Download all (ZIP)</a>';
     }
